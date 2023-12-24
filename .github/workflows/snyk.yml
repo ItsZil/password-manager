@@ -1,4 +1,4 @@
-name: Check for dotnet security vulnerabilities using Snyk
+name: Check for dotnet security vulnerabilities
 on: push
 jobs:
   security:
@@ -6,7 +6,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Setup .NET
-        uses: actions/setup-dotnet@3.0.3
+        uses: actions/setup-dotnet@8.0.x
       - name: Restore dependencies
         run: dotnet restore ./password-manager.sln
       - name: Run Snyk to check for vulnerabilities
