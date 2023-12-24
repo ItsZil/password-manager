@@ -11,17 +11,12 @@ jobs:
         run: brew install coreutils
       - name: Setup Snyk
         uses: snyk/actions/setup@master
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: | 
-            8.0.x
       - name: Install MAUI workload
         run: |
           dotnet workload install maui
       - name: Restore dependencies
         run: dotnet restore ./password-manager.sln
       - name: Run Snyk to detect security vulnerabilities
-        run: snyk test
+        run: snyk test --all-projects
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
