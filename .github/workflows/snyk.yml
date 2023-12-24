@@ -4,7 +4,7 @@ on:
     types: [opened, reopened, synchronize]
 jobs:
   security:
-    runs-on: windows-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@master
       - name: Setup Snyk
