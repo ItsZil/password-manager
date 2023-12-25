@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Password Manager",
+  "version": "1.0",
+  "description": "A password manager that communicates with a local ASP.NET Core server.",
+  "permissions": [ "storage", "activeTab" ],
+  "host_permissions": [ "https://localhost/*" ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [ "<all_urls>" ],
+      "js": [ "content.js" ]
+    }
+  ],
+  "content_security_policy": {
+      "script-src": "self",
+      "object-src": "self"
+  }
+  }

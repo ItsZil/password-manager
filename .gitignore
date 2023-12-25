@@ -535,3 +535,4 @@ dist
 **/*.Server/GeneratedArtifacts
 **/*.Server/ModelManifest.xml
 _Pvt_Extensions
+.aider*
