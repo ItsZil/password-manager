@@ -2,30 +2,27 @@
 <html>
 <head>
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="ext/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link rel="stylesheet" href="ext/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
 
     <title>Password Manager</title>
     <style>
         /* Add your styles here */
     </style>
 </head>
-<body>
-    <div class="jumbotron">
-        <h1 class="display-4">Password Manager</h1>
-        <p class="lead">This is a simple password manager extension.</p>
+<body>    
+    <div class="container container-md">
+        <div class="header clearfix mt-2 mb-2">
+            <h3 class="text-muted">Password Manager</h3>
+        </div>
+        <div class="password-list">
+            <ul class="list-unstyled">
+                <li class="password-item">Item 1</li>
+                <li class="password-item">Item 2</li>
+                <li class="password-item">Item 3</li>
+            </ul>
+        </div>
 
-        <hr class="my-4">
-        <p>It can store and retrieve your passwords securely.</p>
-
-        <p class="lead">
-            <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
-        </p>
-    </div>
-    
-    <div class="list-group">
-        <a href="#" class="list-group-item list-group-item-action">Item 1</a>
-        <a href="#" class="list-group-item list-group-item-action">Item 2</a>
-        <a href="#" class="list-group-item list-group-item-action">Item 3</a>
+        <button type="button" class="btn btn-primary" id="fetch-passwords">Fetch Passwords</button>
     </div>
 
     <script src="popup.js"></script>
