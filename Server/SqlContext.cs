@@ -1,19 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Server.Models;
+using System.Reflection;
 
 namespace Server
 {
-    public class SqlContext : DbContext
+    internal class SqlContext : DbContext
     {
-        public DbSet<TestModel> TestModels { get; set; }
+        internal DbSet<TestModel> TestModels { get; set; }
 
-        public string DbPath { get; }
+        private string DbPath { get; }
 
         public SqlContext()
         {
-            var folder = Environment.SpecialFolder.LocalApplicationData;
-            var path = Environment.GetFolderPath(folder);
-            DbPath = Path.Join(path, "database.db");
+            var path = Assembly.GetExecutingAssembly().Location;
+            var folder = Path.GetDirectoryName(path);
+            DbPath = Path.Join(folder, "database.db");
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
