@@ -8,25 +8,40 @@
 };
 chrome.storage.local.set({ importMap });*/
 
-chrome.runtime.onInstalled.addListener(() => {
-    console.log('Password Manager extension installed.');
+var response = '';
 
+function testCommunication() {
     const serverUrl = 'https://localhost:5271';
     const apiEndpoint = '/api/test';
-    const enableTest = false;
+    const enableTest = true;
 
-    function testCommunication() {
-        if (enableTest) {
-            fetch(`${serverUrl}${apiEndpoint}`)
-                .then(response => response.text())
-                .then(data => {
-                    console.log('Response received from server: ', data);
-                })
-                .catch(error => {
-                    console.error('Error retrieving response: ', error);
-                });
-        }
+    if (enableTest) {
+        return fetch(`${serverUrl}${apiEndpoint}`)
+            .then(response => response.json())
+            .catch(error => {
+                console.error('Error retrieving response: ', error);
+                throw error;
+            });
+    } else {
+        return Promise.resolve('');
     }
+}
 
-    testCommunication();
+chrome.runtime.onInstalled.addListener(() => {
+    console.log('Password Manager extension installed.');
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request === "retrieveResponse") {
+        testCommunication()
+            .then(response => {
+                console.log("Sending response: ", response);
+                sendResponse({ data: response });
+            })
+            .catch(error => {
+                console.error("Error during communication: ", error);
+                sendResponse({ error: error.message });
+            });
+        return true;
+    }
 });
