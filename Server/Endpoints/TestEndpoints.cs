@@ -2,30 +2,25 @@
 {
     public static class TestEndpoints
     {
-        private static RouteGroupBuilder testApi;
-        private static SqlContext dbContext;
 
         public static RouteGroupBuilder MapTestEndpoints(this RouteGroupBuilder group)
         {
             group.MapGet("/test", Test);
             group.MapGet("/testdb", TestDb);
 
-            testApi = group;
             return group;
         }
 
-        public static void Test()
+        public static IResult Test()
         {
-            //var testApi = app.MapGroup("/api/");
-
-            testApi.MapGet("/test", () => new Response($"Current time is {DateTime.Now}"));
+            return Results.Ok(new Response($"Current time is {DateTime.Now}"));
         }
 
-        public static void TestDb()
+        public static IResult TestDb(SqlContext dbContext)
         {
-            //var testApi = app.MapGroup("/api/");
-
-            testApi.MapGet("/testdb", () => new Response($"{dbContext.TestModels.Count()}"));
+            return Results.Ok(new Response($"{dbContext.TestModels.Count()}"));
         }
     }
+
+    public record Response(string Message);
 }

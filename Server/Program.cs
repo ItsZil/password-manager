@@ -52,14 +52,12 @@ namespace Server
             });
 
 
-            var root = app.MapGroup("/api/");
-            root.MapTestEndpoints();
+            var rootApi = app.MapGroup("/api/");
+            rootApi.MapTestEndpoints();
 
             app.Run();
         }
     }
-
-    public record Response(string Message);
 
     [JsonSerializable(typeof(Response))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
