@@ -41,16 +41,16 @@ namespace Server
                 }
             });
 
-            var testApi = app.MapGroup("/test");
-            testApi.MapGet("/", () => $"Current time is {DateTime.Now}");
+            var testApi = app.MapGroup("/api/test");
+            testApi.MapGet("/", () => new Response($"Current time is {DateTime.Now}"));
 
             app.Run();
         }
     }
 
-    public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
+    public record Response(string Message);
 
-    [JsonSerializable(typeof(Todo[]))]
+    [JsonSerializable(typeof(Response))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {
 
