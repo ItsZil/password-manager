@@ -3,7 +3,8 @@
   "name": "Password Manager",
   "version": "1.0",
   "description": "A password manager that communicates with a local ASP.NET Core server.",
-  "permissions": ["storage", "activeTab", "http://localhost/*"],
+  "permissions": [ "storage", "activeTab" ],
+  "host_permissions":  [ "https://localhost/*" ],
   "background": {
     "service_worker": "background.js"
   },
