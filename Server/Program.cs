@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Server.Endpoints;
 
 namespace Server
 {
@@ -15,10 +16,19 @@ namespace Server
                 options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
             });
 
+            builder.Services.AddDbContext<SqlContext>();
+
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
 
             var app = builder.Build();
+
+            // Ensure the SQLite database is created
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<SqlContext>();
+                dbContext.Database.EnsureCreated();
+            }
 
             // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies
             app.UseForwardedHeaders(new ForwardedHeadersOptions
@@ -41,8 +51,9 @@ namespace Server
                 }
             });
 
-            var testApi = app.MapGroup("/api/test");
-            testApi.MapGet("/", () => new Response($"Current time is {DateTime.Now}"));
+
+            var root = app.MapGroup("/api/");
+            root.MapTestEndpoints();
 
             app.Run();
         }
