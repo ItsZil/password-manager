@@ -9,3 +9,8 @@ GET {{Server_HostAddress}}/api/testdb/
 Response-Type: application/json
 
 ###
+
+POST {{Server_HostAddress}}/api/testcreatedbmodel/
+Response-Type: application/json
+
+###

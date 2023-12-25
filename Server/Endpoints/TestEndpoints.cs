@@ -1,4 +1,6 @@
-﻿namespace Server.Endpoints
+﻿using Server.Models;
+
+namespace Server.Endpoints
 {
     internal static class TestEndpoints
     {
@@ -6,6 +8,7 @@
         {
             group.MapGet("/test", Test);
             group.MapGet("/testdb", TestDb);
+            group.MapPost("/testcreatedbmodel", TestCreateDbModel);
 
             return group;
         }
@@ -17,7 +20,20 @@
 
         internal static IResult TestDb(SqlContext dbContext)
         {
-            return Results.Ok(new Response($"{dbContext.TestModels.Count()}"));
+            if (!dbContext.TestModels.Any())
+            {
+                return Results.Ok(new Response("No TestModels in the database"));
+            }
+            var lastTestModel = dbContext.TestModels.OrderBy(t => t.Id).Last();
+            return Results.Ok(lastTestModel);
+        }
+
+        internal static IResult TestCreateDbModel(SqlContext dbContext)
+        {
+            dbContext.TestModels.Add(new TestModel { Message = "Created in TestCreateDbModel"});
+            dbContext.SaveChanges();
+
+            return Results.Ok(new Response("Created a new TestModel in the database"));
         }
     }
 
