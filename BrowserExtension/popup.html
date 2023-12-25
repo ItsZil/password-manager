@@ -1,16 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Password Manager</title>
-  <style>
-    /* Add your styles here */
-  </style>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="ext/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <title>Password Manager</title>
+    <style>
+        /* Add your styles here */
+    </style>
 </head>
 <body>
-  <div id="app">
-    <!-- Your popup UI components will go here -->
-    <h1>Password Manager</h1>
-  </div>
-  <script src="popup.js"></script>
+    <div class="jumbotron">
+        <h1 class="display-4">Password Manager</h1>
+        <p class="lead">This is a simple password manager extension.</p>
+
+        <hr class="my-4">
+        <p>It can store and retrieve your passwords securely.</p>
+
+        <p class="lead">
+            <a class="btn btn-primary btn-lg" href="#" role="button">Learn more</a>
+        </p>
+    </div>
+    
+    <div class="list-group">
+        <a href="#" class="list-group-item list-group-item-action">Item 1</a>
+        <a href="#" class="list-group-item list-group-item-action">Item 2</a>
+        <a href="#" class="list-group-item list-group-item-action">Item 3</a>
+    </div>
+
+    <script src="popup.js"></script>
+    <script src="ext/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+    <script src="ext/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="ext/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 </body>
 </html>
