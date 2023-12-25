@@ -1,26 +1,32 @@
 'use strict';
 
+/*const importMap = {
+    "imports": {
+        "@popperjs/core": chrome.runtime.getURL("ext/popper.min.js"),
+        "bootstrap": chrome.runtime.getURL("ext/bootstrap.esm.min.js")
+    }
+};
+chrome.storage.local.set({ importMap });*/
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Password Manager extension installed.');
 
-    const serverUrl = 'http://localhost:5000'; // Replace with your server URL
-    const apiEndpoint = '/api/passwords'; // Replace with your API endpoint
+    const serverUrl = 'https://localhost:5271';
+    const apiEndpoint = '/api/test';
     const enableTest = false;
 
-    // Example function to communicate with the server
-    function fetchPasswords() {
+    function testCommunication() {
         if (enableTest) {
             fetch(`${serverUrl}${apiEndpoint}`)
-                .then(response => response.json())
+                .then(response => response.text())
                 .then(data => {
-                    console.log('Passwords fetched from server:', data);
+                    console.log('Response received from server: ', data);
                 })
                 .catch(error => {
-                    console.error('Error fetching passwords:', error);
+                    console.error('Error retrieving response: ', error);
                 });
         }
     }
 
-    // Call the function to fetch passwords after installation
-    fetchPasswords();
+    testCommunication();
 });
