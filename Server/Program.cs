@@ -16,19 +16,9 @@ namespace Server
             });
 
             // Configure the app to serve over HTTPS only
-            builder.WebHost.ConfigureKestrel(serverOptions =>
-            {
-                serverOptions.ConfigureHttpsDefaults(httpsOptions =>
-                {
-                });
-            });
+            builder.WebHost.UseKestrelHttpsConfiguration();
 
             var app = builder.Build();
-
-            app.UseHttpsRedirection();
-
-            // Add HSTS middleware
-            app.UseHsts();
 
             // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies
             app.UseForwardedHeaders(new ForwardedHeadersOptions
