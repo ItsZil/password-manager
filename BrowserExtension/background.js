@@ -1,26 +1,47 @@
 'use strict';
 
+/*const importMap = {
+    "imports": {
+        "@popperjs/core": chrome.runtime.getURL("ext/popper.min.js"),
+        "bootstrap": chrome.runtime.getURL("ext/bootstrap.esm.min.js")
+    }
+};
+chrome.storage.local.set({ importMap });*/
+
+var response = '';
+
+function testCommunication() {
+    const serverUrl = 'https://localhost:5271';
+    const apiEndpoint = '/api/test';
+    const enableTest = true;
+
+    if (enableTest) {
+        return fetch(`${serverUrl}${apiEndpoint}`)
+            .then(response => response.json())
+            .catch(error => {
+                console.error('Error retrieving response: ', error);
+                throw error;
+            });
+    } else {
+        return Promise.resolve('');
+    }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Password Manager extension installed.');
+});
 
-    const serverUrl = 'http://localhost:5000'; // Replace with your server URL
-    const apiEndpoint = '/api/passwords'; // Replace with your API endpoint
-    const enableTest = false;
-
-    // Example function to communicate with the server
-    function fetchPasswords() {
-        if (enableTest) {
-            fetch(`${serverUrl}${apiEndpoint}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Passwords fetched from server:', data);
-                })
-                .catch(error => {
-                    console.error('Error fetching passwords:', error);
-                });
-        }
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request === "retrieveResponse") {
+        testCommunication()
+            .then(response => {
+                console.log("Sending response: ", response);
+                sendResponse({ data: response });
+            })
+            .catch(error => {
+                console.error("Error during communication: ", error);
+                sendResponse({ error: error.message });
+            });
+        return true;
     }
-
-    // Call the function to fetch passwords after installation
-    fetchPasswords();
 });

@@ -1,4 +1,6 @@
+using System.Net;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Server
 {
@@ -13,30 +15,42 @@ namespace Server
                 options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
             });
 
+            // Configure the app to serve over HTTPS only
+            builder.WebHost.UseKestrelHttpsConfiguration();
+
             var app = builder.Build();
 
-            var sampleTodos = new Todo[] {
-                new(1, "Walk the dog"),
-                new(2, "Do the dishes", DateOnly.FromDateTime(DateTime.Now)),
-                new(3, "Do the laundry", DateOnly.FromDateTime(DateTime.Now.AddDays(1))),
-                new(4, "Clean the bathroom"),
-                new(5, "Clean the car", DateOnly.FromDateTime(DateTime.Now.AddDays(2)))
-            };
+            // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
 
-            var todosApi = app.MapGroup("/todos");
-            todosApi.MapGet("/", () => sampleTodos);
-            todosApi.MapGet("/{id}", (int id) =>
-                sampleTodos.FirstOrDefault(a => a.Id == id) is { } todo
-                    ? Results.Ok(todo)
-                    : Results.NotFound());
+            // Middleware to limit access to the local network
+            app.Use(async (context, next) =>
+            {
+                var remoteIp = context.Connection.RemoteIpAddress;
+                if (remoteIp != null && (remoteIp.Equals(IPAddress.Loopback) || remoteIp.Equals(IPAddress.IPv6Loopback) && context.Request.IsHttps))
+                {
+                    await next.Invoke();
+                }
+                else
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    await context.Response.WriteAsync("Access denied. This service is only available within the local network.");
+                }
+            });
+
+            var testApi = app.MapGroup("/api/test");
+            testApi.MapGet("/", () => new Response($"Current time is {DateTime.Now}"));
 
             app.Run();
         }
     }
 
-    public record Todo(int Id, string? Title, DateOnly? DueBy = null, bool IsComplete = false);
+    public record Response(string Message);
 
-    [JsonSerializable(typeof(Todo[]))]
+    [JsonSerializable(typeof(Response))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {
 
