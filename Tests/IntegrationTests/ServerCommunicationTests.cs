@@ -16,12 +16,8 @@ namespace Tests.IntegrationTests.Server
             _factory = new WebApplicationFactory<Program>()
                 .WithWebHostBuilder(builder =>
                 {
-                    builder.UseEnvironment("Testing");
-                    builder.ConfigureTestServices(services =>
-                    {
-
-                    });
-                    
+                    // TODO: should look into another way to bypass the local network check.
+                    builder.UseEnvironment("Testing");                    
                 });
             _client = _factory.CreateClient();
         }
