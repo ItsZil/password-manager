@@ -36,14 +36,13 @@ namespace Tests.UnitTests.Server
         }
 
         [Fact]
-        public void TestDatabaseFileLocation()
+        public void TestDatabaseFileExists()
         {
+            using var context = _fixture.CreateContext();
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
 
             Assert.True(File.Exists(Path.Join(folder, "database.db")));
         }
-
-
     }
 }
