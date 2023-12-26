@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Server.Models;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Tests")]
 namespace Server
 {
     internal class SqlContext : DbContext
