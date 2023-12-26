@@ -37,6 +37,7 @@ namespace Server
             });
 
             // Middleware to limit access to the local network
+            if (!app.Environment.IsEnvironment("Testing"))
             app.Use(async (context, next) =>
             {
                 var remoteIp = context.Connection.RemoteIpAddress;

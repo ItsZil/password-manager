@@ -16,4 +16,7 @@
     </PackageReference>
   </ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="Tests" />
+	</ItemGroup>
 </Project>
