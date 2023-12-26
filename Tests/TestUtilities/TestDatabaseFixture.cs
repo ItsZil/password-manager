@@ -34,8 +34,7 @@ namespace Tests.TestUtilities
 
         internal SqlContext CreateContext()
         {
-            SqlContext context = new SqlContext();
-            context.Database.EnsureCreated();
+            SqlContext context = new SqlContext("testdatabase.db");
             return context;
         }
     }

@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace Tests.UnitTests.Server
 {
     public class DatabaseConnectionTests : IClassFixture<TestDatabaseFixture>, IDisposable
@@ -14,7 +12,6 @@ namespace Tests.UnitTests.Server
         public void Dispose()
         {
             using var context = _fixture.CreateContext();
-
             context.Database.EnsureDeleted();
         }
 
@@ -33,16 +30,6 @@ namespace Tests.UnitTests.Server
             context.Database.EnsureDeleted();
 
             Assert.True(context.Database.EnsureCreated());
-        }
-
-        [Fact]
-        public void TestDatabaseFileExists()
-        {
-            using var context = _fixture.CreateContext();
-            var path = Assembly.GetExecutingAssembly().Location;
-            var folder = Path.GetDirectoryName(path);
-
-            Assert.True(File.Exists(Path.Join(folder, "database.db")));
         }
     }
 }

@@ -6,13 +6,14 @@ using Server;
 
 namespace Tests.IntegrationTests.Server
 {
-    public class ServerCommunicationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class ServerCommunicationTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
     {
         private HttpClient _client;
+        private WebApplicationFactory<Program> _factory;
 
         public ServerCommunicationTests()
         { 
-            var factory = new WebApplicationFactory<Program>()
+            _factory = new WebApplicationFactory<Program>()
                 .WithWebHostBuilder(builder =>
                 {
                     builder.UseEnvironment("Testing");
@@ -22,13 +23,21 @@ namespace Tests.IntegrationTests.Server
                     });
                     
                 });
-            _client = factory.CreateClient();
+            _client = _factory.CreateClient();
+        }
+
+        public void Dispose()
+        {
+            // Ensure that the server's database file is deleted after each test run.
+            var service = _factory.Services.GetService(typeof(SqlContext));
+            if (service is SqlContext context)
+                context.Database.EnsureDeleted();
         }
 
         [Fact]
         public async Task ServerIsRunningAndResponding()
         {
-            var response = await _client.GetAsync("/");
+            var response = await _client.GetAsync("/api/test");
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }

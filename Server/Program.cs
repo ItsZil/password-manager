@@ -38,20 +38,21 @@ namespace Server
 
             // Middleware to limit access to the local network
             if (!app.Environment.IsEnvironment("Testing"))
-            app.Use(async (context, next) =>
             {
-                var remoteIp = context.Connection.RemoteIpAddress;
-                if (remoteIp != null && (remoteIp.Equals(IPAddress.Loopback) || remoteIp.Equals(IPAddress.IPv6Loopback) && context.Request.IsHttps))
+                app.Use(async (context, next) =>
                 {
-                    await next.Invoke();
-                }
-                else
-                {
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    await context.Response.WriteAsync("Access denied. This service is only available within the local network.");
-                }
-            });
-
+                    var remoteIp = context.Connection.RemoteIpAddress;
+                    if (remoteIp != null && (remoteIp.Equals(IPAddress.Loopback) || remoteIp.Equals(IPAddress.IPv6Loopback) && context.Request.IsHttps))
+                    {
+                        await next.Invoke();
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        await context.Response.WriteAsync("Access denied. This service is only available within the local network.");
+                    }
+                });
+            }
 
             var rootApi = app.MapGroup("/api/");
             rootApi.MapTestEndpoints();
