@@ -5,36 +5,21 @@ namespace Tests.TestUtilities
 {
     public class TestDatabaseFixture
     {
-        private static readonly object _lock = new();
-        private static bool _databaseInitialized;
+        public string DatabaseName { get; private set; }
 
         public TestDatabaseFixture()
         {
-            lock (_lock)
+            DatabaseName = $"testdatabase{Guid.NewGuid()}.db";
+            using (var context = CreateContext())
             {
-                if (!_databaseInitialized)
-                {
-                    using (var context = CreateContext())
-                    {
-                        context.Database.EnsureDeleted();
-                        context.Database.EnsureCreated();
-
-                        context.AddRange(
-                            new TestModel { Id = 1, Message = "Test Model 1" },
-                            new TestModel { Id = 2, Message = "Test Model 2" }
-                        );
-
-                        context.SaveChanges();
-                    }
-
-                    _databaseInitialized = true;
-                }
+                context.Database.EnsureDeleted();
+                context.Database.EnsureCreated();
             }
         }
 
         internal SqlContext CreateContext()
         {
-            SqlContext context = new SqlContext("testdatabase.db");
+            SqlContext context = new SqlContext(DatabaseName);
             return context;
         }
     }
