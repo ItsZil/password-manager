@@ -1,5 +1,4 @@
 ﻿using Server;
-using Server.Models;
 
 namespace Tests.TestUtilities
 {
