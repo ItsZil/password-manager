@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Server.Models;
+﻿using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using System.Reflection;
+using Server.Models;
 
 namespace Server
 {
@@ -17,7 +18,7 @@ namespace Server
         {
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
-            _dbPath = Path.Join(folder, "database.db");
+            _dbPath = Path.Join(folder, "vault.db");
         }
 
         public SqlContext(string databaseName)
@@ -28,6 +29,16 @@ namespace Server
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite($"Data Source={_dbPath}");
+            => options.UseSqlite(InitializeConnection(_dbPath));
+
+        private static SqliteConnection InitializeConnection(string databasePath)
+        {
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = databasePath,
+                Password = "Test123" // PRAGMA key is being sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
+            };
+            return new SqliteConnection(connectionString.ToString());
+        }
     }
 }
