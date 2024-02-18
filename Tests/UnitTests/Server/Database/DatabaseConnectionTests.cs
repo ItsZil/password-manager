@@ -1,18 +1,12 @@
 namespace Tests.UnitTests.Server
 {
-    public class DatabaseConnectionTests : IClassFixture<TestDatabaseFixture>, IDisposable
+    public class DatabaseConnectionTests : IClassFixture<TestDatabaseFixture>
     {
         public readonly TestDatabaseFixture _fixture;
 
         public DatabaseConnectionTests(TestDatabaseFixture fixture)
         {
             _fixture = fixture;
-        }
-
-        public void Dispose()
-        {
-            using var context = _fixture.CreateContext();
-            context.Database.EnsureDeleted();
         }
 
         [Fact]
