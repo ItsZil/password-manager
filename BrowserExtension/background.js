@@ -31,17 +31,27 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('Password Manager extension installed.');
 });
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request === "retrieveResponse") {
-        testCommunication()
-            .then(response => {
-                console.log("Sending response: ", response);
-                sendResponse({ data: response });
-            })
-            .catch(error => {
-                console.error("Error during communication: ", error);
-                sendResponse({ error: error.message });
-            });
-        return true;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.hasInputFields) {
+        handleInputFields(message);
+    } else if (message === "retrieveResponse") {
+        return handleResponse(message);
     }
 });
+
+function handleInputFields(message) {
+    console.log('Input fields found on page', message.domain, ', there are a total of', message.filteredInputFields.length, 'input fields.');
+}
+
+function handleResponse(message) {
+    testCommunication()
+        .then(response => {
+            console.log("Sending response: ", response);
+            sendResponse({ data: response });
+        })
+        .catch(error => {
+            console.error("Error during communication: ", error);
+            sendResponse({ error: error.message });
+        });
+    return true;
+}
