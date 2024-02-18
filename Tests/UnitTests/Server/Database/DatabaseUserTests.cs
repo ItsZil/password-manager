@@ -2,19 +2,13 @@ using Server.Models;
 
 namespace Tests.UnitTests.Server
 {
-    public class DatabaseUserTests : IClassFixture<TestDatabaseFixture>, IDisposable
+    public class DatabaseUserTests : IClassFixture<TestDatabaseFixture>
     {
         public readonly TestDatabaseFixture _fixture;
 
         public DatabaseUserTests(TestDatabaseFixture fixture)
         {
             _fixture = fixture;
-        }
-
-        public void Dispose()
-        {
-            using var context = _fixture.CreateContext();
-            context.Database.EnsureDeleted();
         }
 
         [Fact]
