@@ -10,12 +10,18 @@ function isInputField(element) {
 
 // Function to parse the page and check for input fields
 function checkForInputFields() {
-    const inputFields = document.querySelectorAll('input, textarea');
-    const filteredInputFields = Array.from(inputFields).filter(inputField => {
-        return inputField.type === 'email' || inputField.type === 'password' || inputField.type === 'text' || inputField.type === 'tel';
-    });
+    const inputFields = document.querySelectorAll('input[type="email"], input[type="password"], input[type="text"], input[type="tel"], textarea');
 
-    if (filteredInputFields.length > 0) {
+    if (inputFields.length > 0) {
+        // Extract information about input fields
+        const inputFieldInfo = Array.from(inputFields).map(inputField => ({
+            type: inputField.type,
+            id: inputField.id,
+            name: inputField.name,
+            value: inputField.value
+            // Add more attributes as needed
+        }));
+
         var pageHref = window.location.href;
 
         // Remove any queries from pageHref
@@ -28,7 +34,7 @@ function checkForInputFields() {
         var domain = pageHref.split('/')[2];
 
         // Notify the background script that input fields are found
-        chrome.runtime.sendMessage({ hasInputFields: true, filteredInputFields, pageHref, domain });
+        chrome.runtime.sendMessage({ hasInputFields: true, inputFieldInfo, pageHref, domain });
     }
 }
 
@@ -38,3 +44,19 @@ if (document.readyState === 'loading') {
 } else {
     checkForInputFields();
 }
+
+chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.action === 'autofillDetails') {
+        // Find the fields on the page
+        const usernameField = document.getElementById(message.username_field_id);
+        const passwordField = document.getElementById(message.password_field_id);
+
+        // Autofill the fields if found
+        if (usernameField && passwordField) {
+            usernameField.value = message.username;
+            passwordField.value = message.password;
+        } else {
+            console.log('Username and/or password fields not found on the page.'); // TODO: Add error handling
+        }
+    }
+});
