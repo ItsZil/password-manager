@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using Server.Models;
+using UtilitiesLibrary.Models;
 
 namespace Server
 {

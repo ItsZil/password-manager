@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
-namespace Server.Models
+namespace UtilitiesLibrary.Models
 {
     [Index(nameof(Username))]
     public class User
