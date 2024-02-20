@@ -56,6 +56,7 @@ namespace Server
 
             var rootApi = app.MapGroup("/api/");
             rootApi.MapTestEndpoints();
+            rootApi.MapLoginDetailsEndpoints();
 
             app.Run();
         }
