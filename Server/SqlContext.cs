@@ -1,7 +1,7 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using Server.Models;
+using UtilitiesLibrary.Models;
 
 namespace Server
 {
@@ -12,7 +12,7 @@ namespace Server
         internal DbSet<Account> Accounts { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
 
-        private string _dbPath { get; }
+        internal string _dbPath { get; private set; }
 
         public SqlContext()
         {
@@ -30,6 +30,11 @@ namespace Server
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite(InitializeConnection(_dbPath));
+
+        internal void ChangeDatabasePath(string newPath)
+        {
+            _dbPath = newPath;
+        }
 
         private static SqliteConnection InitializeConnection(string databasePath)
         {

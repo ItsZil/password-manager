@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Server.Endpoints;
+using UtilitiesLibrary.Models;
 
 namespace Server
 {
@@ -27,6 +28,13 @@ namespace Server
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<SqlContext>();
+
+                if (app.Environment.IsEnvironment("Testing"))
+                {
+                    // If the app is running in a testing environment, create a new database for each test run.
+                    dbContext.ChangeDatabasePath($"vault_test_{Guid.NewGuid()}.db");
+                }
+
                 dbContext.Database.EnsureCreated();
             }
 
@@ -56,12 +64,14 @@ namespace Server
 
             var rootApi = app.MapGroup("/api/");
             rootApi.MapTestEndpoints();
+            rootApi.MapLoginDetailsEndpoints();
 
             app.Run();
         }
     }
 
     [JsonSerializable(typeof(Response))]
+    [JsonSerializable(typeof(DomainLoginRequest))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {
 

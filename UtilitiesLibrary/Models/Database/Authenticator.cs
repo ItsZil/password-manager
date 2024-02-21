@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Server.Models
+namespace UtilitiesLibrary.Models
 {
     public class Authenticator
     {

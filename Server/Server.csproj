@@ -20,4 +20,12 @@
 	<ItemGroup>
 		<InternalsVisibleTo Include="Tests" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Utilities\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\UtilitiesLibrary\UtilitiesLibrary.csproj" />
+	</ItemGroup>
 </Project>

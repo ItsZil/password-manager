@@ -1,4 +1,4 @@
-using Server.Models;
+using UtilitiesLibrary.Models;
 
 namespace Tests.UnitTests.Server
 {
