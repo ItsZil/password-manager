@@ -28,6 +28,13 @@ namespace Server
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<SqlContext>();
+
+                if (app.Environment.IsEnvironment("Testing"))
+                {
+                    // If the app is running in a testing environment, create a new database for each test run.
+                    dbContext.ChangeDatabasePath($"vault_test_{Guid.NewGuid()}.db");
+                }
+
                 dbContext.Database.EnsureCreated();
             }
 
