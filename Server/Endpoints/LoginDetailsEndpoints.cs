@@ -1,4 +1,5 @@
-﻿using UtilitiesLibrary.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using UtilitiesLibrary.Models;
 
 namespace Server.Endpoints
 {
@@ -6,12 +7,12 @@ namespace Server.Endpoints
     {
         internal static RouteGroupBuilder MapLoginDetailsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapGet("/domainloginrequest", DomainLoginRequest);
+            group.MapPost("/domainloginrequest", DomainLoginRequest);
 
             return group;
         }
 
-        internal static IResult DomainLoginRequest(DomainLoginRequest request)
+        internal static IResult DomainLoginRequest([FromBody] DomainLoginRequest request)
         {
             string requestedDomain = request.Domain;
             DomainLoginResponse response = new($"testuser{requestedDomain}", "password", false);

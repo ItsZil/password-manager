@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Server.Endpoints;
+using UtilitiesLibrary.Models;
 
 namespace Server
 {
@@ -63,6 +64,7 @@ namespace Server
     }
 
     [JsonSerializable(typeof(Response))]
+    [JsonSerializable(typeof(DomainLoginRequest))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {
 
