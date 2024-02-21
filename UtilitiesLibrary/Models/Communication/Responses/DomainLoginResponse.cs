@@ -33,6 +33,7 @@ namespace UtilitiesLibrary.Models
         /// <param name="username">The user's username (email, phone number, etc.)</param>
         /// <param name="password">The user's password</param>
         /// <param name="has2FA">A flag indicating if the user has 2FA enabled for the requested domain</param>
+        [JsonConstructor]
         internal DomainLoginResponse(string username, string password, bool has2FA)
         {
             HasCredentials = true;

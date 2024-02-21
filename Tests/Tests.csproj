@@ -26,15 +26,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="IntegrationTests\" />
     <Folder Include="EndToEndTests\" />
     <Folder Include="PerformanceTests\" />
     <Folder Include="UnitTests\BrowserExtension\" />
     <Folder Include="UnitTests\DesktopApplication\" />
+    <Folder Include="UnitTests\Server\Requests\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Server\Server.csproj" />
+    <ProjectReference Include="..\UtilitiesLibrary\UtilitiesLibrary.csproj" />
   </ItemGroup>
 
 </Project>
