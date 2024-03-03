@@ -1,0 +1,13 @@
+{
+  "name": "browser-extension-tests",
+  "version": "0.0.0",
+  "description": "BrowserExtensionTests",
+  "main": "app.js",
+  "author": {
+    "name": ""
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  },
+  "eslintConfig": {}
+}
