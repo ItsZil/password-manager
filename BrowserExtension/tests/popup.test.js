@@ -22,12 +22,12 @@ afterEach(async () => {
 });
 
 describe('Popup Tests', () => {
-    test('popup renders correctly', async () => {
+    test('Popup renders correctly', async () => {
         const page = await browser.newPage();
         await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`);
     });
 
-    test('popup contains text', async () => {
+    test('Popup contains text', async () => {
         const page = await browser.newPage();
         await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`);
 
