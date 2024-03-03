@@ -27,4 +27,4 @@ jobs:
         cache: 'npm'
         cache-dependency-path: BrowserExtension/package-lock.json
     - run: npm ci
-    - run: npm run start
+    - run: npm test
