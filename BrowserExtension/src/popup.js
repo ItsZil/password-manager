@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function testCommunication() {
         (async () => {
             const response = await chrome.runtime.sendMessage("retrieveTestResponse");
-
             document.getElementById('response').innerHTML = response.data.message;
         })();
     }

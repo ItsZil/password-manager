@@ -4,9 +4,10 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Launch Tests",
       "skipFiles": [ "<node_internals>/**" ],
-      "program": "${workspaceFolder}/app.js",
+      "runtimeExecutable": "npm",
+      "args": ["run", "start"],
       "cwd": "${workspaceFolder}",
       "console": "externalTerminal"
     }

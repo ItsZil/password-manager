@@ -6,7 +6,7 @@
   "permissions": [ "storage", "activeTab" ],
   "host_permissions": [ "https://localhost/*" ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "src/background.js"
   },
   "action": {
     "default_popup": "popup.html"
@@ -14,10 +14,11 @@
   "content_scripts": [
     {
       "matches": [ "<all_urls>" ],
-      "js": [ "content.js" ]
+      "js": [ "src/content.js" ]
     }
   ],
   "content_security_policy": {
-      "extension_pages": "script-src 'self'; object-src 'self'"
-    }
-  }
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkua/0jcyV3RLbA1nEsLaXP6f1N5G15aG7pbtRGZadAtGrVv06hk/dFx1kj+YQJU5WoqIbY08DIyeQFfv+JMc295yQtCKyPQWxJFxoTTG6BTM5qzHzk9jlURsmlkEgMLCuf/jk5wjNxg3EtFsgZGhSAgNA/eWLb39zJGMzlQzUVm6dQ7Ocbc/kbbPuQoV5J3mBdT9x4jmpy4DbG+XnxMS3K0dbdEJaYQEmMh+5d76FdSD0tYu9Keu3Ce+sGy6YyqPt9SZf/v8vdBPOXSFBCxFbcrTksLcXmlZpOYQwb4KS5fO1TjEAnASrULNQAXdekw5Z3aoqlRPtxj1lp77+ZtPzwIDAQAB"
+}
