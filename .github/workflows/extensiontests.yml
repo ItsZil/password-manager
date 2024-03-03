@@ -8,7 +8,7 @@ on:
 
 defaults:
     run:
-        working-directory: BrowserExtensionTests
+        working-directory: BrowserExtension
 
 jobs:
   test:
@@ -25,6 +25,6 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-        cache-dependency-path: BrowserExtensionTests/package-lock.json
+        cache-dependency-path: BrowserExtension/package-lock.json
     - run: npm ci
     - run: npm run start
