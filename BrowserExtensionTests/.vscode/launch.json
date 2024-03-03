@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch Tests",
+      "skipFiles": [ "<node_internals>/**" ],
+      "runtimeExecutable": "npm",
+      "args": ["run", "start"],
+      "cwd": "${workspaceFolder}",
+      "console": "externalTerminal"
+    }
+  ]
+}

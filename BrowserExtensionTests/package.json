@@ -1,13 +1,18 @@
 {
-  "name": "browser-extension-tests",
-  "version": "0.0.0",
-  "description": "BrowserExtensionTests",
-  "main": "app.js",
-  "author": {
-    "name": ""
+  "name": "browserextensiontests",
+  "version": "1.0.0",
+  "description": "",
+  "dependencies": {
+    "jest": "^29.7.0",
+    "puppeteer": "^21.3.6"
   },
+  "scripts": {
+    "start": "jest ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
     "eslint": "^8.57.0"
-  },
-  "eslintConfig": {}
+  }
 }
