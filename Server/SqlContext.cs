@@ -9,7 +9,7 @@ namespace Server
     {
         internal DbSet<TestModel> TestModels { get; set; }
         internal DbSet<User> Users { get; set; }
-        internal DbSet<Account> Accounts { get; set; }
+        internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
 
         internal string _dbPath { get; private set; }
