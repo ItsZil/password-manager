@@ -8,7 +8,7 @@ namespace Tests.TestUtilities
 
         public TestDatabaseFixture()
         {
-            DatabaseName = $"testdatabase{Guid.NewGuid()}.db";
+            DatabaseName = $"vault_test_{Guid.NewGuid()}.db";
             using (var context = CreateContext())
             {
                 context.Database.EnsureDeleted();

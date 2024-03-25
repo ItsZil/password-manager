@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using UtilitiesLibrary.Models;
 
 namespace Server.Endpoints
@@ -12,10 +13,21 @@ namespace Server.Endpoints
             return group;
         }
 
-        internal static IResult DomainLoginRequest([FromBody] DomainLoginRequest request)
+        internal async static Task<IResult> DomainLoginRequest([FromBody] DomainLoginRequest request, SqlContext dbContext)
         {
-            string requestedDomain = request.Domain;
-            DomainLoginResponse response = new($"testuser{requestedDomain}", "password", false);
+            var domain = request.Domain;
+
+            // TODO: auth
+
+            var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain);
+            if (!detailsExist)
+                return Results.NotFound();
+
+            // TODO: per-detail auth
+
+            LoginDetails loginDetails = await dbContext.LoginDetails.FirstAsync(x => x.RootDomain == domain);
+
+            DomainLoginResponse response = new(loginDetails.Username, loginDetails.Password, false); // TODO: check for 2FA
 
             return Results.Ok(response);
         }

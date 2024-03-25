@@ -41,7 +41,7 @@ namespace Server
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePath,
-                Password = "Test123" // PRAGMA key is being sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
+                Password = "Test123" // PRAGMA key gets sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
             };
             return new SqliteConnection(connectionString.ToString());
         }

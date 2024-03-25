@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using System.Net;
 using Server;
+using Microsoft.EntityFrameworkCore;
 
 namespace Tests.IntegrationTests.Server
 {
@@ -17,7 +18,7 @@ namespace Tests.IntegrationTests.Server
                 .WithWebHostBuilder(builder =>
                 {
                     // TODO: should look into another way to bypass the local network check.
-                    builder.UseEnvironment("Testing");                    
+                    builder.UseEnvironment("TEST");                    
                 });
             _client = _factory.CreateClient();
         }
@@ -26,7 +27,7 @@ namespace Tests.IntegrationTests.Server
         {
             // Ensure that the server's database file is deleted after each test run.
             var service = _factory.Services.GetService(typeof(SqlContext));
-            if (service is SqlContext context)
+            if (service is SqlContext context && !context.Database.GetConnectionString().Contains("vault.db"))
                 context.Database.EnsureDeleted();
         }
 

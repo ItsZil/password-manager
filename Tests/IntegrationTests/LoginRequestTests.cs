@@ -20,7 +20,7 @@ namespace Tests.IntegrationTests.Server
                 .WithWebHostBuilder(builder =>
                 {
                     // TODO: should look into another way to bypass the local network check.
-                    builder.UseEnvironment("Testing");                    
+                    builder.UseEnvironment("TEST_INTEGRATION");                    
                 });
             _client = _factory.CreateClient();
         }
@@ -34,7 +34,7 @@ namespace Tests.IntegrationTests.Server
         }
 
         [Fact]
-        public async Task TestDomainLoginRequestReturnsOk()
+        public async Task TestEmptyDomainLoginRequestReturnsOk()
         {
             var apiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new();
@@ -46,7 +46,7 @@ namespace Tests.IntegrationTests.Server
         }
 
         [Fact]
-        public async Task TestDomainLoginRequestReturnsRequestObject()
+        public async Task TestEmptyDomainLoginRequestReturnsRequestObject()
         {
             var apiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new();
@@ -61,6 +61,18 @@ namespace Tests.IntegrationTests.Server
 
             Assert.NotNull(responseObj);
             Assert.IsType<DomainLoginResponse>(responseObj);
+        }
+
+        [Fact]
+        public async Task TestUnknownDomainLoginRequestReturns404()
+        {
+            var apiEndpoint = "/api/domainloginrequest";
+            DomainLoginRequest request = new DomainLoginRequest { Domain = "unknowndomain.404" };
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
     }
 }
