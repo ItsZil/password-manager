@@ -29,10 +29,15 @@ namespace Server
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<SqlContext>();
 
-                if (app.Environment.IsEnvironment("TEST"))
+                if (app.Environment.IsEnvironment("TEST") || app.Environment.IsEnvironment("TEST_INTEGRATION"))
                 {
                     // If the app is running in a testing environment, create a new database for each test run.
                     dbContext.ChangeDatabasePath($"vault_test_{Guid.NewGuid()}.db");
+
+                    // When SqlContext is injected as a depency for endpoints, it needs to know where the existing test database is located.
+                    // To do this, we add the database path to the configuration, and then access it in the SqlContext constructor.
+                    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+                    config["TEST_INTEGRATION_DB_PATH"] = dbContext._dbPath;
                 }
 
                 dbContext.Database.EnsureCreated();

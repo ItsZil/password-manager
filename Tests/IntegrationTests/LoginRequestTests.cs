@@ -3,25 +3,24 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-
+using Microsoft.Extensions.Configuration;
 using Server;
 using UtilitiesLibrary.Models;
 
 namespace Tests.IntegrationTests.Server
 {
-    public class LoginRequestTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+    public class LoginRequestTests : IDisposable
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
 
         public LoginRequestTests()
-        { 
+        {
             _factory = new WebApplicationFactory<Program>()
-                .WithWebHostBuilder(builder =>
-                {
-                    // TODO: should look into another way to bypass the local network check.
-                    builder.UseEnvironment("TEST_INTEGRATION");                    
-                });
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("TEST_INTEGRATION");
+            });
             _client = _factory.CreateClient();
         }
 

@@ -7,19 +7,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Tests.IntegrationTests.Server
 {
-    public class ServerCommunicationTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+    public class ServerCommunicationTests : IDisposable
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
 
         public ServerCommunicationTests()
-        { 
+        {
             _factory = new WebApplicationFactory<Program>()
-                .WithWebHostBuilder(builder =>
-                {
-                    // TODO: should look into another way to bypass the local network check.
-                    builder.UseEnvironment("TEST");                    
-                });
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("TEST_INTEGRATION");
+            });
             _client = _factory.CreateClient();
         }
 
@@ -27,7 +26,7 @@ namespace Tests.IntegrationTests.Server
         {
             // Ensure that the server's database file is deleted after each test run.
             var service = _factory.Services.GetService(typeof(SqlContext));
-            if (service is SqlContext context && !context.Database.GetConnectionString().Contains("vault.db"))
+            if (service is SqlContext context)
                 context.Database.EnsureDeleted();
         }
 
