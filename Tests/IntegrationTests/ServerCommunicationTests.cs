@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using System.Net;
 using Server;
-using Microsoft.EntityFrameworkCore;
 
 namespace Tests.IntegrationTests.Server
 {
