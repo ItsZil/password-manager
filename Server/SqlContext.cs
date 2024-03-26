@@ -9,16 +9,26 @@ namespace Server
     {
         internal DbSet<TestModel> TestModels { get; set; }
         internal DbSet<User> Users { get; set; }
-        internal DbSet<Account> Accounts { get; set; }
+        internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
 
         internal string _dbPath { get; private set; }
 
-        public SqlContext()
+        public SqlContext(IConfiguration configuration)
         {
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
-            _dbPath = Path.Join(folder, "vault.db");
+            
+            string? testDbPath = configuration["TEST_INTEGRATION_DB_PATH"];
+            if (testDbPath != null)
+            {
+                // This test is run in an integration test environment.
+                _dbPath = testDbPath;
+            }
+            else
+            {
+                _dbPath = Path.Join(folder, "vault.db");
+            }
         }
 
         public SqlContext(string databaseName)
@@ -41,7 +51,7 @@ namespace Server
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePath,
-                Password = "Test123" // PRAGMA key is being sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
+                Password = "Test123" // PRAGMA key gets sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
             };
             return new SqliteConnection(connectionString.ToString());
         }

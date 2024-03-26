@@ -9,23 +9,28 @@ namespace UtilitiesLibrary.Models
     {
         // A flag to indicate if the user has login credentials for the requested domain.
         [JsonInclude]
+        [JsonPropertyName("hasCredentials")]
         internal bool HasCredentials { get; set; } = false;
 
         // A flag to indicate if the user has permission to access the login details. TODO: potentially convert to an int to indicate failure reason? If failed user agent or authenticator, enforce authentication etc.
         [JsonInclude]
+        [JsonPropertyName("hasPermission")]
         internal bool HasPermission { get; set; } = false;
 
         // A flag to indicate if the user has 2FA enabled for the requested domain.
         [JsonInclude]
+        [JsonPropertyName("has2FA")]
         internal bool Has2FA { get; set; } = false;
 
         // The user's username for the requested domain.
         [JsonInclude]
+        [JsonPropertyName("username")]
         internal string Username { get; set; }
 
-        // The user's password for the requested domain. TODO: not plain-text?
+        // The user's encrypted password byte array for the requested domain.
         [JsonInclude]
-        internal string Password { get; set; }
+        [JsonPropertyName("password")]
+        internal byte[] Password { get; set; }
 
         /// <summary>
         /// A constructor for when the user has login credentials for the requested domain and has successfully authenticated.
@@ -34,7 +39,7 @@ namespace UtilitiesLibrary.Models
         /// <param name="password">The user's password</param>
         /// <param name="has2FA">A flag indicating if the user has 2FA enabled for the requested domain</param>
         [JsonConstructor]
-        internal DomainLoginResponse(string username, string password, bool has2FA)
+        internal DomainLoginResponse(string username, byte[] password, bool has2FA)
         {
             HasCredentials = true;
             HasPermission = true;

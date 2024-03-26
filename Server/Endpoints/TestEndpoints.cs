@@ -28,10 +28,10 @@ namespace Server.Endpoints
             return Results.Ok(lastTestModel);
         }
 
-        internal static IResult TestCreateDbModel(SqlContext dbContext)
+        internal static async Task<IResult> TestCreateDbModel(SqlContext dbContext)
         {
-            dbContext.TestModels.Add(new TestModel { Message = "Created in TestCreateDbModel"});
-            dbContext.SaveChanges();
+            await dbContext.TestModels.AddAsync(new TestModel { Message = "Created in TestCreateDbModel"});
+            await dbContext.SaveChangesAsync();
 
             return Results.Ok(new Response("Created a new TestModel in the database"));
         }

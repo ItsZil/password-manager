@@ -1,24 +1,22 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
 using System.Net;
 using Server;
 
 namespace Tests.IntegrationTests.Server
 {
-    public class ServerCommunicationTests : IClassFixture<WebApplicationFactory<Program>>, IDisposable
+    public class ServerCommunicationTests : IDisposable
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
 
         public ServerCommunicationTests()
-        { 
+        {
             _factory = new WebApplicationFactory<Program>()
-                .WithWebHostBuilder(builder =>
-                {
-                    // TODO: should look into another way to bypass the local network check.
-                    builder.UseEnvironment("Testing");                    
-                });
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("TEST_INTEGRATION");
+            });
             _client = _factory.CreateClient();
         }
 
