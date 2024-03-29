@@ -29,7 +29,7 @@ namespace Server.Endpoints
 
             // TODO: password meets user rule requirements
 
-            byte[] encryptedPassword = await PasswordUtil.EncryptPassword(request.Password);
+            byte[] encryptedPassword = PasswordUtil.EncryptPassword(request.Password);
 
             await dbContext.LoginDetails.AddAsync(new LoginDetails
             {

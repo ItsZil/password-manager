@@ -1,25 +1,35 @@
-﻿using System.Text;
+﻿using Geralt;
+using System.Text;
 
 namespace UtilitiesLibrary.Utilities
 {
     internal static class PasswordUtil
     {
-        internal static byte[] ByteArrayFromPlain(string password)
+        internal static byte[] ByteArrayFromSpan(ReadOnlySpan<byte> password)
         {
-            return Encoding.UTF8.GetBytes(password);
+            byte[] passwordBytes = new byte[password.Length];
+            password.CopyTo(passwordBytes);
+            return passwordBytes;
         }
 
-        internal static string PlainFromByteArray(byte[] password)
+        internal static string PlainFromContainer(byte[] password)
         {
             return Encoding.UTF8.GetString(password);
         }
 
-        internal static async Task<byte[]> EncryptPassword(byte[] password)
+        internal static string PlainFromContainer(ReadOnlySpan<byte> password)
         {
-            // TODO: Implement encryption
-            string sourcePassword = PlainFromByteArray(password);
-            byte[] encryptedPassword = ByteArrayFromPlain(sourcePassword);
-            return encryptedPassword;
+            return Encoding.UTF8.GetString(password);
+        }
+
+        internal static byte[] EncryptPassword(byte[] password)
+        {
+            ReadOnlySpan<byte> sourcePassword = password;
+
+            Span<byte> computedHash = stackalloc byte[64];
+            Argon2id.ComputeHash(computedHash, sourcePassword, 3, 67108864); // RFC recommend parameters
+
+            return ByteArrayFromSpan(computedHash);
         }
     }
 }
