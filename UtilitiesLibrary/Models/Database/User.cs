@@ -10,6 +10,5 @@ namespace UtilitiesLibrary.Models
         public int UserId { get; set; }
         public string Username { get; set; }
         public byte[] MasterPasswordHash { get; set; }
-        public byte[] MasterPasswordSalt { get; set; }
     }
 }
