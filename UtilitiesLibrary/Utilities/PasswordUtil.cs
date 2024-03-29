@@ -13,6 +13,11 @@ namespace UtilitiesLibrary.Utilities
             return passwordBytes;
         }
 
+        internal static byte[] ByteArrayFromPlain(string password)
+        {
+            return Encoding.UTF8.GetBytes(password);
+        }
+
         internal static string PlainFromContainer(byte[] password)
         {
             return Encoding.UTF8.GetString(password);

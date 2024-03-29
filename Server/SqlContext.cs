@@ -1,7 +1,10 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.Metrics;
+using System;
 using System.Reflection;
 using UtilitiesLibrary.Models;
+using UtilitiesLibrary.Utilities;
 
 namespace Server
 {
@@ -12,7 +15,8 @@ namespace Server
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
 
-        internal string _dbPath { get; private set; }
+        internal string dbPath { get; private set; }
+        internal string vaultPassword { get; private set; } = string.Empty;
 
         public SqlContext(IConfiguration configuration)
         {
@@ -23,11 +27,11 @@ namespace Server
             if (testDbPath != null)
             {
                 // This test is run in an integration test environment.
-                _dbPath = testDbPath;
+                dbPath = testDbPath;
             }
             else
             {
-                _dbPath = Path.Join(folder, "vault.db");
+                dbPath = Path.Join(folder, "vault.db");
             }
         }
 
@@ -35,24 +39,31 @@ namespace Server
         {
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
-            _dbPath = Path.Join(folder, databaseName);
+            dbPath = Path.Join(folder, databaseName);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(InitializeConnection(_dbPath));
+            => options.UseSqlite(InitializeConnection(dbPath));
 
         internal void ChangeDatabasePath(string newPath)
         {
-            _dbPath = newPath;
+            dbPath = newPath;
         }
 
-        private static SqliteConnection InitializeConnection(string databasePath)
+        internal byte[] GetVaultMasterPassword()
         {
+            return PasswordUtil.ByteArrayFromPlain(vaultPassword);
+        }
+
+        private SqliteConnection InitializeConnection(string databasePath)
+        {
+            vaultPassword = "Test123"; // TODO: Randomly generated master key instead.
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePath,
-                Password = "Test123" // PRAGMA key gets sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
+                Password = vaultPassword // PRAGMA key gets sent from EF Core directly after opening the connection.
             };
+
             return new SqliteConnection(connectionString.ToString());
         }
     }
