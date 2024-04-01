@@ -30,7 +30,6 @@
     <Folder Include="PerformanceTests\" />
     <Folder Include="UnitTests\BrowserExtension\" />
     <Folder Include="UnitTests\DesktopApplication\" />
-    <Folder Include="UnitTests\Server\Requests\" />
   </ItemGroup>
 
   <ItemGroup>

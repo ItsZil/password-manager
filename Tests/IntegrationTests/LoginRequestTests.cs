@@ -4,8 +4,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Server;
+using Server.Utilities;
 using UtilitiesLibrary.Models;
-using UtilitiesLibrary.Utilities;
 
 namespace Tests.IntegrationTests.Server
 {
@@ -13,6 +13,10 @@ namespace Tests.IntegrationTests.Server
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
+
+        private byte[] _vaultPasswordHash;
+        private byte[] _salt;
+        private byte[] _encryptionKey;
 
         public LoginRequestTests()
         {
@@ -22,6 +26,13 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
+
+            ReadOnlySpan<byte> plainVaultPassword = PasswordUtil.ByteArrayFromPlain("Test123");
+            _vaultPasswordHash = PasswordUtil.HashMasterPassword(plainVaultPassword);
+
+            Span<byte> salt = stackalloc byte[16];
+            _encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_vaultPasswordHash, ref salt);
+            _salt = salt.ToArray();
         }
 
         public void Dispose()
@@ -32,12 +43,27 @@ namespace Tests.IntegrationTests.Server
                 context.Database.EnsureDeleted();
         }
 
+        private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
+        {
+            var registerApiEndpoint = "/api/domainregisterrequest";
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword") };
+            var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
+            return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
+        }
+
+        private async Task<HttpResponseMessage> LoginDomainAsync(DomainLoginRequest request)
+        {
+            var apiEndpoint = "/api/domainloginrequest";
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
         [Fact]
         public async Task TestNoDomainLoginRequestReturns401()
         {
-            var apiEndpoint = "/api/domainloginrequest";
-
-            var response = await _client.PostAsync(apiEndpoint, null);
+            var response = await LoginDomainAsync(null);
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
@@ -45,11 +71,7 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestEmptyDomainLoginRequestReturns404()
         {
-            var apiEndpoint = "/api/domainloginrequest";
-            DomainLoginRequest request = new();
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
-
-            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            var response = await LoginDomainAsync(new());
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
@@ -57,21 +79,11 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestUnknownDomainLoginRequestReturns404()
         {
-            var apiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new DomainLoginRequest { Domain = "unknowndomain.404" };
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            var response = await LoginDomainAsync(request);
 
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-        }
-
-        private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
-        {
-            var registerApiEndpoint = "/api/domainregisterrequest";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword") };
-            var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
-            return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }
 
         [Fact]
@@ -82,11 +94,9 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
             // Attempt to retrieve login details with the known domain
-            var loginApiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsync(loginApiEndpoint, requestContent);
+            var response = await LoginDomainAsync(request);
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
@@ -99,11 +109,9 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
             // Attempt to retrieve login details with the known domain
-            var apiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            var response = await LoginDomainAsync(request);
 
             string responseString = await response.Content.ReadAsStringAsync();
             Assert.NotNull(responseString);
@@ -122,11 +130,9 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
 
             // Attempt to retrieve login details with the known domain
-            var apiEndpoint = "/api/domainloginrequest";
             DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
-            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            var response = await LoginDomainAsync(request);
 
             string responseString = await response.Content.ReadAsStringAsync();
             Assert.NotNull(responseString);
@@ -136,7 +142,32 @@ namespace Tests.IntegrationTests.Server
             Assert.NotNull(responseObj);
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
-            Assert.Equal("loginrequesttestspassword", PasswordUtil.PlainFromByteArray(responseObj.Password));
+
+            Assert.Equal("loginrequesttestspassword", responseObj.Password);
+        }
+
+        [Fact]
+        public async Task TestKnownDomainLoginRequestReturnsIncorrectPassword()
+        {
+            // Create login details for the known domain
+            var registerResponse = await RegisterDomainAsync("knowndomain.ok");
+            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+            // Attempt to retrieve login details with the known domain
+            DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
+
+            var response = await LoginDomainAsync(request);
+
+            string responseString = await response.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            DomainLoginResponse? responseObj = JsonSerializer.Deserialize<DomainLoginResponse>(responseString);
+
+            Assert.NotNull(responseObj);
+            Assert.IsType<DomainLoginResponse>(responseObj);
+            Assert.NotNull(responseObj.Password);
+
+            Assert.NotEqual("loginrequesttestspassword123", responseObj.Password);
         }
     }
 }

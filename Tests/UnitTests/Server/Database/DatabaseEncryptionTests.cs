@@ -77,7 +77,9 @@ namespace Tests.UnitTests.Server
             using var context = _fixture.CreateContext();
             string dbPath = context.Database.GetDbConnection().DataSource;
 
-            using var connection = new SqliteConnection($"Data Source={dbPath};Password=Test123");
+            string hashInHex = BitConverter.ToString(context.hashedVaultPassword).Replace("-", string.Empty);
+
+            using var connection = new SqliteConnection($"Data Source={dbPath};Password={hashInHex[..32]}");
             int result = AttemptCommand(connection);
 
             // Expecting 0 users in the database.

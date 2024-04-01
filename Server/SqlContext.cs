@@ -1,10 +1,8 @@
 ﻿using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Diagnostics.Metrics;
-using System;
 using System.Reflection;
 using UtilitiesLibrary.Models;
-using UtilitiesLibrary.Utilities;
+using Server.Utilities;
 
 namespace Server
 {
@@ -16,7 +14,9 @@ namespace Server
         internal DbSet<Authenticator> Authenticators { get; set; }
 
         internal string dbPath { get; private set; }
-        internal string vaultPassword { get; private set; } = string.Empty;
+        internal byte[] hashedVaultPassword { get; private set; }
+        internal byte[] encryptionKey { get; private set; }
+        internal byte[] salt { get ; private set; }
 
         public SqlContext(IConfiguration configuration)
         {
@@ -50,20 +50,39 @@ namespace Server
             dbPath = newPath;
         }
 
-        internal byte[] GetVaultMasterPassword()
+        internal byte[] GetEncryptionKey()
         {
-            return PasswordUtil.ByteArrayFromPlain(vaultPassword);
+            if (Users.Count() == 0)
+            {
+                Users.Add(new() { EncryptionKey = encryptionKey });
+            }
+            SaveChanges();
+
+            // TODO
+            return Users.First().EncryptionKey;
+        }
+
+        private void SetVaultMasterPassword(string plainVaultPassword)
+        {
+            byte[] masterPassword = PasswordUtil.ByteArrayFromPlain(plainVaultPassword);
+            ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(masterPassword);
+
+            hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
+
+            Span<byte> generatedSalt = stackalloc byte[16];
+            encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            salt = generatedSalt.ToArray();
         }
 
         private SqliteConnection InitializeConnection(string databasePath)
         {
-            vaultPassword = "Test123"; // TODO: Randomly generated master key instead.
+            SetVaultMasterPassword("Test123"); // TODO: Randomly generated master key instead
+            string hashInHex = BitConverter.ToString(hashedVaultPassword).Replace("-", string.Empty);
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePath,
-                Password = vaultPassword // PRAGMA key gets sent from EF Core directly after opening the connection.
+                Password = hashInHex[..32] // PRAGMA key gets sent from EF Core directly after opening the connection
             };
-
             return new SqliteConnection(connectionString.ToString());
         }
     }
