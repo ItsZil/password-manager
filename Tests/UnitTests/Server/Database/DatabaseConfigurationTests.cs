@@ -1,12 +1,10 @@
-using UtilitiesLibrary.Models;
-
 namespace Tests.UnitTests.Server
 {
-    public class DatabaseUserTests : IClassFixture<TestDatabaseFixture>
+    public class DatabaseConfigurationTests : IClassFixture<TestDatabaseFixture>
     {
         public readonly TestDatabaseFixture _fixture;
 
-        public DatabaseUserTests(TestDatabaseFixture fixture)
+        public DatabaseConfigurationTests(TestDatabaseFixture fixture)
         {
             _fixture = fixture;
         }

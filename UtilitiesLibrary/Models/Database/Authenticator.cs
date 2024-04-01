@@ -9,7 +9,5 @@ namespace UtilitiesLibrary.Models
         public int UserId { get; set; }
         public string Type { get; set; } // TOTP, HOTP, etc.
         public string Secret { get; set; }
-
-        public virtual User User { get; set; }
     }
 }

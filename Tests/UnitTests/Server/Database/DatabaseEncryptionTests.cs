@@ -16,14 +16,12 @@ namespace Tests.UnitTests.Server
         {
             connection.Open();
 
-            // Attempt to read from the database to verify that it is encrypted.
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM Users";
+            command.CommandText = "SELECT COUNT(*) FROM Configuration";
 
-            // If the database is encrypted, the command.ExecuteReader() call should throw an exception.
+            // If the database is encrypted, then this should throw an SqliteException.
             using var reader = command.ExecuteReader();
 
-            // If the command is successful, let's get the count of users. This should be 0.
             reader.Read();
             int count = reader.GetInt32(0);
 
@@ -72,9 +70,10 @@ namespace Tests.UnitTests.Server
         }
 
         [Fact]
-        public void TestDatabaseEncryptedCorrectPassword()
+        public async Task TestDatabaseEncryptedCorrectPassword()
         {
             using var context = _fixture.CreateContext();
+            await context.Database.EnsureCreatedAsync();
             string dbPath = context.Database.GetDbConnection().DataSource;
 
             string hashInHex = BitConverter.ToString(context.hashedVaultPassword).Replace("-", string.Empty);
@@ -82,7 +81,7 @@ namespace Tests.UnitTests.Server
             using var connection = new SqliteConnection($"Data Source={dbPath};Password={hashInHex[..32]}");
             int result = AttemptCommand(connection);
 
-            // Expecting 0 users in the database.
+            // Expecting 0 configuration in the database.
             Assert.Equal(0, result);
         }
     }

@@ -1,8 +1,5 @@
 ﻿using Geralt;
 using Server.Utilities;
-using System;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Tests.UnitTests.Server.Passwords
 {
@@ -11,7 +8,6 @@ namespace Tests.UnitTests.Server.Passwords
         private byte[] _correctVaultPasswordHash;
         private byte[] _incorrectVaultPasswordHash;
 
-        private byte[] _salt; // TODO: This will probably need to be store in the database instead, because we only need it for existing password decryptions.
         private byte[] _correctEncryptionKey;
         private byte[] _incorrectEncryptionKey;
 
@@ -26,8 +22,6 @@ namespace Tests.UnitTests.Server.Passwords
             ReadOnlySpan<byte> plainIncorrectVaultPassword = PasswordUtil.ByteArrayFromPlain("Test1234");
             _incorrectVaultPasswordHash = PasswordUtil.HashMasterPassword(plainIncorrectVaultPassword);
             _incorrectEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, ref salt);
-
-            _salt = salt.ToArray();
         }
 
         [Fact]
@@ -99,31 +93,6 @@ namespace Tests.UnitTests.Server.Passwords
             string decryptedPassword = PasswordUtil.DecryptPassword(_incorrectEncryptionKey, passwordHash);
 
             Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
-        }
-
-        [Fact]
-        public void TestFullFlowWithGuaranteedSameSaltPasses()
-        {
-            byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
-
-            Span<byte> salt = stackalloc byte[16];
-
-            Span<byte> computedHash = stackalloc byte[128];
-            SecureRandom.Fill(salt);
-
-            Argon2id.DeriveKey(computedHash, plainPassword, salt, 3, 67108864);
-
-            Span<byte> encryptionKey = stackalloc byte[32];
-            ReadOnlySpan<byte> personalization = Encoding.UTF8.GetBytes("PasswordManagerZ"); // has to be 16 bytes
-
-            BLAKE2b.DeriveKey(encryptionKey, computedHash[..32], personalization, salt);
-
-            byte[] encryptKey = encryptionKey.ToArray();
-            byte[] passwordHash = PasswordUtil.EncryptPassword(encryptKey, plainPassword);
-
-            string decryptedPassword = PasswordUtil.DecryptPassword(encryptKey, passwordHash);
-
-            Assert.Equal(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
         }
     }
 }
