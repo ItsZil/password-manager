@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Server.Utilities;
 using UtilitiesLibrary.Models;
-using UtilitiesLibrary.Utilities;
 
 namespace Server.Endpoints
 {
@@ -29,7 +29,7 @@ namespace Server.Endpoints
 
             // TODO: password meets user rule requirements
 
-            byte[] encryptedPassword = await PasswordUtil.EncryptPassword(request.Password);
+            byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), request.Password);
 
             await dbContext.LoginDetails.AddAsync(new LoginDetails
             {
@@ -58,7 +58,9 @@ namespace Server.Endpoints
 
             LoginDetails loginDetails = await dbContext.LoginDetails.FirstAsync(x => x.RootDomain == domain);
 
-            DomainLoginResponse response = new(loginDetails.Username, loginDetails.Password, false); // TODO: check for 2FA
+            string decryptedPassword = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+
+            DomainLoginResponse response = new(loginDetails.Username, decryptedPassword, false); // TODO: check for 2FA
 
             return Results.Ok(response);
         }

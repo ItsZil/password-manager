@@ -4,9 +4,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Server;
-using Server.Endpoints;
+using Server.Utilities;
 using UtilitiesLibrary.Models;
-using UtilitiesLibrary.Utilities;
 
 namespace Tests.IntegrationTests.Server
 {

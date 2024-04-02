@@ -37,10 +37,10 @@ namespace Server
                     // When SqlContext is injected as a depency for endpoints, it needs to know where the existing test database is located.
                     // To do this, we add the database path to the configuration, and then access it in the SqlContext constructor.
                     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-                    config["TEST_INTEGRATION_DB_PATH"] = dbContext._dbPath;
+                    config["TEST_INTEGRATION_DB_PATH"] = dbContext.dbPath;
                 }
 
-                dbContext.Database.EnsureCreated();
+                //dbContext.Database.EnsureCreated();
             }
 
             // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies

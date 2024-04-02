@@ -2,17 +2,21 @@
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using UtilitiesLibrary.Models;
+using Server.Utilities;
 
 namespace Server
 {
     internal class SqlContext : DbContext
     {
         internal DbSet<TestModel> TestModels { get; set; }
-        internal DbSet<User> Users { get; set; }
+        internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
 
-        internal string _dbPath { get; private set; }
+        internal string dbPath { get; private set; }
+        internal byte[] hashedVaultPassword;
+        private byte[] encryptionKey;
+        private byte[] salt;
 
         public SqlContext(IConfiguration configuration)
         {
@@ -23,35 +27,84 @@ namespace Server
             if (testDbPath != null)
             {
                 // This test is run in an integration test environment.
-                _dbPath = testDbPath;
+                dbPath = testDbPath;
             }
             else
             {
-                _dbPath = Path.Join(folder, "vault.db");
+                dbPath = Path.Join(folder, "vault.db");
             }
+
+            Database.EnsureCreated(); // TODO: is this safe with existing vaults?
+            InitializeConfiguration();
         }
 
         public SqlContext(string databaseName)
         {
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
-            _dbPath = Path.Join(folder, databaseName);
+            dbPath = Path.Join(folder, databaseName);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(InitializeConnection(_dbPath));
+            => options.UseSqlite(TryInitializeConnection(dbPath, "Test123"));
 
         internal void ChangeDatabasePath(string newPath)
         {
-            _dbPath = newPath;
+            dbPath = newPath;
         }
 
-        private static SqliteConnection InitializeConnection(string databasePath)
+        internal byte[] GetEncryptionKey()
         {
+            if (Configuration.Count() == 0)
+            {
+                throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
+            }
+            return Configuration.First().EncryptionKey;
+        }
+
+        internal byte[] GetPragmaKey()
+        {
+            if (Configuration.Count() == 0)
+            {
+                throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
+            }
+            return Configuration.First().MasterPasswordHash[..32];
+        }
+
+        private void SetVaultMasterPassword(string plainVaultPassword)
+        {
+            byte[] masterPassword = PasswordUtil.ByteArrayFromPlain(plainVaultPassword);
+            ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(masterPassword);
+
+            hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
+
+            Span<byte> generatedSalt = stackalloc byte[16];
+            encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            salt = generatedSalt.ToArray();
+        }
+
+        private void InitializeConfiguration()
+        {
+            if (Configuration.Count() == 0)
+            {
+                Configuration.Add(new Configuration
+                {
+                    MasterPasswordHash = hashedVaultPassword,
+                    Salt = salt,
+                    EncryptionKey = encryptionKey
+                });
+                SaveChanges();
+            }
+        }
+
+        private SqliteConnection TryInitializeConnection(string databasePath, string plainMasterPassword)
+        {
+            SetVaultMasterPassword(plainMasterPassword); // TODO: Randomly generated master key instead, or use one user enters
+            string hashInHex = BitConverter.ToString(hashedVaultPassword).Replace("-", string.Empty);
             var connectionString = new SqliteConnectionStringBuilder
             {
                 DataSource = databasePath,
-                Password = "Test123" // PRAGMA key gets sent from EF Core directly after opening the connection. TODO: Randomly generated master key instead.
+                Password = hashInHex[..32] // PRAGMA key gets sent from EF Core directly after opening the connection
             };
             return new SqliteConnection(connectionString.ToString());
         }
