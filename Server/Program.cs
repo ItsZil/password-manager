@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Server.Endpoints;
+using Server.Utilities;
 using UtilitiesLibrary.Models;
 
 namespace Server
@@ -18,6 +19,7 @@ namespace Server
             });
 
             builder.Services.AddDbContext<SqlContext>();
+            builder.Services.AddSingleton<KeyProvider>();
 
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
@@ -70,6 +72,7 @@ namespace Server
             var rootApi = app.MapGroup("/api/");
             rootApi.MapTestEndpoints();
             rootApi.MapLoginDetailsEndpoints();
+            rootApi.MapHandshakeEndpoints();
 
             app.Run();
         }

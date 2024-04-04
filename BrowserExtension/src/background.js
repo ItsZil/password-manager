@@ -8,8 +8,35 @@
 };
 chrome.storage.local.set({ importMap });*/
 
+const serverUrl = 'https://localhost:5271';
+
+// Placeholder for Diffie-Hellman key pair generation and handshake initiationimport * as forge from 'node-forge';
+
+function initiateHandshake() {
+    const ecdh = forge.pki.ed25519.createKeyPair();
+    const clientPublicKey = forge.util.encode64(ecdh.publicKey);
+
+    fetch(`${serverUrl}/api/handshake`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ ClientPublicKey: clientPublicKey })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const serverPublicKey = forge.util.decode64(data.ServerPublicKey);
+        // Here you would typically use the server's public key along with the client's private key to compute the shared secret
+    })
+    .catch(error => console.error('Error during handshake: ', error));
+}
+
 chrome.runtime.onInstalled.addListener(() => {
     console.log('Password Manager extension installed.');
+
+    // Start handshake process with server, /api/handshake
+    const apiEndpoint = '/api/handshake';
+    initiateHandshake();
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -30,7 +57,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 function testCommunication() {
-    const serverUrl = 'https://localhost:5271';
     const apiEndpoint = '/api/test';
     const enableTest = true;
 
@@ -47,7 +73,6 @@ function testCommunication() {
 }
 
 function domainLoginRequest(domainLoginRequestBody) {
-    const serverUrl = 'https://localhost:5271';
     const apiEndpoint = '/api/domainloginrequest';
 
     return fetch(`${serverUrl}${apiEndpoint}`, {

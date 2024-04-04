@@ -11,17 +11,34 @@ namespace Tests.UnitTests.Server.Passwords
         private byte[] _correctEncryptionKey;
         private byte[] _incorrectEncryptionKey;
 
+        //private KeyProvider _keyProvider;
+
         public HashingTests()
         {
+            // Ensure that there is a shared secret to use as key for encryption
+            KeyProvider keyProvider = new();
+            byte[] clientPublicKey = keyProvider.GenerateClientPublicKey();
+            keyProvider.ComputeSharedSecret(clientPublicKey);
+
+            // Store the encryption keys for later use in tests
+            _correctEncryptionKey = keyProvider.GetSharedSecret();
+
+            // Make sure the incorrect encryption key is different
+            _incorrectEncryptionKey = new byte[_correctEncryptionKey.Length];
+            _correctEncryptionKey.AsSpan().CopyTo(_incorrectEncryptionKey);
+            _incorrectEncryptionKey[0] = (_correctEncryptionKey[0] == 0 ? (byte)1 : (byte)0);
+
+            // Hash master passwords
             ReadOnlySpan<byte> plainVaultPassword = PasswordUtil.ByteArrayFromPlain("Test123");
             _correctVaultPasswordHash = PasswordUtil.HashMasterPassword(plainVaultPassword);
 
-            Span<byte> salt = stackalloc byte[16];
-            _correctEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, ref salt);
+            //Span<byte> salt = stackalloc byte[16];
+            //_correctEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, ref salt);
 
             ReadOnlySpan<byte> plainIncorrectVaultPassword = PasswordUtil.ByteArrayFromPlain("Test1234");
             _incorrectVaultPasswordHash = PasswordUtil.HashMasterPassword(plainIncorrectVaultPassword);
-            _incorrectEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, ref salt);
+            //_incorrectEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, ref salt);
+
         }
 
         [Fact]
@@ -44,6 +61,7 @@ namespace Tests.UnitTests.Server.Passwords
             Assert.False(hashMatches);
         }
 
+        /* TODO: Remove these tests
         [Fact]
         public void TestHashingMasterPasswordEncryptionKeyMatches()
         {
@@ -61,6 +79,7 @@ namespace Tests.UnitTests.Server.Passwords
 
             Assert.NotEqual(_correctEncryptionKey, encryptionKey);
         }
+        */
 
         [Fact]
         public void TestEncryptPasswordReturnsEncrypted()
