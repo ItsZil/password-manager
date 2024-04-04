@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Server.Endpoints;
+using Server.Middleware;
 using Server.Utilities;
 using UtilitiesLibrary.Models;
 
@@ -50,6 +51,9 @@ namespace Server
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
+
+            // Middleware to check if a shared secret key has been computed (handshake process complete)
+            app.UseMiddleware<KeyMiddleware>();
 
             // Middleware to limit access to the local network
             if (!app.Environment.IsEnvironment("TEST") && !app.Environment.IsEnvironment("TEST_INTEGRATION"))

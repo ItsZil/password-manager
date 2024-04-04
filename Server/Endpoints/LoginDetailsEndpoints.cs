@@ -15,7 +15,7 @@ namespace Server.Endpoints
             return group;
         }
 
-        internal async static Task<IResult> DomainRegisterRequest([FromBody] DomainRegisterRequest request, SqlContext dbContext)
+        internal async static Task<IResult> DomainRegisterRequest([FromBody] DomainRegisterRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             var domain = request.Domain;
             var username = request.Username;
@@ -29,7 +29,7 @@ namespace Server.Endpoints
 
             // TODO: password meets user rule requirements
 
-            byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), request.Password);
+            byte[] encryptedPassword = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), request.Password);
 
             await dbContext.LoginDetails.AddAsync(new LoginDetails
             {
@@ -44,7 +44,7 @@ namespace Server.Endpoints
             return Results.Ok(response);
         }
 
-        internal async static Task<IResult> DomainLoginRequest([FromBody] DomainLoginRequest request, SqlContext dbContext)
+        internal async static Task<IResult> DomainLoginRequest([FromBody] DomainLoginRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             var domain = request.Domain;
 
@@ -58,7 +58,7 @@ namespace Server.Endpoints
 
             LoginDetails loginDetails = await dbContext.LoginDetails.FirstAsync(x => x.RootDomain == domain);
 
-            string decryptedPassword = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+            string decryptedPassword = PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), loginDetails.Password);
 
             DomainLoginResponse response = new(loginDetails.Username, decryptedPassword, false); // TODO: check for 2FA
 
