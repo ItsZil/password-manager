@@ -28,6 +28,17 @@ namespace Server.Utilities
             return Encoding.UTF8.GetString(password);
         }
 
+        internal static byte[] GenerateSecurePassword()
+        {
+            // TODO
+            byte[] password = new byte[32];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(password);
+            }
+            return password;
+        }
+
         /// <summary>
         /// Hashes the vault master password using Argon2id
         /// </summary>
@@ -43,9 +54,10 @@ namespace Server.Utilities
 
         /// <summary>
         /// Derives an encryption key from a plain password using Argon2id
+        /// This key is only used for long-term password storage in the vault
         /// </summary>
         /// <param name="sourcePassword">The master password to derive encryption key from</param>
-        /// <returns>A key to use for encrypting passwords</returns>
+        /// <returns>A key to use for encrypting passwords before storage in the vault</returns>
         internal static byte[] DeriveEncryptionKeyFromMasterPassword(ReadOnlySpan<byte> sourcePassword, ref Span<byte> salt)
         {
             Span<byte> encryptionKey = stackalloc byte[32];
@@ -58,7 +70,7 @@ namespace Server.Utilities
         /// Encrypts a password using AES encryption with a provided encryption key
         /// </summary>
         /// <param name="encryptionKey">The encryption key</param>
-        /// <param name="password">The password to be encrypted</param>
+        /// <param name="password">The password to be encrypted as a plain-text byte array</param>
         /// <returns>The encrypted password as a byte array</returns>
         internal static byte[] EncryptPassword(byte[] encryptionKey, byte[] password)
         {
@@ -89,9 +101,9 @@ namespace Server.Utilities
         /// Decrypts a password using AES encryption a provided encryption key
         /// </summary>
         /// <param name="encryptionKey">The encryption key</param>
-        /// <param name="password">The password to be decrypted</param>
+        /// <param name="password">The password to be decrypted as an encrypted byte array</param>
         /// <returns>The encrypted password as a byte array</returns>
-        internal static string DecryptPassword(byte[] encryptionKey, byte[] password)
+        internal static byte[] DecryptPassword(byte[] encryptionKey, byte[] password)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -111,15 +123,23 @@ namespace Server.Utilities
                 {
                     using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Read))
                     {
-                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        using (MemoryStream decryptedData = new MemoryStream())
                         {
                             try
                             {
-                                return srDecrypt.ReadToEnd();
+                                int bytesRead;
+                                byte[] buffer = new byte[1024];
+
+                                while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
+                                {
+                                    decryptedData.Write(buffer, 0, bytesRead);
+                                }
+
+                                return decryptedData.ToArray();
                             }
-                            catch (CryptographicException)
+                            catch (CryptographicException e)
                             {
-                                return string.Empty;
+                                return Array.Empty<byte>();
                             }
                         }
                     }

@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace UtilitiesLibrary.Models
 {
+    /// <summary>
+    /// A request to initiate a handshake with the server.
+    /// </summary>
     public class HandshakeRequest
     {
-        public string ClientPublicKey { get; set; }
+        [JsonInclude]
+        [JsonPropertyName("clientPublicKey")]
+        public byte[] ClientPublicKey { get; set; }
     }
 }

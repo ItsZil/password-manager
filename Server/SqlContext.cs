@@ -15,6 +15,8 @@ namespace Server
 
         internal string dbPath { get; private set; }
         internal byte[] hashedVaultPassword;
+        private byte[] vaultEncryptionKey;
+        private byte[] salt;
 
         public SqlContext(IConfiguration configuration)
         {
@@ -51,6 +53,15 @@ namespace Server
             dbPath = newPath;
         }
 
+        internal byte[] GetEncryptionKey()
+        {
+            if (Configuration.Count() == 0)
+            {
+                throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
+            }
+            return Configuration.First().VaultEncryptionKey;
+        }
+
         internal byte[] GetPragmaKey()
         {
             if (Configuration.Count() == 0)
@@ -66,6 +77,10 @@ namespace Server
             ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(masterPassword);
 
             hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
+
+            Span<byte> generatedSalt = stackalloc byte[16];
+            vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            salt = generatedSalt.ToArray();
         }
 
         private void InitializeConfiguration()
@@ -74,7 +89,9 @@ namespace Server
             {
                 Configuration.Add(new Configuration
                 {
-                    MasterPasswordHash = hashedVaultPassword
+                    MasterPasswordHash = hashedVaultPassword,
+                    Salt = salt,
+                    VaultEncryptionKey = vaultEncryptionKey
                 });
                 SaveChanges();
             }

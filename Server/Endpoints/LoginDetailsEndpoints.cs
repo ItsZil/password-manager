@@ -17,20 +17,31 @@ namespace Server.Endpoints
 
         internal async static Task<IResult> DomainRegisterRequest([FromBody] DomainRegisterRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
-            var domain = request.Domain;
-            var username = request.Username;
+            string domain = request.Domain;
+            string username = request.Username;
 
+            // If no password is provided, generate a random one.
+            byte[] password = request.Password ?? PasswordUtil.GenerateSecurePassword();
+            bool passwordIsEncrypted = request.Password != null;
+
+            // Check if domain & username are valid
             if (domain.Length < 3 || domain.Length > 255 || username.Length < 1)
                 return Results.BadRequest();
 
-            var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain);
+            // Check if there already are login details with the same username for this domain.
+            var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain && x.Username == username);
             if (detailsExist)
                 return Results.Conflict();
 
             // TODO: password meets user rule requirements
 
-            byte[] encryptedPassword = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), request.Password);
+            // Decrypt password with shared secret
+            byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), password);
 
+            // Encrypt password with long-term encryption key
+            byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
+
+            // Save it to vault
             await dbContext.LoginDetails.AddAsync(new LoginDetails
             {
                 RootDomain = domain,
@@ -39,14 +50,19 @@ namespace Server.Endpoints
             });
             await dbContext.SaveChangesAsync();
 
-            DomainRegisterResponse response = new(domain, encryptedPassword);
+            // Encrypt password with shared secret and send it back to the client
+            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain);
+            DomainRegisterResponse response = new(domain, encryptedPasswordShared);
 
             return Results.Ok(response);
         }
 
         internal async static Task<IResult> DomainLoginRequest([FromBody] DomainLoginRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
-            var domain = request.Domain;
+            // If the username is null, respond with first found login details for the domain
+            string domain = request.Domain;
+            string username = request.Username ?? string.Empty;
+            bool lookupByUsername = !string.IsNullOrEmpty(username);
 
             // TODO: auth
 
@@ -56,11 +72,17 @@ namespace Server.Endpoints
 
             // TODO: per-detail auth
 
-            LoginDetails loginDetails = await dbContext.LoginDetails.FirstAsync(x => x.RootDomain == domain);
+            LoginDetails? loginDetails = lookupByUsername ?
+                await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain && x.Username == username) :
+                await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain);
 
-            string decryptedPassword = PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), loginDetails.Password);
+            if (loginDetails == null)
+                return Results.NotFound();
 
-            DomainLoginResponse response = new(loginDetails.Username, decryptedPassword, false); // TODO: check for 2FA
+            byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain);
+
+            DomainLoginResponse response = new(loginDetails.Username, encryptedPasswordShared, false); // TODO: check for 2FA
 
             return Results.Ok(response);
         }

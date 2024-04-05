@@ -7,5 +7,7 @@ namespace UtilitiesLibrary.Models
     public class Configuration
     {
         public byte[] MasterPasswordHash { get; set; }
+        public byte[] Salt { get; set; }
+        public byte[] VaultEncryptionKey { get; set; }
     }
 }

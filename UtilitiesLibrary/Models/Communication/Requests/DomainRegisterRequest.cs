@@ -17,7 +17,8 @@ namespace UtilitiesLibrary.Models
         internal string Username { get; set; }
 
         // The user's client-side encrypted password byte array for the requested domain.
+        // If null, generate a new secure password for the user.
         [JsonInclude]
-        internal byte[] Password { get; set; }
+        internal byte[]? Password { get; set; }
     }
 }

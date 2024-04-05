@@ -18,6 +18,9 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
+
+            // Ensure handshake has been completed before making requests.
+            CompleteTestHandshake.GetSharedSecret(_client);
         }
 
         public void Dispose()

@@ -13,19 +13,13 @@ namespace Tests.UnitTests.Server.Passwords
             _keyProvider = new KeyProvider();
         }
 
-        private string GenerateClientPublicKey()
-        {
-            using ECDiffieHellman client = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP521);
-            return Convert.ToBase64String(client.ExportSubjectPublicKeyInfo());
-        }
-
         [Fact]
         public void TestComputeSharedSecretNotNull()
         {
-            string clientPublicKey = GenerateClientPublicKey();
+            byte[] clientPublicKey = _keyProvider.GenerateClientPublicKey(out _);
             HandshakeRequest request = new HandshakeRequest { ClientPublicKey = clientPublicKey };
 
-            byte[] serverPublicKey = _keyProvider.ComputeSharedSecret(Convert.FromBase64String(request.ClientPublicKey));
+            byte[] serverPublicKey = _keyProvider.ComputeSharedSecret(request.ClientPublicKey);
 
             Assert.NotNull(serverPublicKey);
             Assert.NotNull(_keyProvider.GetSharedSecret());
