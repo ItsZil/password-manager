@@ -1,20 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Password Manager",
-  "version": "1.0",
-  "description": "A password manager that communicates with a local ASP.NET Core server.",
-  "permissions": [ "storage", "activeTab" ],
-  "host_permissions": [ "https://localhost/*" ],
+  "name": "Password Manager Browser Extension",
+  "version": "0.1.0",
+  "description": "Chrome Browser Extension for a local password manager",
+  "icons": {
+    "16": "icons/icon_16.png",
+    "32": "icons/icon_32.png",
+    "48": "icons/icon_48.png",
+    "128": "icons/icon_128.png"
+  },
   "background": {
-    "service_worker": "src/background.js"
+    "service_worker": "background.js"
   },
   "action": {
+    "default_title": "Password Manager",
     "default_popup": "popup.html"
   },
   "content_scripts": [
     {
-      "matches": [ "<all_urls>" ],
-      "js": [ "src/content.js" ]
+      "matches": [
+        "<all_urls>"
+      ],
+      "run_at": "document_idle",
+      "js": [
+        "contentScript.js"
+      ]
     }
   ],
   "content_security_policy": {
