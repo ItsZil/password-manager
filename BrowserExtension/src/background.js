@@ -1,7 +1,6 @@
 'use strict';
 
 // Imports
-const forge = require('node-forge');
 
 // Constants
 const serverUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
@@ -10,47 +9,70 @@ const serverUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Password Manager extension installed.');
 
-  // Start handshake process with server, /api/handshake
-  const apiEndpoint = '/api/handshake';
+  // Start handshake process with server
   initiateHandshake();
 });
 
 // Function to initiate handshake with server in order to generate a shared secret
-function initiateHandshake() {
-  const ecdh = forge.pki.ed25519.generateKeyPair();
-  const clientPublicKey = forge.util.encode64(ecdh.publicKey);
+async function initiateHandshake() {
+  try {
+    // Generate client key pair
+    const clientKeyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-521' }, true, ['deriveKey', 'deriveBits']);
 
-  fetch(`${serverUrl}/api/handshake`, {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ ClientPublicKey: clientPublicKey })
-  })
-  .then(response => response.json())
-  .then(data => {
-      const serverPublicKey = forge.util.decode64(data.ServerPublicKey);
-      console.log('Server public key: ', serverPublicKey)
-      // Here you would typically use the server's public key along with the client's private key to compute the shared secret
-  })
-  .catch(error => console.error('Error during handshake: ', error));
+    // Export client public key
+    const clientPublicKey = await crypto.subtle.exportKey('spki', clientKeyPair.publicKey);
+    const clientPublicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(clientPublicKey)));
+
+    // Send client public key to server
+    let response;
+    try {
+      response = await fetch(`${serverUrl}/api/handshake`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ clientPublicKey: clientPublicKeyBase64 }),
+      });
+    } catch (error) {
+      console.error('Error sending client public key:', error);
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to send client public key. Status code: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const serverPublicKeyBase64 = data.serverPublicKey;
+    const serverPublicKeyArrayBuffer = new Uint8Array(atob(serverPublicKeyBase64).split('').map((c) => c.charCodeAt(0))).buffer;
+
+    // Import server public key
+    const serverPublicKey = await crypto.subtle.importKey('spki', serverPublicKeyArrayBuffer, { name: 'ECDH', namedCurve: 'P-521' }, false, []);
+
+    // Generate shared secret
+    const sharedSecret = await crypto.subtle.deriveBits({ name: 'ECDH', public: serverPublicKey }, clientKeyPair.privateKey, 256);
+  } catch (error) {
+    console.error('Error during handshake:', error);
+  }
 }
+
+
 
 // Listener for requests from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'LOGIN_INPUT_FIELDS_FOUND') {
-      handleInputFields(message);
+    handleInputFields(message);
   } else if (message == 'retrieveTestResponse') {
-      testCommunication()
-          .then(response => {
-              console.log("Sending response: ", response);
-              sendResponse({ data: response });
-          })
-          .catch(error => {
-              console.error("Error during communication: ", error);
-              sendResponse({ error: error.message });
-          });
-      return true;
+    testCommunication()
+      .then((response) => {
+        console.log('Sending response: ', response);
+        sendResponse({ data: response });
+      })
+      .catch((error) => {
+        console.error('Error during communication: ', error);
+        sendResponse({ error: error.message });
+      });
+    return true;
   }
 });
 
@@ -59,63 +81,79 @@ function domainLoginRequest(domainLoginRequestBody) {
   const apiEndpoint = '/api/domainloginrequest';
 
   return fetch(`${serverUrl}${apiEndpoint}`, {
-      method: 'POST',
-      headers: {
-          'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(domainLoginRequestBody)
-      })
-      .then(response => response.json())
-      .catch(error => {
-          console.error('Error retrieving response: ', error);
-          throw error;
-      }
-    );
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(domainLoginRequestBody),
+  })
+    .then((response) => response.json())
+    .catch((error) => {
+      console.error('Error retrieving response: ', error);
+      throw error;
+    });
 }
 
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
   const domainLoginRequestBody = {
-      domain: domain,
-      userAgent: navigator.userAgent
+    domain: domain,
+    userAgent: navigator.userAgent,
   };
 
   try {
-      const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
+    const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
 
-      if (response.hasPermission && response.hasCredentials) {
-          const loginInfo = {
-              username: response.username,
-              password: response.password
-          };
-          console.log("Returning login info: ", loginInfo);
-          return loginInfo;
-      }
-      console.log("No login info found.");
-      return null;
+    if (response.hasPermission && response.hasCredentials) {
+      const loginInfo = {
+        username: response.username,
+        password: response.password,
+      };
+      console.log('Returning login info: ', loginInfo);
+      return loginInfo;
+    }
+    console.log('No login info found.');
+    return null;
   } catch (error) {
-      console.error("Error during communication: ", error);
-      throw error;
+    console.error('Error during communication: ', error);
+    throw error;
   }
 }
 
 // Function to check if there are elements on the current page that are login or registration input fields
 async function handleInputFields(message) {
-  const usernameField = message.inputFieldInfo.find(field => field.type === 'username' || field.id === 'username' || field.name === 'username' || field.name === 'nick');
-  const passwordField = message.inputFieldInfo.find(field => field.type === 'password' || field.id === 'password' || field.name === 'password');
+  const usernameField = message.inputFieldInfo.find(
+    (field) =>
+      field.type === 'username' ||
+      field.id === 'username' ||
+      field.name === 'username' ||
+      field.name === 'nick'
+  );
+  const passwordField = message.inputFieldInfo.find(
+    (field) =>
+      field.type === 'password' ||
+      field.id === 'password' ||
+      field.name === 'password'
+  );
 
   if (usernameField && passwordField) {
-      try {
-          const loginInfo = await retrieveLoginInfo(message.domain);
-          console.log("Login info: ", loginInfo);
+    try {
+      const loginInfo = await retrieveLoginInfo(message.domain);
+      console.log('Login info: ', loginInfo);
 
-          // Send a message to content script to autofill the input fields
-          chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-              chrome.tabs.sendMessage(tabs[0].id, { action: 'autofillDetails', username_field_id: usernameField.id, password_field_id: passwordField.id, username: loginInfo.username, password: loginInfo.password });
-          });
-      } catch (error) {
-          console.error("Error while handling input fields: ", error);
-      }
+      // Send a message to content script to autofill the input fields
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'autofillDetails',
+          username_field_id: usernameField.id,
+          password_field_id: passwordField.id,
+          username: loginInfo.username,
+          password: loginInfo.password,
+        });
+      });
+    } catch (error) {
+      console.error('Error while handling input fields: ', error);
+    }
   }
 }
 
@@ -125,17 +163,16 @@ function testCommunication() {
   const enableTest = true;
 
   if (enableTest) {
-      return fetch(`${serverUrl}${apiEndpoint}`)
-          .then(response => response.json())
-          .catch(error => {
-              console.error('Error retrieving response: ', error);
-              throw error;
-          });
+    return fetch(`${serverUrl}${apiEndpoint}`)
+      .then((response) => response.json())
+      .catch((error) => {
+        console.error('Error retrieving response: ', error);
+        throw error;
+      });
   } else {
-      return Promise.resolve('');
+    return Promise.resolve('');
   }
 }
-
 
 /*chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GREETINGS') {
