@@ -14,9 +14,10 @@ namespace Server
         internal DbSet<Authenticator> Authenticators { get; set; }
 
         internal string dbPath { get; private set; }
-        internal byte[] hashedVaultPassword;
-        private byte[] vaultEncryptionKey;
-        private byte[] salt;
+        internal byte[] hashedVaultPassword = Array.Empty<byte>();
+
+        private byte[] _vaultEncryptionKey = Array.Empty<byte>();
+        private byte[] _salt = Array.Empty<byte>();
 
         public SqlContext(IConfiguration configuration)
         {
@@ -79,8 +80,8 @@ namespace Server
             hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
 
             Span<byte> generatedSalt = stackalloc byte[16];
-            vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
-            salt = generatedSalt.ToArray();
+            _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            _salt = generatedSalt.ToArray();
         }
 
         private void InitializeConfiguration()
@@ -90,8 +91,8 @@ namespace Server
                 Configuration.Add(new Configuration
                 {
                     MasterPasswordHash = hashedVaultPassword,
-                    Salt = salt,
-                    VaultEncryptionKey = vaultEncryptionKey
+                    Salt = _salt,
+                    VaultEncryptionKey = _vaultEncryptionKey
                 });
                 SaveChanges();
             }

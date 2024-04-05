@@ -139,6 +139,7 @@ namespace Server.Utilities
                             }
                             catch (CryptographicException e)
                             {
+                                Console.WriteLine(e);
                                 return Array.Empty<byte>();
                             }
                         }
