@@ -2,9 +2,7 @@
 
 // Imports
 import * as passwordUtil from './util/passwordUtil';
-
-// Constants
-const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
+import * as requests from './util/requestsUtil';
 
 // onInstalled listener that starts initialization
 chrome.runtime.onInstalled.addListener(async () => {
@@ -23,7 +21,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     username: 'student',
     password: encryptedPassword
   }
-  await domainRegisterRequest(domainRegisterRequestBody);
+  await requests.domainRegisterRequest(domainRegisterRequestBody);
 });
 
 // Listener for requests from content script
@@ -44,39 +42,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Function to handle domain registration requests
-async function domainRegisterRequest(domainRegisterRequestBody) {
-  const apiEndpoint = '/api/domainregisterrequest';
-
-  try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(domainRegisterRequestBody),
-    });
-
-    if (response.status === 200) {
-      return response.json();
-    } else {
-      console.error(
-        `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
-      );
-    }
-  } catch (error) {
-    console.error('Error retrieving response: ', error);
-    throw error;
-  }
-}
-
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
   const domainLoginRequestBody = {
     domain: domain,
   };
 
-  const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
+  const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
 
   if (response.hasPermission && response.hasCredentials) {
     try {
@@ -94,32 +66,6 @@ async function retrieveLoginInfo(domain) {
   }
   // No login info has been found in the vault by the server.
   return null;
-}
-
-// Function to handle input fields found in the page by sending a domain login details request
-async function domainLoginRequest(domainLoginRequestBody) {
-  const apiEndpoint = '/api/domainloginrequest';
-
-  try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(domainLoginRequestBody),
-    });
-
-    if (response.status === 200) {
-      return response.json();
-    } else {
-      console.error(
-        `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
-      );
-    }
-  } catch (error) {
-    console.error('Error retrieving response: ', error);
-    throw error;
-  }
 }
 
 // Function to check if there are elements on the current page that are login or registration input fields

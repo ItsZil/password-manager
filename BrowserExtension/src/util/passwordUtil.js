@@ -31,6 +31,7 @@ export async function initiateHandshake() {
     const clientPublicKeyBase64 = btoa(String.fromCharCode.apply(null, publicKeyBytes));
 
     // Send client public key to server
+    const requestBody = JSON.stringify({ clientPublicKey: clientPublicKeyBase64 });
     let response;
     try {
       response = await fetch(`${ServerUrl}/api/handshake`, {
