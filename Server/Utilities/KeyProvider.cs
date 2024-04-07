@@ -20,7 +20,6 @@ namespace Server.Utilities
             byte[] serverPublicKey = server.ExportSubjectPublicKeyInfo();
 
             SharedSecret = server.DeriveKeyMaterial(client.PublicKey);
-            _logger.LogInformation("Secret: " + PrintByteArray(SharedSecret));
             return serverPublicKey;
         }
 

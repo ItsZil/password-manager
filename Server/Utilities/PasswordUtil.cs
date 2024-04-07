@@ -77,6 +77,7 @@ namespace Server.Utilities
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = encryptionKey;
+                aesAlg.GenerateIV();
 
                 using (MemoryStream msEncrypt = new MemoryStream())
                 {

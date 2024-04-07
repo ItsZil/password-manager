@@ -85,15 +85,15 @@ if (document.readyState === 'loading') {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'AUTOFILL_DETAILS') {
     // Find the fields on the page
-    const usernameField = document.getElementById(message.username_field_id);
-    const passwordField = document.getElementById(message.password_field_id);
+    const usernameField = document.getElementById(request.username_field_id);
+    const passwordField = document.getElementById(request.password_field_id);
 
     // Autofill the fields if found
     if (usernameField && passwordField) {
-      usernameField.value = message.username;
-      passwordField.value = message.password;
+      usernameField.value = request.username;
+      passwordField.value = request.password;
     } else {
-      console.log('Username and/or password fields not found on the page.'); // TODO: Add error handling
+      // Username and/or password fields not found on the page. // TODO: Add error handling, we probably should've gone this far if we can't find the fields.
     }
   }
 

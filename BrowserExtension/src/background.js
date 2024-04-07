@@ -7,17 +7,11 @@ const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 let SharedSecret = null;
 
 // onInstalled listener that starts initialization
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   console.log('Password Manager extension installed.');
 
   // Start handshake process with server
-  initiateHandshake();
-
-  /*let domainRegisterRequestBody = {
-    domain: 'login.ktu.lt',
-    username: 'zilkra'
-  };
-  domainRegisterRequest(domainRegisterRequestBody)*/
+  await initiateHandshake();
 });
 
 // Function to convert a string to an ArrayBuffer
@@ -34,12 +28,21 @@ function str2ab(str) {
 async function initiateHandshake() {
   try {
     // Generate client key pair
-    const clientKeyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
+    const clientKeyPair = await crypto.subtle.generateKey(
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      ['deriveKey', 'deriveBits']
+    );
 
     // Export client public key
-    const clientPublicKey = await crypto.subtle.exportKey('spki', clientKeyPair.publicKey);
+    const clientPublicKey = await crypto.subtle.exportKey(
+      'spki',
+      clientKeyPair.publicKey
+    );
     const publicKeyBytes = new Uint8Array(clientPublicKey);
-    const clientPublicKeyBase64 = btoa(String.fromCharCode.apply(null, publicKeyBytes));
+    const clientPublicKeyBase64 = btoa(
+      String.fromCharCode.apply(null, publicKeyBytes)
+    );
 
     // Send client public key to server
     let response;
@@ -57,7 +60,9 @@ async function initiateHandshake() {
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to send client public key. Status code: ${response.status}`);
+      throw new Error(
+        `Failed to send client public key. Status code: ${response.status}`
+      );
     }
 
     // Read server public key
@@ -66,17 +71,37 @@ async function initiateHandshake() {
     const serverPublicKeyArrayBuffer = str2ab(atob(serverPublicKeyBase64));
 
     // Import server public key
-    const serverPublicKey = await crypto.subtle.importKey('spki', serverPublicKeyArrayBuffer, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
+    const serverPublicKey = await crypto.subtle.importKey(
+      'spki',
+      serverPublicKeyArrayBuffer,
+      { name: 'ECDH', namedCurve: 'P-256' },
+      true,
+      []
+    );
 
     // Generate raw (unhashed) shared secret
-    const rawSecret = await crypto.subtle.deriveKey({ name: 'ECDH', public: serverPublicKey }, clientKeyPair.privateKey, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    const rawSecret = await crypto.subtle.deriveKey(
+      { name: 'ECDH', public: serverPublicKey },
+      clientKeyPair.privateKey,
+      { name: 'AES-CBC', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
 
     // Export the raw shared secret key, hash it with SHA-256 and import it back
     const rawSharedSecret = await crypto.subtle.exportKey('raw', rawSecret);
-    const hashedSharedSecret = await crypto.subtle.digest('SHA-256', rawSharedSecret);
+    const hashedSharedSecret = await crypto.subtle.digest(
+      'SHA-256',
+      rawSharedSecret
+    );
 
-    SharedSecret = await crypto.subtle.importKey('raw', hashedSharedSecret, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
-
+    SharedSecret = await crypto.subtle.importKey(
+      'raw',
+      hashedSharedSecret,
+      { name: 'AES-CBC', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
   } catch (error) {
     console.error('Error during handshake:', error);
   }
@@ -115,7 +140,9 @@ function domainRegisterRequest(domainRegisterRequestBody) {
       if (response.status === 200) {
         return response.json();
       } else {
-        console.error(`Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`);
+        console.error(
+          `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
+        );
       }
     })
     .catch((error) => {
@@ -124,15 +151,13 @@ function domainRegisterRequest(domainRegisterRequestBody) {
     });
 }
 
-
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
   const domainLoginRequestBody = {
-    domain: domain
+    domain: domain,
   };
 
-    const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
-    console.log(response);
+  const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
 
   if (response.hasPermission && response.hasCredentials) {
     try {
@@ -140,11 +165,24 @@ async function retrieveLoginInfo(domain) {
       // Decrypt the password using the shared secret.
       const passwordEncrypted = str2ab(atob(response.password));
 
-      const passwordDecrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: passwordEncrypted.slice(0, 16) }, SharedSecret, passwordEncrypted); // TODO: does this work?
+      const iv = passwordEncrypted.slice(0, 16);
+      const cipherText = passwordEncrypted.slice(16);
+      const passwordDecrypted = await crypto.subtle.decrypt(
+        { name: 'AES-CBC', iv: iv },
+        SharedSecret,
+        cipherText
+      );
+
+      // Convert passwordDecrypted into a plain-text string
+      const passwordDecryptedArray = new Uint8Array(passwordDecrypted);
+      const passwordDecryptedString = String.fromCharCode.apply(
+        null,
+        passwordDecryptedArray
+      );
 
       const loginInfo = {
         username: response.username,
-        password: passwordDecrypted
+        password: passwordDecryptedString,
       };
 
       // Returning login info to handleInputFields.
@@ -172,7 +210,9 @@ function domainLoginRequest(domainLoginRequestBody) {
       if (response.status === 200) {
         return response.json();
       } else {
-        console.error(`Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`);
+        console.error(
+          `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
+        );
       }
     })
     .catch((error) => {
@@ -200,12 +240,11 @@ async function handleInputFields(message) {
   if (usernameField && passwordField) {
     try {
       const loginInfo = await retrieveLoginInfo(message.domain);
-      console.log('Login info: ', loginInfo);
 
       // Send a message to content script to autofill the input fields
       chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
         chrome.tabs.sendMessage(tabs[0].id, {
-          action: 'autofillDetails',
+          type: 'AUTOFILL_DETAILS',
           username_field_id: usernameField.id,
           password_field_id: passwordField.id,
           username: loginInfo.username,

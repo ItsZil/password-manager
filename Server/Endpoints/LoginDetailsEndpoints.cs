@@ -20,23 +20,35 @@ namespace Server.Endpoints
             string domain = request.Domain;
             string username = request.Username;
 
-            // If no password is provided, generate a random one.
-            byte[] password = request.Password ?? PasswordUtil.GenerateSecurePassword();
-            bool passwordIsEncrypted = request.Password != null;
-
             // Check if domain & username are valid
             if (domain.Length < 3 || domain.Length > 255 || username.Length < 1)
                 return Results.BadRequest();
+
+            // delete all logindetails except for login.ktu.lt and save db, no if
+            for (int i = 0; i < dbContext.LoginDetails.Count(); i++)
+            {
+                if (dbContext.LoginDetails.ToArray()[i].RootDomain != "login.ktu.lt")
+                {
+                    dbContext.LoginDetails.Remove(dbContext.LoginDetails.ToArray()[i]);
+                }
+            }
+            await dbContext.SaveChangesAsync();
+
 
             // Check if there already are login details with the same username for this domain.
             var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain && x.Username == username);
             if (detailsExist)
                 return Results.Conflict();
 
+            // If no password is provided, generate a random one.
+            byte[] password = request.Password != null ? Convert.FromBase64String(request.Password) : PasswordUtil.GenerateSecurePassword();
+            bool passwordIsEncrypted = request.Password != null;
+
             // TODO: password meets user rule requirements
 
             // Decrypt password with shared secret
             byte[] decryptedPasswordPlain = passwordIsEncrypted ? PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), password) : password;
+            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
             byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
@@ -80,6 +92,8 @@ namespace Server.Endpoints
                 return Results.NotFound();
 
             byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+            // string
+            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
             byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain);
 
             DomainLoginResponse response = new(loginDetails.Username, encryptedPasswordShared, false); // TODO: check for 2FA
