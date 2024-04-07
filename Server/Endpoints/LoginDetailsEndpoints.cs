@@ -24,7 +24,7 @@ namespace Server.Endpoints
             if (domain.Length < 3 || domain.Length > 255 || username.Length < 1)
                 return Results.BadRequest();
 
-            // delete all logindetails except for login.ktu.lt and save db, no if
+            // delete all logindetails except for login.ktu.lt and save db
             for (int i = 0; i < dbContext.LoginDetails.Count(); i++)
             {
                 if (dbContext.LoginDetails.ToArray()[i].RootDomain != "login.ktu.lt")
