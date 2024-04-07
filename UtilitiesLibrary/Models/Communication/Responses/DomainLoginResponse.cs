@@ -27,19 +27,19 @@ namespace UtilitiesLibrary.Models
         [JsonPropertyName("username")]
         internal string Username { get; set; }
 
-        // The user's encrypted password (shared secret key) byte array for the requested domain.
+        // The user's encrypted password (using shared secret key) base64 encoded string for the requested domain.
         [JsonInclude]
         [JsonPropertyName("password")]
-        internal byte[] Password { get; set; }
+        internal string Password { get; set; }
 
         /// <summary>
         /// A constructor for when the user has login credentials for the requested domain and has successfully authenticated.
         /// </summary>
         /// <param name="username">The user's username (email, phone number, etc.)</param>
-        /// <param name="password">The user's password</param>
+        /// <param name="password">The user's encrypted password as a base64 encoded string</param>
         /// <param name="has2FA">A flag indicating if the user has 2FA enabled for the requested domain</param>
         [JsonConstructor]
-        internal DomainLoginResponse(string username, byte[] password, bool has2FA)
+        internal DomainLoginResponse(string username, string password, bool has2FA)
         {
             HasCredentials = true;
             HasPermission = true;

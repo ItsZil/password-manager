@@ -6,9 +6,6 @@ namespace Server.Utilities
     // Singleton
     public class KeyProvider
     {
-        ILogger _logger;
-        public KeyProvider(ILogger<KeyProvider> logger) { _logger = logger; }
-
         private byte[]? SharedSecret;
 
         internal byte[] ComputeSharedSecret(byte[] clientPublicKey)
@@ -36,7 +33,7 @@ namespace Server.Utilities
 
         internal byte[] ComputeSharedSecretTests(ECDiffieHellman client, byte[] serverPublicKey)
         {
-            using ECDiffieHellman server = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP521);
+            using ECDiffieHellman server = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             server.ImportSubjectPublicKeyInfo(serverPublicKey, out _);
 
             SharedSecret = client.DeriveKeyMaterial(server.PublicKey);
@@ -51,7 +48,7 @@ namespace Server.Utilities
         // For use in tests
         internal byte[] GenerateClientPublicKey(out ECDiffieHellman client)
         {
-            ECDiffieHellman clientECDH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP521);
+            ECDiffieHellman clientECDH = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             byte[] key = clientECDH.ExportSubjectPublicKeyInfo();
 
             client = clientECDH;

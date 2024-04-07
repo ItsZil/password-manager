@@ -24,17 +24,6 @@ namespace Server.Endpoints
             if (domain.Length < 3 || domain.Length > 255 || username.Length < 1)
                 return Results.BadRequest();
 
-            // delete all logindetails except for login.ktu.lt and save db
-            for (int i = 0; i < dbContext.LoginDetails.Count(); i++)
-            {
-                if (dbContext.LoginDetails.ToArray()[i].RootDomain != "login.ktu.lt")
-                {
-                    dbContext.LoginDetails.Remove(dbContext.LoginDetails.ToArray()[i]);
-                }
-            }
-            await dbContext.SaveChangesAsync();
-
-
             // Check if there already are login details with the same username for this domain.
             var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain && x.Username == username);
             if (detailsExist)
@@ -96,7 +85,7 @@ namespace Server.Endpoints
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
             byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain);
 
-            DomainLoginResponse response = new(loginDetails.Username, encryptedPasswordShared, false); // TODO: check for 2FA
+            DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false); // TODO: check for 2FA
 
             return Results.Ok(response);
         }

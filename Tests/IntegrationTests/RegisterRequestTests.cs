@@ -62,7 +62,7 @@ namespace Tests.IntegrationTests.Server
             byte[] encryptedPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword"));
 
             var registerApiEndpoint = "/api/domainregisterrequest";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = encryptedPassword };
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = Convert.ToBase64String(encryptedPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }

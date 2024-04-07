@@ -41,7 +41,7 @@ namespace Tests.IntegrationTests.Server
             byte[] encryptedSharedKeyPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, plainPassword);
 
             var registerApiEndpoint = "/api/domainregisterrequest";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = encryptedSharedKeyPassword };
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }
@@ -138,7 +138,7 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, responseObj.Password);
+            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
             string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
 
             Assert.Equal("loginrequesttestspassword", decryptedPasswordString);
@@ -165,7 +165,7 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, responseObj.Password);
+            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
             string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
 
             Assert.NotEqual("loginrequesttestspassword123", decryptedPasswordString);
