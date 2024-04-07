@@ -1,16 +1,14 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 
-const runningInGithubActions = process.env.GITHUB_ACTIONS === 'true';
-
-const EXTENSION_PATH = runningInGithubActions ? path.resolve(__dirname, '../BrowserExtension/build') : path.resolve(__dirname, '../../BrowserExtension/build');
+const EXTENSION_PATH = path.resolve(__dirname, '../../BrowserExtension/build')
 const EXTENSION_ID = 'icbeakhigcgladpiblnolcogihmcdoif';
 
 let browser;
 
 beforeEach(async () => {
     browser = await puppeteer.launch({
-        headless: false,
+        headless: 'new',
         args: [
             `--disable-extensions-except=${EXTENSION_PATH}`,
             `--load-extension=${EXTENSION_PATH}`

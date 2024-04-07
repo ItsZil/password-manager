@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "master" ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 defaults:
     run:
         working-directory: BrowserExtension
@@ -15,8 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        node-version: [20.x]
 
     steps:
     - uses: actions/checkout@v3
@@ -27,4 +30,5 @@ jobs:
         cache: 'npm'
         cache-dependency-path: BrowserExtension/package-lock.json
     - run: npm ci
+    - run: npm run build
     - run: npm test

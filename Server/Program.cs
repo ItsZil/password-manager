@@ -42,8 +42,7 @@ namespace Server
                     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
                     config["TEST_INTEGRATION_DB_PATH"] = dbContext.dbPath;
                 }
-
-                //dbContext.Database.EnsureCreated();
+                dbContext.Database.EnsureCreated();
             }
 
             // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies
