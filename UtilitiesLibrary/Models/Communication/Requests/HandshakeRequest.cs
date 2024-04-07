@@ -9,6 +9,6 @@ namespace UtilitiesLibrary.Models
     {
         [JsonInclude]
         [JsonPropertyName("clientPublicKey")]
-        public byte[] ClientPublicKey { get; set; }
+        public string ClientPublicKeyBase64 { get; set; }
     }
 }

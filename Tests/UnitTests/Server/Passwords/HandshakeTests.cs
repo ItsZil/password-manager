@@ -17,9 +17,9 @@ namespace Tests.UnitTests.Server.Passwords
         public void TestComputeSharedSecretNotNull()
         {
             byte[] clientPublicKey = _keyProvider.GenerateClientPublicKey(out _);
-            HandshakeRequest request = new HandshakeRequest { ClientPublicKey = clientPublicKey };
+            HandshakeRequest request = new HandshakeRequest { ClientPublicKeyBase64 = Convert.ToBase64String(clientPublicKey) };
 
-            byte[] serverPublicKey = _keyProvider.ComputeSharedSecret(request.ClientPublicKey);
+            byte[] serverPublicKey = _keyProvider.ComputeSharedSecret(Convert.FromBase64String(request.ClientPublicKeyBase64));
 
             Assert.NotNull(serverPublicKey);
             Assert.NotNull(_keyProvider.GetSharedSecret());

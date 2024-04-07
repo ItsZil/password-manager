@@ -3,7 +3,8 @@
 // Imports
 
 // Constants
-const serverUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
+const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
+let SharedSecret = null;
 
 // onInstalled listener that starts initialization
 chrome.runtime.onInstalled.addListener(() => {
@@ -11,22 +12,39 @@ chrome.runtime.onInstalled.addListener(() => {
 
   // Start handshake process with server
   initiateHandshake();
+
+  /*let domainRegisterRequestBody = {
+    domain: 'login.ktu.lt',
+    username: 'zilkra'
+  };
+  domainRegisterRequest(domainRegisterRequestBody)*/
 });
+
+// Function to convert a string to an ArrayBuffer
+function str2ab(str) {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0, strLen = str.length; i < strLen; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return buf;
+}
 
 // Function to initiate handshake with server in order to generate a shared secret
 async function initiateHandshake() {
   try {
     // Generate client key pair
-    const clientKeyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-521' }, true, ['deriveKey', 'deriveBits']);
+    const clientKeyPair = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
 
     // Export client public key
     const clientPublicKey = await crypto.subtle.exportKey('spki', clientKeyPair.publicKey);
-    const clientPublicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(clientPublicKey)));
+    const publicKeyBytes = new Uint8Array(clientPublicKey);
+    const clientPublicKeyBase64 = btoa(String.fromCharCode.apply(null, publicKeyBytes));
 
     // Send client public key to server
     let response;
     try {
-      response = await fetch(`${serverUrl}/api/handshake`, {
+      response = await fetch(`${ServerUrl}/api/handshake`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,27 +60,33 @@ async function initiateHandshake() {
       throw new Error(`Failed to send client public key. Status code: ${response.status}`);
     }
 
+    // Read server public key
     const data = await response.json();
     const serverPublicKeyBase64 = data.serverPublicKey;
-    const serverPublicKeyArrayBuffer = new Uint8Array(atob(serverPublicKeyBase64).split('').map((c) => c.charCodeAt(0))).buffer;
+    const serverPublicKeyArrayBuffer = str2ab(atob(serverPublicKeyBase64));
 
     // Import server public key
-    const serverPublicKey = await crypto.subtle.importKey('spki', serverPublicKeyArrayBuffer, { name: 'ECDH', namedCurve: 'P-521' }, false, []);
+    const serverPublicKey = await crypto.subtle.importKey('spki', serverPublicKeyArrayBuffer, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
 
-    // Generate shared secret
-    const sharedSecret = await crypto.subtle.deriveBits({ name: 'ECDH', public: serverPublicKey }, clientKeyPair.privateKey, 256);
+    // Generate raw (unhashed) shared secret
+    const rawSecret = await crypto.subtle.deriveKey({ name: 'ECDH', public: serverPublicKey }, clientKeyPair.privateKey, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+
+    // Export the raw shared secret key, hash it with SHA-256 and import it back
+    const rawSharedSecret = await crypto.subtle.exportKey('raw', rawSecret);
+    const hashedSharedSecret = await crypto.subtle.digest('SHA-256', rawSharedSecret);
+
+    SharedSecret = await crypto.subtle.importKey('raw', hashedSharedSecret, { name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+
   } catch (error) {
     console.error('Error during handshake:', error);
   }
 }
 
-
-
 // Listener for requests from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'LOGIN_INPUT_FIELDS_FOUND') {
-    handleInputFields(message);
-  } else if (message == 'retrieveTestResponse') {
+    handleInputFields(request.payload);
+  } else if (request.type == 'RETRIEVE_TEST_RESPONSE') {
     testCommunication()
       .then((response) => {
         console.log('Sending response: ', response);
@@ -76,48 +100,85 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Function to handle input fields found in the page by sending a domain login details request
-function domainLoginRequest(domainLoginRequestBody) {
-  const apiEndpoint = '/api/domainloginrequest';
+// Function to handle domain registration requests
+function domainRegisterRequest(domainRegisterRequestBody) {
+  const apiEndpoint = '/api/domainregisterrequest';
 
-  return fetch(`${serverUrl}${apiEndpoint}`, {
+  return fetch(`${ServerUrl}${apiEndpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(domainLoginRequestBody),
+    body: JSON.stringify(domainRegisterRequestBody),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (response.status === 200) {
+        return response.json();
+      } else {
+        console.error(`Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`);
+      }
+    })
     .catch((error) => {
       console.error('Error retrieving response: ', error);
       throw error;
     });
 }
 
+
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
   const domainLoginRequestBody = {
-    domain: domain,
-    userAgent: navigator.userAgent,
+    domain: domain
   };
 
-  try {
     const response = await domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
+    console.log(response);
 
-    if (response.hasPermission && response.hasCredentials) {
+  if (response.hasPermission && response.hasCredentials) {
+    try {
+      // The password is a base64 encoded AES encrypted byte[].
+      // Decrypt the password using the shared secret.
+      const passwordEncrypted = str2ab(atob(response.password));
+
+      const passwordDecrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: passwordEncrypted.slice(0, 16) }, SharedSecret, passwordEncrypted); // TODO: does this work?
+
       const loginInfo = {
         username: response.username,
-        password: response.password,
+        password: passwordDecrypted
       };
-      console.log('Returning login info: ', loginInfo);
+
+      // Returning login info to handleInputFields.
       return loginInfo;
+    } catch (error) {
+      console.error('Error during decryption: ', error);
     }
-    console.log('No login info found.');
-    return null;
-  } catch (error) {
-    console.error('Error during communication: ', error);
-    throw error;
   }
+  // No login info has been found in the vault by the server.
+  return null;
+}
+
+// Function to handle input fields found in the page by sending a domain login details request
+function domainLoginRequest(domainLoginRequestBody) {
+  const apiEndpoint = '/api/domainloginrequest';
+
+  return fetch(`${ServerUrl}${apiEndpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(domainLoginRequestBody),
+  })
+    .then((response) => {
+      if (response.status === 200) {
+        return response.json();
+      } else {
+        console.error(`Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`);
+      }
+    })
+    .catch((error) => {
+      console.error('Error retrieving response: ', error);
+      throw error;
+    });
 }
 
 // Function to check if there are elements on the current page that are login or registration input fields
@@ -163,7 +224,7 @@ function testCommunication() {
   const enableTest = true;
 
   if (enableTest) {
-    return fetch(`${serverUrl}${apiEndpoint}`)
+    return fetch(`${ServerUrl}${apiEndpoint}`)
       .then((response) => response.json())
       .catch((error) => {
         console.error('Error retrieving response: ', error);

@@ -17,7 +17,7 @@ namespace Tests.TestUtilities
             byte[] clientPublicKey = keyProvider.GenerateClientPublicKey(out clientECDH);
 
             var apiEndpoint = "/api/handshake";
-            HandshakeRequest request = new() { ClientPublicKey = clientPublicKey };
+            HandshakeRequest request = new() { ClientPublicKeyBase64 = Convert.ToBase64String(clientPublicKey) };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
             var response = httpClient.PostAsync(apiEndpoint, requestContent).Result;
@@ -27,7 +27,7 @@ namespace Tests.TestUtilities
             HandshakeResponse? handshakeResponse = JsonSerializer.Deserialize<HandshakeResponse>(responseContent);
             Assert.NotNull(handshakeResponse);
 
-            byte[] serverPublicKey = handshakeResponse.ServerPublicKey;
+            byte[] serverPublicKey = Convert.FromBase64String(handshakeResponse.ServerPublicKeyBase64);
             keyProvider.ComputeSharedSecretTests(clientECDH, serverPublicKey);
 
             return keyProvider.GetSharedSecret();

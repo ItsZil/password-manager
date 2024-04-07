@@ -15,10 +15,10 @@ namespace Server.Endpoints
 
         internal static IResult ComputeSharedSecretKey([FromBody] HandshakeRequest request, KeyProvider keyProvider)
         {
-            byte[] clientPublicKey = request.ClientPublicKey;
+            byte[] clientPublicKey = Convert.FromBase64String(request.ClientPublicKeyBase64);
             byte[] serverPublicKey = keyProvider.ComputeSharedSecret(clientPublicKey);
 
-            return Results.Ok(new HandshakeResponse { ServerPublicKey = serverPublicKey });
+            return Results.Ok(new HandshakeResponse { ServerPublicKeyBase64 = Convert.ToBase64String(serverPublicKey) });
         }
     }
 }

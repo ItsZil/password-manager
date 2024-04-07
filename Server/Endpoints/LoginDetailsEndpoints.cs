@@ -36,7 +36,7 @@ namespace Server.Endpoints
             // TODO: password meets user rule requirements
 
             // Decrypt password with shared secret
-            byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), password);
+            byte[] decryptedPasswordPlain = passwordIsEncrypted ? PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), password) : password;
 
             // Encrypt password with long-term encryption key
             byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
