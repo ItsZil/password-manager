@@ -13,7 +13,8 @@ chrome.runtime.onInstalled.addListener(async () => {
 
   // Start handshake process with server
   await passwordUtil.initiateHandshake();
-  
+
+  /*
   let password = 'Password123';
   const encryptedPassword = await passwordUtil.encryptPassword(password);
   const domainRegisterRequestBody = {
@@ -21,7 +22,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     username: 'student',
     password: encryptedPassword
   }
-  await requests.domainRegisterRequest(domainRegisterRequestBody);
+  await requests.domainRegisterRequest(domainRegisterRequestBody);*/
 });
 
 // Listener for requests from content script
@@ -52,10 +53,9 @@ async function retrieveLoginInfo(domain) {
 
   if (response.hasPermission && response.hasCredentials) {
     try {
-
       const loginInfo = {
         username: response.username,
-        password: await passwordUtil.decryptPassword(response.password)
+        password: await passwordUtil.decryptPassword(response.password),
       };
 
       // Returning login info to handleInputFields.

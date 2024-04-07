@@ -28,10 +28,14 @@ export async function initiateHandshake() {
       clientKeyPair.publicKey
     );
     const publicKeyBytes = new Uint8Array(clientPublicKey);
-    const clientPublicKeyBase64 = btoa(String.fromCharCode.apply(null, publicKeyBytes));
+    const clientPublicKeyBase64 = btoa(
+      String.fromCharCode.apply(null, publicKeyBytes)
+    );
 
     // Send client public key to server
-    const requestBody = JSON.stringify({ clientPublicKey: clientPublicKeyBase64 });
+    const requestBody = JSON.stringify({
+      clientPublicKey: clientPublicKeyBase64,
+    });
     let response;
     try {
       response = await fetch(`${ServerUrl}/api/handshake`, {
@@ -89,6 +93,9 @@ export async function initiateHandshake() {
       true,
       ['encrypt', 'decrypt']
     );
+
+    // Return true if the handshake was successful
+    return true;
   } catch (error) {
     console.error('Error during handshake:', error);
   }
@@ -107,9 +114,14 @@ export async function encryptPassword(rawPassword) {
   );
 
   // Concatenate the IV and the encrypted password
-  const passwordEncryptedWithIV = new Uint8Array(iv.length + passwordEncryptedArray.byteLength);
+  const passwordEncryptedWithIV = new Uint8Array(
+    iv.length + passwordEncryptedArray.byteLength
+  );
   passwordEncryptedWithIV.set(iv);
-  passwordEncryptedWithIV.set(new Uint8Array(passwordEncryptedArray), iv.length);
+  passwordEncryptedWithIV.set(
+    new Uint8Array(passwordEncryptedArray),
+    iv.length
+  );
 
   // Convert passwordEncryptedWithIV into a Base64 string
   const passwordEncryptedWithIVString = String.fromCharCode.apply(

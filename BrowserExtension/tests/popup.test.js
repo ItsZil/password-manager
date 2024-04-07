@@ -1,14 +1,16 @@
 const puppeteer = require('puppeteer');
 const path = require('path');
 
-const EXTENSION_PATH = path.resolve(__dirname, '../../BrowserExtension');
+const runningInGithubActions = process.env.GITHUB_ACTIONS === 'true';
+
+const EXTENSION_PATH = runningInGithubActions ? path.resolve(__dirname, '../BrowserExtension/build') : path.resolve(__dirname, '../../BrowserExtension/build');
 const EXTENSION_ID = 'icbeakhigcgladpiblnolcogihmcdoif';
 
 let browser;
 
 beforeEach(async () => {
     browser = await puppeteer.launch({
-        headless: "new",
+        headless: false,
         args: [
             `--disable-extensions-except=${EXTENSION_PATH}`,
             `--load-extension=${EXTENSION_PATH}`
@@ -22,12 +24,12 @@ afterEach(async () => {
 });
 
 describe('Popup Tests', () => {
-    test('Popup renders correctly', async () => {
+    test('popup renders correctly', async () => {
         const page = await browser.newPage();
         await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`);
     });
 
-    test('Popup contains text', async () => {
+    test('popup contains text', async () => {
         const page = await browser.newPage();
         await page.goto(`chrome-extension://${EXTENSION_ID}/popup.html`);
 
