@@ -120,31 +120,32 @@ namespace Server.Utilities
 
                 aesAlg.IV = iv;
 
-                using (MemoryStream msDecrypt = new MemoryStream(encryptedPassword))
+                try
                 {
-                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Read))
+                    using (MemoryStream msDecrypt = new MemoryStream(encryptedPassword))
                     {
-                        using (MemoryStream decryptedData = new MemoryStream())
+                        using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Read))
                         {
-                            try
+                            using (MemoryStream decryptedData = new MemoryStream())
                             {
-                                int bytesRead;
-                                byte[] buffer = new byte[1024];
+                                    int bytesRead;
+                                    byte[] buffer = new byte[1024];
 
-                                while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
-                                {
-                                    decryptedData.Write(buffer, 0, bytesRead);
+                                    while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
+                                    {
+                                        decryptedData.Write(buffer, 0, bytesRead);
+                                    }
+
+                                    return decryptedData.ToArray();
                                 }
 
-                                return decryptedData.ToArray();
-                            }
-                            catch (CryptographicException e)
-                            {
-                                Console.WriteLine(e);
-                                return Array.Empty<byte>();
                             }
                         }
                     }
+                catch (CryptographicException e)
+                {
+                    Console.WriteLine(e);
+                    return Array.Empty<byte>();
                 }
             }
         }
