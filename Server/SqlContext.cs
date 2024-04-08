@@ -14,9 +14,10 @@ namespace Server
         internal DbSet<Authenticator> Authenticators { get; set; }
 
         internal string dbPath { get; private set; }
-        internal byte[] hashedVaultPassword;
-        private byte[] encryptionKey;
-        private byte[] salt;
+        internal byte[] hashedVaultPassword = Array.Empty<byte>();
+
+        private byte[] _vaultEncryptionKey = Array.Empty<byte>();
+        private byte[] _salt = Array.Empty<byte>();
 
         public SqlContext(IConfiguration configuration)
         {
@@ -59,7 +60,7 @@ namespace Server
             {
                 throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
             }
-            return Configuration.First().EncryptionKey;
+            return Configuration.First().VaultEncryptionKey;
         }
 
         internal byte[] GetPragmaKey()
@@ -79,8 +80,8 @@ namespace Server
             hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
 
             Span<byte> generatedSalt = stackalloc byte[16];
-            encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
-            salt = generatedSalt.ToArray();
+            _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            _salt = generatedSalt.ToArray();
         }
 
         private void InitializeConfiguration()
@@ -90,8 +91,8 @@ namespace Server
                 Configuration.Add(new Configuration
                 {
                     MasterPasswordHash = hashedVaultPassword,
-                    Salt = salt,
-                    EncryptionKey = encryptionKey
+                    Salt = _salt,
+                    VaultEncryptionKey = _vaultEncryptionKey
                 });
                 SaveChanges();
             }

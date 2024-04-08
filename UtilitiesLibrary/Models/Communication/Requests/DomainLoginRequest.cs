@@ -12,8 +12,9 @@ namespace UtilitiesLibrary.Models
         [JsonInclude]
         internal string Domain { get; set; } = string.Empty;
 
-        // The user's browser's user agent.
+        // The username for which the user is requesting login credentials.
+        // If it is null, return first login details found for the domain.
         [JsonInclude]
-        internal string UserAgent { get; set; } = string.Empty;
+        internal string? Username { get; set; }
     }
 }

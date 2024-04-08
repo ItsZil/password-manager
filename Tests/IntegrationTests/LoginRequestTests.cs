@@ -9,14 +9,13 @@ using UtilitiesLibrary.Models;
 
 namespace Tests.IntegrationTests.Server
 {
+    [Collection(nameof(LoginRequestTests))]
     public class LoginRequestTests : IDisposable
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
 
-        private byte[] _vaultPasswordHash;
-        private byte[] _salt;
-        private byte[] _encryptionKey;
+        private readonly byte[] _sharedSecretKey;
 
         public LoginRequestTests()
         {
@@ -26,13 +25,7 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
-
-            ReadOnlySpan<byte> plainVaultPassword = PasswordUtil.ByteArrayFromPlain("Test123");
-            _vaultPasswordHash = PasswordUtil.HashMasterPassword(plainVaultPassword);
-
-            Span<byte> salt = stackalloc byte[16];
-            _encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_vaultPasswordHash, ref salt);
-            _salt = salt.ToArray();
+            _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client);
         }
 
         public void Dispose()
@@ -45,8 +38,11 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
         {
+            byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword");
+            byte[] encryptedSharedKeyPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, plainPassword);
+
             var registerApiEndpoint = "/api/domainregisterrequest";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword") };
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }
@@ -67,7 +63,7 @@ namespace Tests.IntegrationTests.Server
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
-
+        
         [Fact]
         public async Task TestEmptyDomainLoginRequestReturns404()
         {
@@ -143,7 +139,10 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            Assert.Equal("loginrequesttestspassword", responseObj.Password);
+            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
+            string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
+
+            Assert.Equal("loginrequesttestspassword", decryptedPasswordString);
         }
 
         [Fact]
@@ -167,7 +166,10 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            Assert.NotEqual("loginrequesttestspassword123", responseObj.Password);
+            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
+            string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
+
+            Assert.NotEqual("loginrequesttestspassword123", decryptedPasswordString);
         }
     }
 }

@@ -5,6 +5,7 @@ using Server;
 
 namespace Tests.IntegrationTests.Server
 {
+    [Collection(nameof(ServerCommunicationTests))]
     public class ServerCommunicationTests : IDisposable
     {
         private HttpClient _client;
@@ -18,6 +19,9 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
+
+            // Ensure handshake has been completed before making requests.
+            CompleteTestHandshake.GetSharedSecret(_client);
         }
 
         public void Dispose()
@@ -27,6 +31,7 @@ namespace Tests.IntegrationTests.Server
             if (service is SqlContext context)
                 context.Database.EnsureDeleted();
         }
+
 
         [Fact]
         public async Task ServerIsRunningAndResponding()

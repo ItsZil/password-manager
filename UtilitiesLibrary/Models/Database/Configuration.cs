@@ -8,6 +8,6 @@ namespace UtilitiesLibrary.Models
     {
         public byte[] MasterPasswordHash { get; set; }
         public byte[] Salt { get; set; }
-        public byte[] EncryptionKey { get; set; }
+        public byte[] VaultEncryptionKey { get; set; }
     }
 }

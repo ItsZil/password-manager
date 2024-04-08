@@ -29,7 +29,6 @@
     <Folder Include="EndToEndTests\" />
     <Folder Include="PerformanceTests\" />
     <Folder Include="UnitTests\BrowserExtension\" />
-    <Folder Include="UnitTests\DesktopApplication\" />
   </ItemGroup>
 
   <ItemGroup>

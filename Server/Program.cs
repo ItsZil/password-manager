@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Server.Endpoints;
+using Server.Middleware;
+using Server.Utilities;
 using UtilitiesLibrary.Models;
 
 namespace Server
@@ -18,6 +20,7 @@ namespace Server
             });
 
             builder.Services.AddDbContext<SqlContext>();
+            builder.Services.AddSingleton<KeyProvider>();
 
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
@@ -39,8 +42,6 @@ namespace Server
                     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
                     config["TEST_INTEGRATION_DB_PATH"] = dbContext.dbPath;
                 }
-
-                //dbContext.Database.EnsureCreated();
             }
 
             // Configure Forwarded Headers to allow for correct scheme usage behind reverse proxies
@@ -48,6 +49,9 @@ namespace Server
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
+
+            // Middleware to check if a shared secret key has been computed (handshake process complete)
+            app.UseMiddleware<KeyMiddleware>();
 
             // Middleware to limit access to the local network
             if (!app.Environment.IsEnvironment("TEST") && !app.Environment.IsEnvironment("TEST_INTEGRATION"))
@@ -70,6 +74,7 @@ namespace Server
             var rootApi = app.MapGroup("/api/");
             rootApi.MapTestEndpoints();
             rootApi.MapLoginDetailsEndpoints();
+            rootApi.MapHandshakeEndpoints();
 
             app.Run();
         }

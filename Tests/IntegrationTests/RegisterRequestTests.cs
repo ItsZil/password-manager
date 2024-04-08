@@ -9,10 +9,13 @@ using UtilitiesLibrary.Models;
 
 namespace Tests.IntegrationTests.Server
 {
+    [Collection(nameof(RegisterRequestTests))]
     public class RegisterRequestTests : IDisposable
     {
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
+
+        private readonly byte[] _sharedSecretKey;
 
         public RegisterRequestTests()
         {
@@ -22,6 +25,7 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
+            _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client);
         }
 
         public void Dispose()
@@ -41,7 +45,7 @@ namespace Tests.IntegrationTests.Server
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
-
+        
         [Fact]
         public async Task TestEmptyDomainRegisterRequestReturns401()
         {
@@ -56,8 +60,10 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
         {
+            byte[] encryptedPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword"));
+
             var registerApiEndpoint = "/api/domainregisterrequest";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword") };
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = Convert.ToBase64String(encryptedPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }
