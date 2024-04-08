@@ -9,6 +9,7 @@ using UtilitiesLibrary.Models;
 
 namespace Tests.IntegrationTests.Server
 {
+    [Collection(nameof(LoginRequestTests))]
     public class LoginRequestTests : IDisposable
     {
         private HttpClient _client;
@@ -62,7 +63,7 @@ namespace Tests.IntegrationTests.Server
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
-
+        
         [Fact]
         public async Task TestEmptyDomainLoginRequestReturns404()
         {

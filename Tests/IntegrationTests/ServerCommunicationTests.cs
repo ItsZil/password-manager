@@ -5,6 +5,7 @@ using Server;
 
 namespace Tests.IntegrationTests.Server
 {
+    [Collection(nameof(ServerCommunicationTests))]
     public class ServerCommunicationTests : IDisposable
     {
         private HttpClient _client;
@@ -30,6 +31,7 @@ namespace Tests.IntegrationTests.Server
             if (service is SqlContext context)
                 context.Database.EnsureDeleted();
         }
+
 
         [Fact]
         public async Task ServerIsRunningAndResponding()

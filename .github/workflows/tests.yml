@@ -25,4 +25,4 @@ jobs:
     - name: Build
       run: dotnet build Tests/Tests.csproj --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: dotnet test --no-build --verbosity detailed  --blame-hang-timeout 3min 
