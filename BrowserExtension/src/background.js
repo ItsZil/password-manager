@@ -4,8 +4,8 @@
 import * as passwordUtil from './util/passwordUtil';
 import * as requests from './util/requestsUtil';
 
-// onInstalled listener that starts initialization
-chrome.runtime.onInstalled.addListener(async () => {
+// onStartup listener that starts initialization
+chrome.runtime.onStartup.addListener(async () => {
   console.log('Password Manager extension installed.');
 
   // We need to pass the crypto object to the passwordUtil file

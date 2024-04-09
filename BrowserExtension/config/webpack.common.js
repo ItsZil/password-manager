@@ -57,6 +57,10 @@ const common = {
           }
         ]
       },
+      {
+            test: /\.woff2?$/,
+            type: "asset/resource",
+      },
       // Check for images imported in .js files and
       {
         test: IMAGE_TYPES,
