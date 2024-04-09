@@ -1,31 +1,28 @@
 'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
+$('#newVaultBtn').on("click", function () {
+  chrome.runtime.openOptionsPage();
+});
 
-  // Check if we need to show the initial setup options in the popup.
+$('#openVaultBtn').on("click", function () {
+  chrome.runtime.openOptionsPage();
+});
+
+$(() => {
   chrome.storage.local.get(['setup_complete'], function (result) {
-    var initialSetupElement = document.querySelector('.initial-setup');
-    var setupCompleteElement = document.querySelector('.setup-complete');
+    const initialSetupElement = $('#initial-setup');
+    const setupCompleteElement = $('#setup-complete');
 
     if (initialSetupElement && setupCompleteElement) {
       if (result.setup_complete) {
         // Display the initial setup options.
-        initialSetupElement.style.display = 'none';
-        setupCompleteElement.style.display = 'initial';
+        initialSetupElement.hide();
+        setupCompleteElement.show();
       } else {
         // Display the default initialized popup.
-        initialSetupElement.style.display = 'initial';
-        setupCompleteElement.style.display = 'none';
+        initialSetupElement.show();
+        setupCompleteElement.hide();
       }
     }
-  });
-
-
-  document.getElementById('newVaultBtn').addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
-  });
-
-  document.getElementById('openVaultBtn').addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
   });
 });

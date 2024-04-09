@@ -3,6 +3,7 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const miniCssExtractPlugin = require('mini-css-extract-plugin');
 const autoprefixer = require('autoprefixer');
+const providePlugin = require('webpack');
 
 const PATHS = require('./paths');
 
@@ -89,6 +90,10 @@ const common = {
     // Extract CSS into separate files
     new miniCssExtractPlugin({
       filename: '[name].css',
+    }),
+    new providePlugin.ProvidePlugin({
+      $: "jquery",
+      "window.jQuery": "jquery",
     }),
   ],
 };
