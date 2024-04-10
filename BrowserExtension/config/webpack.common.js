@@ -3,7 +3,7 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const miniCssExtractPlugin = require('mini-css-extract-plugin');
 const autoprefixer = require('autoprefixer');
-const providePlugin = require('webpack');
+const webpack = require('webpack');
 
 const PATHS = require('./paths');
 
@@ -91,10 +91,10 @@ const common = {
     new miniCssExtractPlugin({
       filename: '[name].css',
     }),
-    new providePlugin.ProvidePlugin({
+    new webpack.ProvidePlugin({
       $: "jquery",
       "window.jQuery": "jquery",
-    }),
+    })
   ],
 };
 

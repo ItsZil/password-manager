@@ -39,6 +39,14 @@ namespace Server.Utilities
             return password;
         }
 
+        internal static byte[] GeneratePassphrase(int wordCount)
+        {
+            char[] passphrasePlainChars = SecureRandom.GetPassphrase(wordCount, ' ');
+            string passphrasePlain = new string(passphrasePlainChars);
+
+            return ByteArrayFromPlain(passphrasePlain);
+        }
+
         /// <summary>
         /// Hashes the vault master password using Argon2id
         /// </summary>

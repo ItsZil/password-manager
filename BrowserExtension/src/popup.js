@@ -1,11 +1,11 @@
 'use strict';
 
 $('#newVaultBtn').on("click", function () {
-  chrome.runtime.openOptionsPage();
+  open('setup.html');
 });
 
-$('#openVaultBtn').on("click", function () {
-  chrome.runtime.openOptionsPage();
+$('#importVaultBtn').on("click", function () {
+  open('import.html');
 });
 
 $(() => {

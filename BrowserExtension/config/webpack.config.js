@@ -12,6 +12,8 @@ const config = (env, argv) =>
       main: PATHS.src + '/main.js',
       popup: PATHS.src + '/popup.js',
       options: PATHS.src + '/options.js',
+      setup: PATHS.src + '/setup.js',
+      import: PATHS.src + '/import.js',
 
       contentScript: PATHS.src + '/contentScript.js',
       background: PATHS.src + '/background.js',

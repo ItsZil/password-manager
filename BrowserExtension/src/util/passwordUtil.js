@@ -12,6 +12,12 @@ export function init(chromeCrypto) {
   crypto = chromeCrypto;
 }
 
+// Function to initialize the crypto object from frontend scripts
+export function initPublic(windowCrypto) {
+  crypto = windowCrypto;
+  initiateHandshake();
+}
+
 // Function to initiate handshake with server in order to generate a shared secret
 export async function initiateHandshake() {
   try {
@@ -36,6 +42,7 @@ export async function initiateHandshake() {
     const requestBody = JSON.stringify({
       clientPublicKey: clientPublicKeyBase64,
     });
+
     let response;
     try {
       response = await fetch(`${ServerUrl}/api/handshake`, {
@@ -43,17 +50,16 @@ export async function initiateHandshake() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clientPublicKey: clientPublicKeyBase64 }),
+        body: requestBody,
       });
     } catch (error) {
       console.error('Error sending client public key:', error);
-      return;
+      return false;
     }
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to send client public key. Status code: ${response.status}`
-      );
+      console.error('Failed to send client public key. Status code: ${response.status}');
+      return false;
     }
 
     // Read server public key
@@ -155,6 +161,40 @@ export async function decryptPassword(rawResponsePassword) {
   );
 
   return passwordDecryptedString;
+}
+
+// Function to fetch a generated passphrase from the server
+export async function fetchPassphrase(wordCount) {
+  const requestBody = JSON.stringify({
+    wordCount: wordCount,
+  });
+
+  let response;
+  try {
+    response = await fetch(`${ServerUrl}/api/generatepassphrase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    });
+  } catch (error) {
+    console.error('Error sending passphrase generation request', error);
+    return;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to send passphrase generation request. Status code: ${response.status}`
+    );
+  }
+
+  // Read passphrase
+  const data = await response.json();
+  const passphraseEncryptedBase64 = data.passphrase;
+
+  const passphrasePlain = await decryptPassword(passphraseEncryptedBase64);
+  return passphrasePlain;
 }
 
 // ----------------

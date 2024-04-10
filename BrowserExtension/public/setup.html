@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="stylesheet" href="./main.css">
+
+  <title>Setup Vault</title>
+</head>
+
+<body class=" d-flex flex-column" data-bs-theme="dark">
+  <div class="page page-center">
+    <div class="container container-tight py-4">
+      <div class="text-center mb-4">
+        <a href="#" class="navbar-brand navbar-brand-autodark">
+          <i class="bi-safe2 navbar-brand-image" style="font-size: xx-large" alt="Password Manager"></i>
+        </a>
+      </div>
+      <div class="card card-md">
+        <div class="card-body">
+          <h2 class="card-title text-center mb-0">Let's secure your passwords</h2>
+          <div class="card-body">
+            <ul class="steps steps-green steps-counter my-4">
+              <li class="step-item">Install</li>
+              <li class="step-item active">Vault Setup</li>
+              <li class="step-item">Done</li>
+            </ul>
+          </div>
+          <div class="hr mt-0"></div>
+
+          <!-- Vault location options -->
+          <div class="mb-4">
+            <label class="form-label">Vault location</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="select-vault-location" id="my-documents-location" autocomplete="off" checked="">
+              <label for="my-documents-location" type="button" class="btn">My Documents</label>
+              <input type="radio" class="btn-check" name="select-vault-location" id="custom-path-location" autocomplete="off">
+              <label for="custom-path-location" type="button" class="btn">Custom path (specify)</label>
+            </div>
+            <div id="customPathInput" class="mt-2" style="display: none;">
+              <input type="text" id="customPath" class="form-control" placeholder="Enter absolute path">
+              <small id="customPathError" class="text-danger" style="display: none;">Invalid path</small>
+              <div class="mt-2">
+                <i class="bi-info-circle-fill ps-1 form-text"> Example: C:\Users\Name\Private\Vault</i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Master authentication options -->
+          <div class="mb-2">
+            <label class="form-label">Master authentication</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="select-master-password" id="use-passkey" autocomplete="off" checked="">
+              <label for="use-passkey" type="button" class="btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Recommended: Security Key, Fingerprint, Face Recognition">Passkey</label>
+              <input type="radio" class="btn-check" name="select-master-password" id="use-pass-phrase" autocomplete="off">
+              <label for="use-pass-phrase" type="button" class="btn" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Random 4 - 10 Word Phrase">Pass Phrase</label>
+            </div>
+            <div id="passphraseSettings" class="mt-2" style="display: none;">
+              <!-- Passphrase word count-->
+              <div class="counter-input input-group mb-2">
+                <button id="decreaseWordCount" class="btn btn-outline-secondary" type="button">-</button>
+                <input id="wordCount" type="text" class="form-control" value="Word count: 4" readonly>
+                <button id="increaseWordCount" class="btn btn-outline-secondary" type="button">+</button>
+              </div>
+
+              <!-- Passphrase -->
+              <div class="input-group mb-2">
+                <input type="text" class="form-control" id="passPhraseInput" placeholder="Generate Passphrase" readonly>
+                <button class="bi bi-arrow-clockwise btn" id="generatePassphrase" type="button"></button>
+              </div>
+              <div class="mt-2">
+                <p class="bi-exclamation-diamond-fill ps-1 mt-2 form-text"> Memorize it: if you write it down, keep it in a secure location</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-footer mt-4">
+            <button id="initialize-vault" class="btn btn-primary w-100">Initialize vault</button>
+          </div>
+        </div>
+      </div>
+      <div class="text-center text-secondary mt-3">
+        Already have a vault? <a href="./import.html" tabindex="-1">Import</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="./main.js"></script>
+  <script src="./setup.js"></script>
+
+</body>
+
+
+</html>

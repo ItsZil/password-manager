@@ -11,8 +11,6 @@
 // For more information on Content Scripts,
 // See https://developer.chrome.com/extensions/content_scripts
 
-require('bootstrap');
-
 /* Communicate with background file by sending a message
 chrome.runtime.sendMessage(
   {

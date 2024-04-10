@@ -5,14 +5,27 @@ import * as passwordUtil from './util/passwordUtil';
 import * as requests from './util/requestsUtil';
 
 // onStartup listener that starts initialization
-chrome.runtime.onStartup.addListener(async () => {
-  console.log('Password Manager extension installed.');
+chrome.runtime.onStartup.addListener(init);
+chrome.runtime.onInstalled.addListener(init);
+
+async function init() {
+  console.log('Password Manager extension started.');
 
   // We need to pass the crypto object to the passwordUtil file
   passwordUtil.init(crypto);
 
-  // Start handshake process with server
-  await passwordUtil.initiateHandshake();
+  // Function to repeatedly initiate handshake with server
+  async function tryHandshake() {
+    // Start handshake process with server
+    const handshakeSuccessful = await passwordUtil.initiateHandshake();
+    if (!handshakeSuccessful) {
+      // If handshake failed, log an error and retry after 5 seconds
+      console.log('Handshake failed. Retrying in 5 seconds...');
+      setTimeout(tryHandshake, 5000); // Retry after 5 seconds
+    }
+  }
+
+  tryHandshake();
 
   /*
   let password = 'Password123';
@@ -23,7 +36,7 @@ chrome.runtime.onStartup.addListener(async () => {
     password: encryptedPassword
   }
   await requests.domainRegisterRequest(domainRegisterRequestBody);*/
-});
+}
 
 // Listener for requests from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
