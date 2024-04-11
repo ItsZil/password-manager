@@ -6,22 +6,46 @@ const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 // Variables
 let crypto = null;
 let SharedSecret = null;
+let isTryingHandshake = false;
 
 // Function to initialize the crypto object from the background script
 export function init(chromeCrypto) {
   crypto = chromeCrypto;
+
+  tryHandshake();
 }
 
 // Function to initialize the crypto object from frontend scripts
 export function initPublic(windowCrypto) {
   crypto = windowCrypto;
-  initiateHandshake();
+
+  tryHandshake();
 }
 
-export async function isHandshakeCompleteRetry() {
-  await initiateHandshake();
+export function isHandshakeComplete() {
   return SharedSecret !== null;
 }
+
+// Function to repeatedly initiate handshake with server
+async function tryHandshake() {
+  if (isTryingHandshake) {
+    return;
+  }
+  isTryingHandshake = true;
+
+  // Start handshake process with server
+  const handshakeSuccessful = await initiateHandshake();
+
+  if (!handshakeSuccessful) {
+    // If handshake failed, log an error and retry after 3 seconds
+    console.log('Handshake failed. Retrying in 3 seconds...');
+    isTryingHandshake = false;
+    setTimeout(async () => { await tryHandshake(); }, 3000);
+  } else {
+    isTryingHandshake = false;
+  }
+}
+
 
 // Function to initiate handshake with server in order to generate a shared secret
 export async function initiateHandshake() {
@@ -58,12 +82,12 @@ export async function initiateHandshake() {
         body: requestBody,
       });
     } catch (error) {
-      console.error('Error sending client public key:', error);
+      console.warn('Error sending client public key:', error);
       return false;
     }
 
     if (!response.ok) {
-      console.error('Failed to send client public key. Status code: ${response.status}');
+      console.warn('Failed to send client public key. Status code: ${response.status}');
       return false;
     }
 
@@ -108,7 +132,7 @@ export async function initiateHandshake() {
     // Return true if the handshake was successful
     return true;
   } catch (error) {
-    console.error('Error during handshake:', error);
+    console.warn('Error during handshake:', error);
   }
 }
 

@@ -11,21 +11,8 @@ chrome.runtime.onInstalled.addListener(init);
 async function init() {
   console.log('Password Manager extension started.');
 
-  // We need to pass the crypto object to the passwordUtil file
+  // We need to pass the crypto object to the passwordUtil file and start handshake process
   passwordUtil.init(crypto);
-
-  // Function to repeatedly initiate handshake with server
-  async function tryHandshake() {
-    // Start handshake process with server
-    const handshakeSuccessful = await passwordUtil.initiateHandshake();
-    if (!handshakeSuccessful) {
-      // If handshake failed, log an error and retry after 5 seconds
-      console.log('Handshake failed. Retrying in 5 seconds...');
-      setTimeout(tryHandshake, 5000); // Retry after 5 seconds
-    }
-  }
-
-  tryHandshake();
 
   /*
   let password = 'Password123';

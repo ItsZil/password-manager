@@ -1,9 +1,7 @@
-const { initPublic, isHandshakeCompleteRetry, fetchPassphrase } = require('./util/passwordUtil.js');
+const { initPublic, isHandshakeComplete, fetchPassphrase } = require('./util/passwordUtil.js');
 
 $(document).ready(async function () {
   initPublic(window.crypto);
-
-  // Wait for handshake to complete
   await waitForHandshake();
 
   // Show/hide custom path input based on radio button selection
@@ -113,10 +111,9 @@ $('#generatePassphrase').on('click', async function () {
   }
 });
 
-
+// Function to wait for handshake to complete and show the appropriate UI
 async function waitForHandshake(secondsRemaining = 3) {
-  const isHandshakeComplete = await isHandshakeCompleteRetry();
-  if (!isHandshakeComplete) {
+  if (!isHandshakeComplete()) {
     $('#handshake-complete').hide();
     $('#waiting-for-handshake').show();
     $('#handshake-retry-text').text(`Retrying in ${secondsRemaining} seconds`);
