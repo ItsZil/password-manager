@@ -9,17 +9,18 @@ let SharedSecret = null;
 let isTryingHandshake = false;
 
 // Function to initialize the crypto object from the background script
-export function init(chromeCrypto) {
+export function init(sourceId, chromeCrypto) {
   crypto = chromeCrypto;
 
-  tryHandshake();
+  tryHandshake(sourceId);
 }
 
 // Function to initialize the crypto object from frontend scripts
-export function initPublic(windowCrypto) {
+export function initPublic(sourceId, windowCrypto) {
   crypto = windowCrypto;
+  console.log(sourceId);
 
-  tryHandshake();
+  tryHandshake(sourceId);
 }
 
 export function isHandshakeComplete() {
@@ -27,20 +28,20 @@ export function isHandshakeComplete() {
 }
 
 // Function to repeatedly initiate handshake with server
-async function tryHandshake() {
+async function tryHandshake(sourceId) {
   if (isTryingHandshake) {
     return;
   }
   isTryingHandshake = true;
 
   // Start handshake process with server
-  const handshakeSuccessful = await initiateHandshake();
+  const handshakeSuccessful = await initiateHandshake(sourceId);
 
   if (!handshakeSuccessful) {
     // If handshake failed, log an error and retry after 3 seconds
     console.log('Handshake failed. Retrying in 3 seconds...');
     isTryingHandshake = false;
-    setTimeout(async () => { await tryHandshake(); }, 3000);
+    setTimeout(async () => { await tryHandshake(sourceId); }, 3000);
   } else {
     isTryingHandshake = false;
   }
@@ -48,7 +49,7 @@ async function tryHandshake() {
 
 
 // Function to initiate handshake with server in order to generate a shared secret
-export async function initiateHandshake() {
+export async function initiateHandshake(sourceId) {
   try {
     // Generate client key pair
     const clientKeyPair = await crypto.subtle.generateKey(
@@ -69,6 +70,7 @@ export async function initiateHandshake() {
 
     // Send client public key to server
     const requestBody = JSON.stringify({
+      sourceId: sourceId,
       clientPublicKey: clientPublicKeyBase64,
     });
 

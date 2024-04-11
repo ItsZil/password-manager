@@ -28,17 +28,22 @@ namespace Server.Utilities
             return Encoding.UTF8.GetString(password);
         }
 
-        internal static byte[] GenerateSecurePassword()
+        /// <summary>
+        /// Generates a secure, random string to be used as a password
+        /// </summary>
+        /// <returns>A plain byte array of the password</returns>
+        internal static byte[] GenerateSecurePassword(int length = 64)
         {
-            // TODO
-            byte[] password = new byte[32];
-            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(password);
-            }
-            return password;
+            string randomPassword = SecureRandom.GetString(length);
+
+            return ByteArrayFromPlain(randomPassword);
         }
 
+        /// <summary>
+        /// Generates a secure, random passphrase of the specified word count
+        /// </summary>
+        /// <param name="wordCount">The amount of words the passphrase should consist of</param>
+        /// <returns>A plain byte array of the passphrase</returns>
         internal static byte[] GeneratePassphrase(int wordCount)
         {
             char[] passphrasePlainChars = SecureRandom.GetPassphrase(wordCount, ' ');
@@ -55,7 +60,7 @@ namespace Server.Utilities
         internal static byte[] HashMasterPassword(ReadOnlySpan<byte> sourcePassword)
         {
             Span<byte> computedHash = stackalloc byte[128];
-            Argon2id.ComputeHash(computedHash, sourcePassword, 3, 67108864); // todo: increase
+            Argon2id.ComputeHash(computedHash, sourcePassword, 3, 268435456);
 
             return ByteArrayFromSpan(computedHash);
         }

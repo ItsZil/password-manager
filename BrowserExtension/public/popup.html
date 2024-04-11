@@ -7,21 +7,21 @@
   <title>Password Manager Setup</title>
 </head>
 
-<body>
+<body class=" d-flex flex-column" data-bs-theme="dark">
   <main class="root">
     <!-- User has not completed setup -->
     <div id="initial-setup">
       <div class="p-5 text-center">
         <h1 class="mb-3">Welcome</h1>
-        <p class="mb-4">Choose an option to get started:</p>
+        <p class="mb-4">Choose an option to get started</p>
 
-        <button id="newVaultBtn" class="btn btn-primary mb-2">Create New Vault</button>
-        <button id="importVaultBtn" class="btn btn-secondary">Import Existing Vault</button>
+        <button id="newVaultBtn" class="btn btn-info mb-2 w-100">Create New Vault</button>
+        <button id="importVaultBtn" class="btn btn-secondary w-100">Import Existing Vault</button>
       </div>
     </div>
 
     <!-- User has completed setup -->
-    <div id="setup-complete">
+    <div id="setup-complete" style="display: none">
 
       <div class="container text-center mt-4">
         <div class="row">

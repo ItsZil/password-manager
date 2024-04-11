@@ -36,7 +36,7 @@ namespace Server.Endpoints
             // TODO: password meets user rule requirements
 
             // Decrypt password with shared secret
-            byte[] decryptedPasswordPlain = passwordIsEncrypted ? PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(), password) : password;
+            byte[] decryptedPasswordPlain = passwordIsEncrypted ? PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(1), password) : password; // TODO: change from sourceId 1 to 0 after demo
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
@@ -83,7 +83,7 @@ namespace Server.Endpoints
             byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
             // string
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
-            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain);
+            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), decryptedPasswordPlain); // TODO: change from sourceId 1 to 0 after demo
 
             DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false); // TODO: check for 2FA
 

@@ -51,7 +51,7 @@ namespace Server
         /// </summary>
         /// <param name="newPath">An absolute path to where the vault should be stored</param>
         /// <param name="plainMasterPassword">A byte array of the plain-text master password</param>
-        internal void UpdateDatabaseConnection(string newPath, byte[] plainMasterPassword)
+        internal async Task UpdateDatabaseConnection(string newPath, byte[] plainMasterPassword)
         {
             if (!newPath.EndsWith(".db"))
             {
@@ -63,10 +63,11 @@ namespace Server
             SetVaultMasterPassword(plainMasterPassword);
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 
-            Database.GetDbConnection().ConnectionString = newConnectionString;
-            Database.EnsureCreated();
+            await using var connection = Database.GetDbConnection();
+            connection.ConnectionString = newConnectionString;
 
-            Database.GetDbConnection().Open(); // Re-open the connection with the new connection string
+            await Database.EnsureCreatedAsync();
+            await connection.OpenAsync(); // Re-open the connection with the new connection string
         }
 
         /// <summary>

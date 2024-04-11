@@ -1,10 +1,8 @@
-const { initPublic, isHandshakeComplete, fetchPassphrase } = require('./util/passwordUtil.js');
-const { isAbsolutePathValid } = require('./util/requestsUtil.js');
+const { initPublic, isHandshakeComplete, fetchPassphrase, encryptPassword, decryptPassword, str2ab } = require('./util/passwordUtil.js');
+const { isAbsolutePathValid, generatePragmaKey, sendSetupVaultRequest, domainRegisterRequest } = require('./util/requestsUtil.js');
 
-// Constants
-const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 $(document).ready(async function () {
-  initPublic(window.crypto);
+  initPublic(1, window.crypto);
   await waitForHandshake();
 
   // Show/hide custom path input based on radio button selection
@@ -65,38 +63,91 @@ $(document).ready(async function () {
   });
 
   // Complete setup button
-  $('#initialize-vault').click(async function () {
-    try {
-      const usePasskey = $('#use-passkey').is(':checked');
+  $('#initialize-vault').on('click', async function () {
 
-      if (usePasskey) {
-        // Check if WebAuthn is supported by the browser
+    // Retrieve vault location
+    let vaultLocation;
+    const useCustomPath = $('#custom-path-location').is(':checked');
+    if (useCustomPath) {
+      const customPath = $('#customPath').val();
+      const isValid = await validatePath(customPath);
+      if (isValid) {
+        vaultLocation = encodeURIComponent(customPath);
+      }
+    }
+
+    // Use the pass phrase or random password as the pragma key
+    let vaultKey;
+    const usePassPhrase = $('#use-pass-phrase').is(':checked');
+    if (usePassPhrase) {
+      const passPhrase = $('#passPhraseInput').val();
+      vaultKey = await encryptPassword(passPhrase);
+    }
+    else {
+      // User is going to use a passphrase, so we need to generate a new pragma key
+      // Later, we will add it to the credentials
+      vaultKey = await generatePragmaKey();
+    }
+
+    const setupVaultRequestBody = {
+      absolutePathUri: vaultLocation,
+      vaultRawKeyBase64: await encryptPassword(vaultKey)
+    }
+
+    $('#vault-creation-progress-modal').show();
+
+    const setupSucceeded = await sendSetupVaultRequest(setupVaultRequestBody);
+    if (setupSucceeded) {
+      if (!usePassPhrase) {
+        // Let's create the credentials & store the pragma key inside it.
+        const decryptedPragmaKeyPlain = await decryptPassword(vaultKey);
+        const decryptedPragmaKeyArrayBuffer = str2ab(decryptedPragmaKeyPlain);
+
         if (!window.PublicKeyCredential) {
+          // TODO
           throw new Error('WebAuthn is not supported by this browser.');
         }
 
-        // TODO
+        // Generate a random challenge
+        let challenge = new Uint8Array(32);
+        window.crypto.getRandomValues(challenge);
+;
         let credential = await navigator.credentials.create({
           publicKey: {
-            challenge: new Uint8Array([117, 61, 252, 231, 191, 241]),
-            rp: { name: "Vault" },
+            challenge: challenge,
+            rp: { name: "Local Password Manager Vault" },
             user: {
-              id: new Uint8Array([79, 252, 83, 72, 214, 7, 89, 26]),
-              name: "jamiedoe",
-              displayName: "Jamie Doe"
+              id: decryptedPragmaKeyArrayBuffer,
+              name: "Local Password Manager Vault",
+              displayName: "Local Password Manager Vault"
             },
             pubKeyCredParams: [{ type: "public-key", alg: -7 }]
           }
         });
-
-        // Handle successful registration
-        console.log('Credential registered successfully:', credential);
       }
-    } catch (error) {
-      // Handle errors
-      console.error('Error during credential registration:', error);
+
+      // Show success UI
+      $('#vault-creation-progress-modal').hide();
+      $('#page-title').text('Your vault is ready');
+
+      $('#setup-step').removeClass('active');
+      $('#done-step').addClass('active');
+
+      $('#setup-fields').hide();
+      $('#setup-complete-message').show();
     }
   });
+});
+
+$('#create-test-details').on('click', async function () {
+  let password = 'Password123';
+  const encryptedPassword = await encryptPassword(password);
+  const domainRegisterRequestBody = {
+    domain: 'practicetestautomation.com',
+    username: 'student',
+    password: encryptedPassword
+  }
+  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 $('#generatePassphrase').on('click', async function () {

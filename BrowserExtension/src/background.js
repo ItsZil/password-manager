@@ -12,7 +12,7 @@ async function init() {
   console.log('Password Manager extension started.');
 
   // We need to pass the crypto object to the passwordUtil file and start handshake process
-  passwordUtil.init(crypto);
+  passwordUtil.init(0, crypto);
 
   /*
   let password = 'Password123';
@@ -45,8 +45,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
+  passwordUtil.init(0, crypto); // Ensure we are initialized and have completed handshake. TODO: alternatives?
   const domainLoginRequestBody = {
-    domain: domain,
+    domain: domain
   };
 
   const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse

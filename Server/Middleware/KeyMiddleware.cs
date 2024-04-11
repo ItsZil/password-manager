@@ -17,7 +17,7 @@ namespace Server.Middleware
             if (!context.Request.Path.StartsWithSegments("/api/handshake") && context.Request.Method != "POST")
             {
                 // Check if KeyProvider.GetSharedSecret() is null
-                if (keyProvider.GetSharedSecret() == null)
+                if (!keyProvider.SharedSecretNotNull())
                 {
                     // If it is null, return a 403 Forbidden response
                     context.Response.StatusCode = 403;
