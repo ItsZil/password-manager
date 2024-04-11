@@ -1,5 +1,8 @@
 const { initPublic, isHandshakeComplete, fetchPassphrase } = require('./util/passwordUtil.js');
+const { isAbsolutePathValid } = require('./util/requestsUtil.js');
 
+// Constants
+const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 $(document).ready(async function () {
   initPublic(window.crypto);
   await waitForHandshake();
@@ -26,13 +29,14 @@ $(document).ready(async function () {
   });
 
   // Validate custom path when user enters input
-  $('#customPath').on('input', function () {
+  $('#customPath').on('input', async function () {
     var customPath = $(this).val();
-    var isValid = validatePath(customPath); // Implement your validation logic
+    var isValid = await validatePath(customPath);
     if (isValid) {
+      $('#customPath').removeClass('is-invalid').removeClass('is-invalid-lite').addClass('is-valid').addClass('is-valid-lite');
       $('#customPathError').hide();
     } else {
-      $('#customPathError').show();
+      $('#customPath').removeClass('is-valid').removeClass('is-valid-lite').addClass('is-invalid').addClass('is-invalid-lite');
     }
   });
 
@@ -113,7 +117,11 @@ $('#generatePassphrase').on('click', async function () {
 
 // Function to wait for handshake to complete and show the appropriate UI
 async function waitForHandshake(secondsRemaining = 3) {
+  // Wait 100ms before checking if handshake is complete
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
   if (!isHandshakeComplete()) {
+    $('#initial-wait-for-handshake').hide();
     $('#handshake-complete').hide();
     $('#waiting-for-handshake').show();
     $('#handshake-retry-text').text(`Retrying in ${secondsRemaining} seconds`);
@@ -129,6 +137,7 @@ async function waitForHandshake(secondsRemaining = 3) {
       $('#handshake-retry-icon').removeClass(receptionClasses.join(' ')).addClass(receptionClass);
     }
   } else {
+    $('#initial-wait-for-handshake').hide();
     $('#waiting-for-handshake').hide();
     $('#handshake-complete').show();
   }
@@ -137,19 +146,22 @@ async function waitForHandshake(secondsRemaining = 3) {
 // Function to validate path
 async function validatePath(path) {
   if (!path || typeof path !== 'string') {
+    $('#customPathError').hide();
     return false; // Path is empty or not a string
   }
 
-  // Check if the path is absolute
+  path = path.trim();
+
   if (!path.startsWith('/') && !path.match(/^[a-zA-Z]:\\/)) {
+    $('#customPathError').hide();
     return false; // Path is not absolute
   }
 
-  // Attempt to resolve the directory handle using the File System Access API
-  try {
-    return false; // Path exists
-  } catch (error) {
-    console.error('Error validating path:', error);
-    return false; // Path does not exist or cannot be resolved
+  // Check if path exists
+  const absolutePathUri = encodeURIComponent(path);
+  const isPathValid = await isAbsolutePathValid(absolutePathUri);
+  if (!isPathValid) {
+    $('#customPathError').show();
   }
+  return isPathValid;
 }

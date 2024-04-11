@@ -14,7 +14,7 @@
         <div class="mb-3">
           <i class="navbar-brand-image navbar-brand navbar-brand-autodark" id="handshake-retry-icon" style="font-size: xx-large" alt="Password Manager"></i>
         </div>
-        <div class="text-secondary">Failed to connect to vault service</div>
+        <div class="text-secondary">Connecting to vault service</div>
         <div class="text-secondary mb-3" id="handshake-retry-text">Retrying in 3</div>
         <div class="progress progress-sm">
           <div class="progress-bar progress-bar-indeterminate"></div>
@@ -50,7 +50,7 @@
               <label for="custom-path-location" type="button" class="btn">Custom path (specify)</label>
             </div>
             <div id="customPathInput" class="mt-2" style="display: none;">
-              <input type="text" id="customPath" class="form-control" placeholder="Enter absolute path">
+              <input type="text" id="customPath" class="form-control is-invalid is-invalid-lite" placeholder="Enter absolute path">
               <small id="customPathError" class="text-danger" style="display: none;">Invalid path</small>
               <div class="mt-2">
                 <i class="bi-info-circle-fill ps-1 form-text"> Example: C:\Users\Name\Private\Vault</i>

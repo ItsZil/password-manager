@@ -9,6 +9,7 @@ namespace Server.Endpoints
         internal static RouteGroupBuilder MapConfigurationEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/generatepassphrase", GeneratePassPhrase);
+            group.MapPost("/isabsolutepathvalid", IsAbsolutePathValid);
 
             return group;
         }
@@ -21,6 +22,16 @@ namespace Server.Endpoints
             byte[] passphraseEncrypted = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(), passphrasePlain);
 
             return Results.Ok(new PassphraseResponse { PassphraseBase64 = Convert.ToBase64String(passphraseEncrypted) });
+        }
+
+        internal static IResult IsAbsolutePathValid([FromBody] PathCheckRequest pathRequest)
+        {
+            string path = Uri.UnescapeDataString(pathRequest.AbsolutePathUri);
+            string normalizedPath = Path.GetFullPath(path);
+
+            bool isValid = Directory.Exists(normalizedPath);
+
+            return Results.Ok(new PathCheckResponse { PathValid = isValid });
         }
     }
 }

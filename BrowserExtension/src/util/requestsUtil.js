@@ -56,3 +56,30 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
     throw error;
   }
 }
+
+export async function isAbsolutePathValid(absolutePathUri) {
+  const apiEndpoint = '/api/isabsolutepathvalid';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ absolutePathUri: absolutePathUri }),
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json.pathValid;
+    } else {
+      console.error(
+        `Failed to check if path is valid for ${absolutePathUri}: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
