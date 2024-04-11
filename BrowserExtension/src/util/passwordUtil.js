@@ -18,6 +18,11 @@ export function initPublic(windowCrypto) {
   initiateHandshake();
 }
 
+export async function isHandshakeCompleteRetry() {
+  await initiateHandshake();
+  return SharedSecret !== null;
+}
+
 // Function to initiate handshake with server in order to generate a shared secret
 export async function initiateHandshake() {
   try {

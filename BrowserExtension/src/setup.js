@@ -1,7 +1,10 @@
-const { initPublic, fetchPassphrase } = require('./util/passwordUtil.js');
+const { initPublic, isHandshakeCompleteRetry, fetchPassphrase } = require('./util/passwordUtil.js');
 
-$(document).ready(function () {
+$(document).ready(async function () {
   initPublic(window.crypto);
+
+  // Wait for handshake to complete
+  await waitForHandshake();
 
   // Show/hide custom path input based on radio button selection
   $('input[type=radio][name=select-vault-location]').change(function () {
@@ -110,6 +113,29 @@ $('#generatePassphrase').on('click', async function () {
   }
 });
 
+
+async function waitForHandshake(secondsRemaining = 3) {
+  const isHandshakeComplete = await isHandshakeCompleteRetry();
+  if (!isHandshakeComplete) {
+    $('#handshake-complete').hide();
+    $('#waiting-for-handshake').show();
+    $('#handshake-retry-text').text(`Retrying in ${secondsRemaining} seconds`);
+
+    if (secondsRemaining === 0) {
+      setTimeout(waitForHandshake, 0); // Retry immediately
+    } else {
+      setTimeout(() => waitForHandshake(secondsRemaining - 1), 1000); // Wait for 1 second and retry
+
+      const receptionClasses = ['bi-reception-4', 'bi-reception-2', 'bi-reception-0'];
+      const receptionClass = receptionClasses[secondsRemaining-1];
+
+      $('#handshake-retry-icon').removeClass(receptionClasses.join(' ')).addClass(receptionClass);
+    }
+  } else {
+    $('#waiting-for-handshake').hide();
+    $('#handshake-complete').show();
+  }
+}
 
 // Function to validate path
 async function validatePath(path) {
