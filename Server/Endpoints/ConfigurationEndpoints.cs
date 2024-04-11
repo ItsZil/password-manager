@@ -10,6 +10,7 @@ namespace Server.Endpoints
         {
             group.MapPost("/generatepassphrase", GeneratePassPhrase);
             group.MapPost("/isabsolutepathvalid", IsAbsolutePathValid);
+            group.MapPost("/setupvault", SetupVault);
 
             return group;
         }
@@ -32,6 +33,27 @@ namespace Server.Endpoints
             bool isValid = Directory.Exists(normalizedPath);
 
             return Results.Ok(new PathCheckResponse { PathValid = isValid });
+        }
+
+        internal static IResult SetupVault([FromBody] SetupVaultRequest setupRequest, SqlContext sqlContext)
+        {
+            string dbPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            if (setupRequest.AbsolutePathUri != null)
+            {
+                dbPath = Path.GetFullPath(Uri.UnescapeDataString(setupRequest.AbsolutePathUri));
+            }
+
+            byte[] plainPragmaKey = Convert.FromBase64String(setupRequest.VaultRawKeyBase64);
+
+            if (string.IsNullOrWhiteSpace(dbPath) || plainPragmaKey.Length != 0)
+            {
+                return Results.BadRequest("Database path or vault password is empty.");
+            }
+
+            // Update the database connection with the new path and master password
+            sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
+
+            return Results.Ok();
         }
     }
 }
