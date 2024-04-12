@@ -1,10 +1,10 @@
 'use strict';
 
-$('#newVaultBtn').on("click", function () {
+$('#newVaultBtn').on('click', function () {
   open('setup.html');
 });
 
-$('#importVaultBtn').on("click", function () {
+$('#importVaultBtn').on('click', function () {
   open('import.html');
 });
 

@@ -35,32 +35,30 @@ const common = {
         use: [
           {
             // Extracts CSS for each JS file that includes CSS
-            loader: miniCssExtractPlugin.loader
+            loader: miniCssExtractPlugin.loader,
           },
           {
             // Interprets `@import` and `url()` like `import/require()` and will resolve them
-            loader: 'css-loader'
+            loader: 'css-loader',
           },
           {
             // Loader for webpack to process CSS with PostCSS
             loader: 'postcss-loader',
             options: {
               postcssOptions: {
-                plugins: [
-                  autoprefixer
-                ]
-              }
-            }
+                plugins: [autoprefixer],
+              },
+            },
           },
           {
             // Loads a SASS/SCSS file and compiles it to CSS
-            loader: 'sass-loader'
-          }
-        ]
+            loader: 'sass-loader',
+          },
+        ],
       },
       {
-            test: /\.woff2?$/,
-            type: "asset/resource",
+        test: /\.woff2?$/,
+        type: 'asset/resource',
       },
       // Check for images imported in .js files and
       {
@@ -92,9 +90,9 @@ const common = {
       filename: '[name].css',
     }),
     new webpack.ProvidePlugin({
-      $: "jquery",
-      "window.jQuery": "jquery",
-    })
+      $: 'jquery',
+      'window.jQuery': 'jquery',
+    }),
   ],
 };
 

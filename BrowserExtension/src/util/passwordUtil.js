@@ -41,12 +41,13 @@ async function tryHandshake(sourceId) {
     // If handshake failed, log an error and retry after 3 seconds
     console.log('Handshake failed. Retrying in 3 seconds...');
     isTryingHandshake = false;
-    setTimeout(async () => { await tryHandshake(sourceId); }, 3000);
+    setTimeout(async () => {
+      await tryHandshake(sourceId);
+    }, 3000);
   } else {
     isTryingHandshake = false;
   }
 }
-
 
 // Function to initiate handshake with server in order to generate a shared secret
 export async function initiateHandshake(sourceId) {
@@ -89,7 +90,9 @@ export async function initiateHandshake(sourceId) {
     }
 
     if (!response.ok) {
-      console.warn('Failed to send client public key. Status code: ${response.status}');
+      console.warn(
+        'Failed to send client public key. Status code: ${response.status}'
+      );
       return false;
     }
 

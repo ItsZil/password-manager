@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function retrieveLoginInfo(domain) {
   passwordUtil.init(0, crypto); // Ensure we are initialized and have completed handshake. TODO: alternatives?
   const domainLoginRequestBody = {
-    domain: domain
+    domain: domain,
   };
 
   const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse

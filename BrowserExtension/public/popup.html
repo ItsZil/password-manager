@@ -1,61 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <link rel="stylesheet" href="./main.css">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="./main.css" />
 
-  <title>Password Manager Setup</title>
-</head>
+    <title>Password Manager Setup</title>
+  </head>
 
-<body class=" d-flex flex-column" data-bs-theme="dark">
-  <main class="root">
-    <!-- User has not completed setup -->
-    <div id="initial-setup">
-      <div class="p-5 text-center">
-        <h1 class="mb-3">Welcome</h1>
-        <p class="mb-4">Choose an option to get started</p>
+  <body class="d-flex flex-column" data-bs-theme="dark">
+    <main class="root">
+      <!-- User has not completed setup -->
+      <div id="initial-setup">
+        <div class="p-5 text-center">
+          <h1 class="mb-3">Welcome</h1>
+          <p class="mb-4">Choose an option to get started</p>
 
-        <button id="newVaultBtn" class="btn btn-info mb-2 w-100">Create New Vault</button>
-        <button id="importVaultBtn" class="btn btn-secondary w-100">Import Existing Vault</button>
-      </div>
-    </div>
-
-    <!-- User has completed setup -->
-    <div id="setup-complete" style="display: none">
-
-      <div class="container text-center mt-4">
-        <div class="row">
-          <div class="col-md-4">
-            <h2>Connection status: OK</h2>
-            <p>Last request: 2024-04-10 12:53:42</p>
-          </div>
-
-          <!-- Divider -->
-          <hr class="my-3">
-
-          <div class="col-md-4">
-            <h2>Vault statistics</h2>
-            <p class="mb-0">Number of passwords: 10</p>
-            <p>Number of authenticators: 5</p>
-          </div>
+          <button id="newVaultBtn" class="btn btn-info mb-2 w-100">
+            Create New Vault
+          </button>
+          <button id="importVaultBtn" class="btn btn-secondary w-100">
+            Import Existing Vault
+          </button>
         </div>
       </div>
 
-      <!-- Footer -->
-      <footer class="footer mt-auto py-2 bg-body-secondary">
-        <ul class="nav justify-content-center border-bottom">
-          <li class="nav-item"><a href="#" class="nav-link px-4"><i class="bi-key-fill h1"></i></a></li>
-          <li class="nav-item"><a href="#" class="nav-link px-4"><i class="bi-shield-lock-fill h1"></i></a></li>
-          <li class="nav-item"><a href="#" class="nav-link px-4"><i class="bi-database-fill-gear h1"></i></a></li>
-          <li class="nav-item"><a href="#" class="nav-link px-4"><i class="bi-database-fill-lock h1"></i></a></li>
-        </ul>
-      </footer>
-    </div>
-  </main>
+      <!-- User has completed setup -->
+      <div id="setup-complete" style="display: none">
+        <div class="container text-center mt-4">
+          <div class="row">
+            <div class="col-md-4">
+              <h2>Connection status: OK</h2>
+              <p>Last request: 2024-04-10 12:53:42</p>
+            </div>
 
-  <script src="./popup.js"></script>
-</body>
+            <!-- Divider -->
+            <hr class="my-3" />
 
+            <div class="col-md-4">
+              <h2>Vault statistics</h2>
+              <p class="mb-0">Number of passwords: 10</p>
+              <p>Number of authenticators: 5</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer mt-auto py-2 bg-body-secondary">
+          <ul class="nav justify-content-center border-bottom">
+            <li class="nav-item">
+              <a href="#" class="nav-link px-4"
+                ><i class="bi-key-fill h1"></i
+              ></a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link px-4"
+                ><i class="bi-shield-lock-fill h1"></i
+              ></a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link px-4"
+                ><i class="bi-database-fill-gear h1"></i
+              ></a>
+            </li>
+            <li class="nav-item">
+              <a href="#" class="nav-link px-4"
+                ><i class="bi-database-fill-lock h1"></i
+              ></a>
+            </li>
+          </ul>
+        </footer>
+      </div>
+    </main>
+
+    <script src="./popup.js"></script>
+  </body>
 </html>
 
 <style>

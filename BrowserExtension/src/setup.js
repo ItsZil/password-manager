@@ -1,5 +1,17 @@
-const { initPublic, isHandshakeComplete, fetchPassphrase, encryptPassword, decryptPassword, str2ab } = require('./util/passwordUtil.js');
-const { isAbsolutePathValid, generatePragmaKey, sendSetupVaultRequest, domainRegisterRequest } = require('./util/requestsUtil.js');
+const {
+  initPublic,
+  isHandshakeComplete,
+  fetchPassphrase,
+  encryptPassword,
+  decryptPassword,
+  str2ab,
+} = require('./util/passwordUtil.js');
+const {
+  isAbsolutePathValid,
+  generatePragmaKey,
+  sendSetupVaultRequest,
+  domainRegisterRequest,
+} = require('./util/requestsUtil.js');
 
 $(document).ready(async function () {
   initPublic(1, window.crypto);
@@ -31,10 +43,18 @@ $(document).ready(async function () {
     var customPath = $(this).val();
     var isValid = await validatePath(customPath);
     if (isValid) {
-      $('#customPath').removeClass('is-invalid').removeClass('is-invalid-lite').addClass('is-valid').addClass('is-valid-lite');
+      $('#customPath')
+        .removeClass('is-invalid')
+        .removeClass('is-invalid-lite')
+        .addClass('is-valid')
+        .addClass('is-valid-lite');
       $('#customPathError').hide();
     } else {
-      $('#customPath').removeClass('is-valid').removeClass('is-valid-lite').addClass('is-invalid').addClass('is-invalid-lite');
+      $('#customPath')
+        .removeClass('is-valid')
+        .removeClass('is-valid-lite')
+        .addClass('is-invalid')
+        .addClass('is-invalid-lite');
     }
   });
 
@@ -64,7 +84,6 @@ $(document).ready(async function () {
 
   // Complete setup button
   $('#initialize-vault').on('click', async function () {
-
     // Retrieve vault location
     let vaultLocation;
     const useCustomPath = $('#custom-path-location').is(':checked');
@@ -82,8 +101,7 @@ $(document).ready(async function () {
     if (usePassPhrase) {
       const passPhrase = $('#passPhraseInput').val();
       vaultKey = await encryptPassword(passPhrase);
-    }
-    else {
+    } else {
       // User is going to use a passphrase, so we need to generate a new pragma key
       // Later, we will add it to the credentials
       vaultKey = await generatePragmaKey();
@@ -91,8 +109,8 @@ $(document).ready(async function () {
 
     const setupVaultRequestBody = {
       absolutePathUri: vaultLocation,
-      vaultRawKeyBase64: await encryptPassword(vaultKey)
-    }
+      vaultRawKeyBase64: await encryptPassword(vaultKey),
+    };
 
     $('#vault-creation-progress-modal').show();
 
@@ -111,18 +129,17 @@ $(document).ready(async function () {
         // Generate a random challenge
         let challenge = new Uint8Array(32);
         window.crypto.getRandomValues(challenge);
-;
         let credential = await navigator.credentials.create({
           publicKey: {
             challenge: challenge,
-            rp: { name: "Local Password Manager Vault" },
+            rp: { name: 'Local Password Manager Vault' },
             user: {
               id: decryptedPragmaKeyArrayBuffer,
-              name: "Local Password Manager Vault",
-              displayName: "Local Password Manager Vault"
+              name: 'Local Password Manager Vault',
+              displayName: 'Local Password Manager Vault',
             },
-            pubKeyCredParams: [{ type: "public-key", alg: -7 }]
-          }
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
+          },
         });
       }
 
@@ -143,10 +160,11 @@ $('#create-test-details').on('click', async function () {
   let password = 'Password123';
   const encryptedPassword = await encryptPassword(password);
   const domainRegisterRequestBody = {
+    sourceId: 1,
     domain: 'practicetestautomation.com',
     username: 'student',
-    password: encryptedPassword
-  }
+    password: encryptedPassword,
+  };
   await domainRegisterRequest(domainRegisterRequestBody);
 });
 
@@ -162,7 +180,9 @@ $('#generatePassphrase').on('click', async function () {
     // Set the generated passphrase to the input field
     $('#passPhraseInput').val(passphrase);
   } catch (error) {
-    $('#passPhraseInput').val('Something went wrong: is the vault service running?');
+    $('#passPhraseInput').val(
+      'Something went wrong: is the vault service running?'
+    );
   }
 });
 
@@ -182,10 +202,16 @@ async function waitForHandshake(secondsRemaining = 3) {
     } else {
       setTimeout(() => waitForHandshake(secondsRemaining - 1), 1000); // Wait for 1 second and retry
 
-      const receptionClasses = ['bi-reception-4', 'bi-reception-2', 'bi-reception-0'];
-      const receptionClass = receptionClasses[secondsRemaining-1];
+      const receptionClasses = [
+        'bi-reception-4',
+        'bi-reception-2',
+        'bi-reception-0',
+      ];
+      const receptionClass = receptionClasses[secondsRemaining - 1];
 
-      $('#handshake-retry-icon').removeClass(receptionClasses.join(' ')).addClass(receptionClass);
+      $('#handshake-retry-icon')
+        .removeClass(receptionClasses.join(' '))
+        .addClass(receptionClass);
     }
   } else {
     $('#initial-wait-for-handshake').hide();

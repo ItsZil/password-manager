@@ -87,7 +87,6 @@ export async function isAbsolutePathValid(absolutePathUri) {
   }
 }
 
-
 // Function to generate a new pragma key
 // Returns: A string containing the base64 encoded, encrypted pragma key, false if unsuccessful
 export async function generatePragmaKey() {
@@ -95,7 +94,7 @@ export async function generatePragmaKey() {
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (response.status === 200) {

@@ -1,4 +1,4 @@
 // Import custom CSS
-import './scss/styles.scss'
+import './scss/styles.scss';
 
 require('@tabler/core');
