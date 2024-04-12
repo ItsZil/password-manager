@@ -4,15 +4,15 @@
 import * as passwordUtil from './util/passwordUtil';
 import * as requests from './util/requestsUtil';
 
-// onInstalled listener that starts initialization
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log('Password Manager extension installed.');
+// onStartup listener that starts initialization
+chrome.runtime.onStartup.addListener(init);
+chrome.runtime.onInstalled.addListener(init);
 
-  // We need to pass the crypto object to the passwordUtil file
-  passwordUtil.init(crypto);
+async function init() {
+  console.log('Password Manager extension started.');
 
-  // Start handshake process with server
-  await passwordUtil.initiateHandshake();
+  // We need to pass the crypto object to the passwordUtil file and start handshake process
+  passwordUtil.init(0, crypto);
 
   /*
   let password = 'Password123';
@@ -23,7 +23,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     password: encryptedPassword
   }
   await requests.domainRegisterRequest(domainRegisterRequestBody);*/
-});
+}
 
 // Listener for requests from content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -45,6 +45,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
+  passwordUtil.init(0, crypto); // Ensure we are initialized and have completed handshake. TODO: alternatives?
   const domainLoginRequestBody = {
     domain: domain,
   };

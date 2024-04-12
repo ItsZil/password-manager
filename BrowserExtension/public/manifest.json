@@ -3,12 +3,14 @@
   "name": "Password Manager Browser Extension",
   "version": "0.1.0",
   "description": "Chrome Browser Extension for a local password manager",
+  "options_page": "options.html",
   "icons": {
     "16": "icons/icon_16.png",
     "32": "icons/icon_32.png",
     "48": "icons/icon_48.png",
     "128": "icons/icon_128.png"
   },
+  "permissions": ["storage", "clipboardWrite"],
   "background": {
     "service_worker": "background.js"
   },

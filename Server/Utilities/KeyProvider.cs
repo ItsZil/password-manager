@@ -6,9 +6,10 @@ namespace Server.Utilities
     // Singleton
     public class KeyProvider
     {
-        private byte[]? SharedSecret;
+        // Key: Source ID (0 - background, 1 - setup), Value: Shared Secret
+        private Dictionary<int, byte[]> SharedSecrets = new Dictionary<int, byte[]>();
 
-        internal byte[] ComputeSharedSecret(byte[] clientPublicKey)
+        internal byte[] ComputeSharedSecret(int sourceId, byte[] clientPublicKey)
         {
             using ECDiffieHellman client = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             client.ImportSubjectPublicKeyInfo(clientPublicKey, out _);
@@ -16,7 +17,8 @@ namespace Server.Utilities
             using ECDiffieHellman server = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             byte[] serverPublicKey = server.ExportSubjectPublicKeyInfo();
 
-            SharedSecret = server.DeriveKeyMaterial(client.PublicKey);
+            byte[] sharedSecret = server.DeriveKeyMaterial(client.PublicKey);
+            SharedSecrets[sourceId] = sharedSecret;
             return serverPublicKey;
         }
 
@@ -36,13 +38,18 @@ namespace Server.Utilities
             using ECDiffieHellman server = ECDiffieHellman.Create(ECCurve.NamedCurves.nistP256);
             server.ImportSubjectPublicKeyInfo(serverPublicKey, out _);
 
-            SharedSecret = client.DeriveKeyMaterial(server.PublicKey);
-            return SharedSecret;
+            SharedSecrets[0] = client.DeriveKeyMaterial(server.PublicKey);
+            return SharedSecrets[0];
         }
 
-        internal byte[] GetSharedSecret()
+        internal byte[] GetSharedSecret(int sourceId = 0)
         {
-            return SharedSecret ?? throw new Exception("Shared secret is null - has handshake completed?");
+            return SharedSecrets[sourceId] ?? throw new Exception("Shared secret is null - has handshake completed?");
+        }
+
+        internal bool SharedSecretNotNull()
+        {
+            return SharedSecrets.Count != 0;
         }
 
         // For use in tests

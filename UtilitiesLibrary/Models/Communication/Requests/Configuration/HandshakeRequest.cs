@@ -8,6 +8,10 @@ namespace UtilitiesLibrary.Models
     public class HandshakeRequest
     {
         [JsonInclude]
+        [JsonPropertyName("sourceId")]
+        public int SourceId { get; set; }
+
+        [JsonInclude]
         [JsonPropertyName("clientPublicKey")]
         public string ClientPublicKeyBase64 { get; set; }
     }

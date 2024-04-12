@@ -6,14 +6,51 @@ const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
 // Variables
 let crypto = null;
 let SharedSecret = null;
+let isTryingHandshake = false;
 
 // Function to initialize the crypto object from the background script
-export function init(chromeCrypto) {
+export function init(sourceId, chromeCrypto) {
   crypto = chromeCrypto;
+
+  tryHandshake(sourceId);
+}
+
+// Function to initialize the crypto object from frontend scripts
+export function initPublic(sourceId, windowCrypto) {
+  crypto = windowCrypto;
+  console.log(sourceId);
+
+  tryHandshake(sourceId);
+}
+
+export function isHandshakeComplete() {
+  return SharedSecret !== null;
+}
+
+// Function to repeatedly initiate handshake with server
+async function tryHandshake(sourceId) {
+  if (isTryingHandshake) {
+    return;
+  }
+  isTryingHandshake = true;
+
+  // Start handshake process with server
+  const handshakeSuccessful = await initiateHandshake(sourceId);
+
+  if (!handshakeSuccessful) {
+    // If handshake failed, log an error and retry after 3 seconds
+    console.log('Handshake failed. Retrying in 3 seconds...');
+    isTryingHandshake = false;
+    setTimeout(async () => {
+      await tryHandshake(sourceId);
+    }, 3000);
+  } else {
+    isTryingHandshake = false;
+  }
 }
 
 // Function to initiate handshake with server in order to generate a shared secret
-export async function initiateHandshake() {
+export async function initiateHandshake(sourceId) {
   try {
     // Generate client key pair
     const clientKeyPair = await crypto.subtle.generateKey(
@@ -34,8 +71,10 @@ export async function initiateHandshake() {
 
     // Send client public key to server
     const requestBody = JSON.stringify({
+      sourceId: sourceId,
       clientPublicKey: clientPublicKeyBase64,
     });
+
     let response;
     try {
       response = await fetch(`${ServerUrl}/api/handshake`, {
@@ -43,17 +82,18 @@ export async function initiateHandshake() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clientPublicKey: clientPublicKeyBase64 }),
+        body: requestBody,
       });
     } catch (error) {
-      console.error('Error sending client public key:', error);
-      return;
+      console.warn('Error sending client public key:', error);
+      return false;
     }
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to send client public key. Status code: ${response.status}`
+      console.warn(
+        'Failed to send client public key. Status code: ${response.status}'
       );
+      return false;
     }
 
     // Read server public key
@@ -97,7 +137,7 @@ export async function initiateHandshake() {
     // Return true if the handshake was successful
     return true;
   } catch (error) {
-    console.error('Error during handshake:', error);
+    console.warn('Error during handshake:', error);
   }
 }
 
@@ -155,6 +195,40 @@ export async function decryptPassword(rawResponsePassword) {
   );
 
   return passwordDecryptedString;
+}
+
+// Function to fetch a generated passphrase from the server
+export async function fetchPassphrase(wordCount) {
+  const requestBody = JSON.stringify({
+    wordCount: wordCount,
+  });
+
+  let response;
+  try {
+    response = await fetch(`${ServerUrl}/api/generatepassphrase`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: requestBody,
+    });
+  } catch (error) {
+    console.error('Error sending passphrase generation request', error);
+    return;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to send passphrase generation request. Status code: ${response.status}`
+    );
+  }
+
+  // Read passphrase
+  const data = await response.json();
+  const passphraseEncryptedBase64 = data.passphrase;
+
+  const passphrasePlain = await decryptPassword(passphraseEncryptedBase64);
+  return passphrasePlain;
 }
 
 // ----------------

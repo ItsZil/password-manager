@@ -19,7 +19,7 @@ namespace Tests.UnitTests.Server.Passwords
             // Ensure that there is a shared secret to use as key for encryption
             KeyProvider keyProvider = new();
             byte[] clientPublicKey = keyProvider.GenerateClientPublicKey(out _);
-            keyProvider.ComputeSharedSecret(clientPublicKey);
+            keyProvider.ComputeSharedSecret(0, clientPublicKey);
 
             // Store the shared password encryption keys
             _correctSharedEncryptionKey = keyProvider.GetSharedSecret();

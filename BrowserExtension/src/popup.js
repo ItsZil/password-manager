@@ -1,16 +1,28 @@
 'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const fetchButton = document.getElementById('fetch-passwords');
+$('#newVaultBtn').on('click', function () {
+  open('setup.html');
+});
 
-  fetchButton.addEventListener('click', () => {
-    testCommunication();
+$('#importVaultBtn').on('click', function () {
+  open('import.html');
+});
+
+$(() => {
+  chrome.storage.local.get(['setup_complete'], function (result) {
+    const initialSetupElement = $('#initial-setup');
+    const setupCompleteElement = $('#setup-complete');
+
+    if (initialSetupElement && setupCompleteElement) {
+      if (result.setup_complete) {
+        // Display the initial setup options.
+        initialSetupElement.hide();
+        setupCompleteElement.show();
+      } else {
+        // Display the default initialized popup.
+        initialSetupElement.show();
+        setupCompleteElement.hide();
+      }
+    }
   });
-
-  function testCommunication() {
-    (async () => {
-      const response = await chrome.runtime.sendMessage('retrieveTestResponse');
-      document.getElementById('response').innerHTML = response.data.message;
-    })();
-  }
 });

@@ -8,6 +8,10 @@ namespace UtilitiesLibrary.Models
     /// </summary>
     internal class DomainLoginRequest
     {
+        // The source ID, indicating which script is requesting the login credentials.
+        [JsonInclude]
+        internal int SourceId { get; set; } = 0;
+
         // The domain (website.com) for which the user is requesting login credentials.
         [JsonInclude]
         internal string Domain { get; set; } = string.Empty;

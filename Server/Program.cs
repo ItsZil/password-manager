@@ -75,6 +75,7 @@ namespace Server
             rootApi.MapTestEndpoints();
             rootApi.MapLoginDetailsEndpoints();
             rootApi.MapHandshakeEndpoints();
+            rootApi.MapConfigurationEndpoints();
 
             app.Run();
         }
