@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using UtilitiesLibrary.Models;
 using Server.Utilities;
-using System.Text.Json;
 using System.Text;
 
 namespace Server
@@ -23,13 +22,15 @@ namespace Server
 
         public SqlContext(IConfiguration configuration)
         {
-            dbPath = ConfigUtil.GetVaultLocation();
-
             string? testDbPath = configuration["TEST_INTEGRATION_DB_PATH"];
             if (testDbPath != null)
             {
                 // This test is run in an integration test environment.
                 dbPath = testDbPath;
+            }
+            else
+            {
+                dbPath = ConfigUtil.GetVaultLocation();
             }
 
             Database.EnsureCreated();

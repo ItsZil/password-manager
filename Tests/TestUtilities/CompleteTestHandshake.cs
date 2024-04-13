@@ -9,7 +9,7 @@ namespace Tests.TestUtilities
     internal static class CompleteTestHandshake
     {
         // Used in integration tests to get the shared secret key for encryption and decryption
-        internal static byte[] GetSharedSecret(HttpClient httpClient)
+        internal static byte[] GetSharedSecret(HttpClient httpClient, int sourceId = 0)
         {
             KeyProvider keyProvider = new();
 
@@ -17,7 +17,7 @@ namespace Tests.TestUtilities
             byte[] clientPublicKey = keyProvider.GenerateClientPublicKey(out clientECDH);
 
             var apiEndpoint = "/api/handshake";
-            HandshakeRequest request = new() { ClientPublicKeyBase64 = Convert.ToBase64String(clientPublicKey) };
+            HandshakeRequest request = new() { SourceId = sourceId, ClientPublicKeyBase64 = Convert.ToBase64String(clientPublicKey) };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
             var response = httpClient.PostAsync(apiEndpoint, requestContent).Result;

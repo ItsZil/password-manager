@@ -40,6 +40,8 @@ namespace Server.Utilities
 
         public static string GetVaultLocation()
         {
+            CreateConfigurationFile(Path.GetDirectoryName(configPath) ?? configPath.Replace("config.json", "")); // Ensure we have a config file. This is necessary for integration tests.
+
             // Read the VAULT_LOCATION key from the config.json file
             var configJson = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<Dictionary<string, string>>(configJson);
