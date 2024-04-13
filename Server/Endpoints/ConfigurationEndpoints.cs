@@ -44,7 +44,7 @@ namespace Server.Endpoints
             return Results.Ok(new PathCheckResponse { PathValid = isValid });
         }
 
-        internal static IResult SetupVault([FromBody] SetupVaultRequest setupRequest, SqlContext sqlContext, KeyProvider keyProvider)
+        internal async static Task<IResult> SetupVault([FromBody] SetupVaultRequest setupRequest, SqlContext sqlContext, KeyProvider keyProvider)
         {
             string dbPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); // Use My Documents as default location
             if (setupRequest.AbsolutePathUri != null)
@@ -61,7 +61,7 @@ namespace Server.Endpoints
             }
 
             // Update the database connection with the new path and pragma key
-            sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
+            await sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
 
             return Results.Ok();
         }

@@ -8,4 +8,7 @@
 
     [CollectionDefinition(nameof(ServerCommunicationTests), DisableParallelization = true)]
     public class ServerCommunicationTests { }
+
+    [CollectionDefinition(nameof(ConfigurationTests), DisableParallelization = true)]
+    public class ConfigurationTests { }
 }

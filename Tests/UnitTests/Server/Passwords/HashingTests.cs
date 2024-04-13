@@ -1,6 +1,5 @@
 ﻿using Geralt;
 using Server.Utilities;
-using System.Security.Cryptography;
 
 namespace Tests.UnitTests.Server.Passwords
 {
