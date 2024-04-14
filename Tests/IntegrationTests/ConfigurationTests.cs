@@ -61,9 +61,9 @@ namespace Tests.IntegrationTests
             return response;
         }
 
-        private async Task<HttpResponseMessage> GeneratePragmaKeyAsync()
+        private async Task<HttpResponseMessage> GeneratePasswordAsync()
         {
-            var apiEndpoint = "api/generatepragmakey";
+            var apiEndpoint = "api/generatepassword";
             var response = await _client.GetAsync(apiEndpoint);
             return response;
         }
@@ -73,6 +73,16 @@ namespace Tests.IntegrationTests
             var apiEndpoint = "api/isabsolutepathvalid";
             var pathCheckRequest = new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(path) };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(pathCheckRequest), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> SetupVaultAsync(string path, string vaultRawKeyBase64)
+        {
+            var apiEndpoint = "api/setupvault";
+            var setupVaultRequest = new SetupVaultRequest { AbsolutePathUri = Uri.EscapeDataString(path), VaultRawKeyBase64 = vaultRawKeyBase64 };
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(setupVaultRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
             return response;
@@ -95,31 +105,21 @@ namespace Tests.IntegrationTests
             Assert.False(string.IsNullOrWhiteSpace(responseObj.PassphraseBase64));
         }
 
-        private async Task<HttpResponseMessage> SetupVaultAsync(string path, string vaultRawKeyBase64)
-        {
-            var apiEndpoint = "api/setupvault";
-            var setupVaultRequest = new SetupVaultRequest { AbsolutePathUri = Uri.EscapeDataString(path), VaultRawKeyBase64 = vaultRawKeyBase64 };
-            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(setupVaultRequest), Encoding.UTF8, "application/json");
-
-            var response = await _client.PostAsync(apiEndpoint, requestContent);
-            return response;
-        }
-
         [Fact]
-        public async Task GeneratePragmaKey_ReturnsOkAndValidResponse()
+        public async Task GeneratePassword_ReturnsOkAndValidResponse()
         {
-            var response = await GeneratePragmaKeyAsync();
+            var response = await GeneratePasswordAsync();
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
             string responseString = await response.Content.ReadAsStringAsync();
             Assert.NotNull(responseString);
 
-            PragmaKeyResponse? responseObj = JsonSerializer.Deserialize<PragmaKeyResponse>(responseString);
+            GeneratedPasswordResponse? responseObj = JsonSerializer.Deserialize<GeneratedPasswordResponse>(responseString);
 
             Assert.NotNull(responseObj);
-            Assert.IsType<PragmaKeyResponse>(responseObj);
-            Assert.False(string.IsNullOrWhiteSpace(responseObj.KeyBase64));
+            Assert.IsType<GeneratedPasswordResponse>(responseObj);
+            Assert.False(string.IsNullOrWhiteSpace(responseObj.PasswordBase64));
         }
 
         [Fact]
@@ -176,11 +176,11 @@ namespace Tests.IntegrationTests
         [Fact]
         public async Task SetupVault_ReturnsOkVaultExists()
         {
-            var pragmaKeyResponse = await GeneratePragmaKeyAsync();
+            var pragmaKeyResponse = await GeneratePasswordAsync();
             Assert.Equal(HttpStatusCode.OK, pragmaKeyResponse.StatusCode);
 
             string pragmaKeyResponseString = await pragmaKeyResponse.Content.ReadAsStringAsync();
-            PragmaKeyResponse? pragmaKeyResponseObj = JsonSerializer.Deserialize<PragmaKeyResponse>(pragmaKeyResponseString);
+            GeneratedPasswordResponse? pragmaKeyResponseObj = JsonSerializer.Deserialize<GeneratedPasswordResponse>(pragmaKeyResponseString);
             Assert.NotNull(pragmaKeyResponseObj);
 
             var response = await SetupVaultAsync(_runningTestVaultLocation, pragmaKeyResponseObj.KeyBase64);

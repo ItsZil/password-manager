@@ -74,7 +74,7 @@ namespace Server.Utilities
         internal static byte[] DeriveEncryptionKeyFromMasterPassword(ReadOnlySpan<byte> sourcePassword, ref Span<byte> salt)
         {
             Span<byte> encryptionKey = stackalloc byte[32];
-            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 67108864); // todo: increase
+            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 268435456);
 
             return ByteArrayFromSpan(encryptionKey);
         }

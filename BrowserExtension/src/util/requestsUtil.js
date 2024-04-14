@@ -87,10 +87,10 @@ export async function isAbsolutePathValid(absolutePathUri) {
   }
 }
 
-// Function to generate a new pragma key
-// Returns: A string containing the base64 encoded, encrypted pragma key, false if unsuccessful
-export async function generatePragmaKey() {
-  const apiEndpoint = '/api/generatepragmakey';
+// Function to generate a new secure password
+// Returns: A string containing the base64 encoded, encrypted password. False if unsuccessful
+export async function generatePassword() {
+  const apiEndpoint = '/api/generatepassword';
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
@@ -102,7 +102,7 @@ export async function generatePragmaKey() {
       return json.key;
     } else {
       console.error(
-        `Failed to retrieve generated pragma key: ${response.status} ${response.statusText}`
+        `Failed to retrieve generated password: ${response.status} ${response.statusText}`
       );
       return false;
     }

@@ -47,16 +47,12 @@ $(document).ready(async function () {
   // Import button
   $('#import-vault').on('click', async function () {
     // Retrieve vault location
-    let vaultLocation;
-    const usevaultPath = $('#custom-path-location').is(':checked');
-    if (usevaultPath) {
-      const vaultPath = $('#vaultPath').val();
-      const isValid = await validatePath(vaultPath);
-      if (isValid) {
-        vaultLocation = encodeURIComponent(vaultPath);
-      } else {
-        return;
-      }
+    let vaultPath = $('#vaultPathInput').val();
+    const isValid = await validatePath(vaultPath);
+    if (isValid) {
+      vaultPath = encodeURIComponent(vaultPath);
+    } else {
+      return;
     }
 
     // Use the pass phrase or random password as the pragma key
@@ -67,7 +63,7 @@ $(document).ready(async function () {
     const vaultKey = await encryptPassword(passPhrase);
 
     const importVaultRequestBody = {
-      absolutePathUri: vaultLocation,
+      absolutePathUri: vaultPath,
       vaultRawKeyBase64: vaultKey,
     };
 

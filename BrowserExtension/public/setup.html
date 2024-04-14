@@ -102,8 +102,8 @@
                     >Invalid path</small
                   >
                   <div class="mt-2">
-                    <i class="bi-info-circle-fill ps-1 form-text">
-                      Example: C:\Users\Name\Private\Vault</i
+                    <p class="bi-info-circle-fill ps-1 form-text">
+                      Example: C:\Users\Name\Private\Vault</p
                     >
                   </div>
                 </div>
@@ -112,42 +112,7 @@
               <!-- Master passphrase options -->
               <div class="mb-2">
                 <label class="form-label">Master passphrase</label>
-                <div class="btn-group w-100" role="group">
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="select-master-password"
-                    id="use-passkey"
-                    autocomplete="off"
-                    checked=""
-                  />
-                  <label
-                    for="use-passkey"
-                    type="button"
-                    class="btn"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="bottom"
-                    title="Security Key, Fingerprint, Face Recognition"
-                    >Passkey</label
-                  >
-                  <input
-                    type="radio"
-                    class="btn-check"
-                    name="select-master-password"
-                    id="use-pass-phrase"
-                    autocomplete="off"
-                  />
-                  <label
-                    for="use-pass-phrase"
-                    type="button"
-                    class="btn"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="bottom"
-                    title="Random 4 - 10 Word Phrase"
-                    >Pass Phrase</label
-                  >
-                </div>
-                <div id="passphraseSettings" class="mt-2" style="display: none">
+                <div id="passphraseSettings" class="mt-2">
                   <!-- Passphrase word count-->
                   <div class="counter-input input-group mb-2">
                     <button
@@ -189,8 +154,11 @@
                     ></button>
                   </div>
                   <div class="mt-2">
-                    <p class="bi-exclamation-diamond-fill ps-1 mt-2 form-text">
-                      Memorize it: if you write it down, keep it secure. You can change it later.
+                    <p class="bi-exclamation-diamond-fill ps-1 mt-2 mb-0 form-text">
+                      Memorize it: if you write it down, keep it secure.
+                    </p>
+                    <p class="ps-1 mt-0 form-text">
+                      You can change it in the options.
                     </p>
                   </div>
                 </div>

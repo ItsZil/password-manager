@@ -2,15 +2,13 @@ const {
   initPublic,
   isHandshakeComplete,
   fetchPassphrase,
-  encryptPassword,
-  decryptPassword,
-  str2ab,
+  encryptPassword
 } = require('./util/passwordUtil.js');
+
 const {
   isAbsolutePathValid,
-  generatePragmaKey,
   sendSetupVaultRequest,
-  domainRegisterRequest,
+  domainRegisterRequest
 } = require('./util/requestsUtil.js');
 
 $(document).ready(async function () {
@@ -27,14 +25,6 @@ $(document).ready(async function () {
       $('#customPathInput').hide();
       $('#customPathValidationLabel').hide();
       $('#customPathTooltip').hide();
-    }
-  });
-
-  $('input[type=radio][name=select-master-password]').change(function () {
-    if (this.id === 'use-passkey') {
-      $('#passphraseSettings').hide();
-    } else if (this.id === 'use-pass-phrase') {
-      $('#passphraseSettings').show();
     }
   });
 
@@ -96,16 +86,8 @@ $(document).ready(async function () {
     }
 
     // Use the pass phrase or random password as the pragma key
-    let vaultKey;
-    const usePassPhrase = $('#use-pass-phrase').is(':checked');
-    if (usePassPhrase) {
-      const passPhrase = $('#passPhraseInput').val();
-      vaultKey = await encryptPassword(passPhrase);
-    } /*else {
-      // User is going to use a passphrase, so we need to generate a new pragma key
-      // Later, we will add it to the credentials
-      vaultKey = await generatePragmaKey();
-    }*/
+    const passPhrase = $('#passPhraseInput').val();
+    const vaultKey = await encryptPassword(passPhrase);
 
     const setupVaultRequestBody = {
       absolutePathUri: vaultLocation,
@@ -116,36 +98,6 @@ $(document).ready(async function () {
 
     const setupSucceeded = await sendSetupVaultRequest(setupVaultRequestBody);
     if (setupSucceeded) {
-      /*if (!usePassPhrase) {
-        // Let's create the credentials & store the pragma key inside it.
-        const decryptedPragmaKeyPlain = await decryptPassword(vaultKey);
-        const decryptedPragmaKeyArrayBuffer = str2ab(decryptedPragmaKeyPlain);
-
-        if (!window.PublicKeyCredential) {
-          // TODO
-          throw new Error('WebAuthn is not supported by this browser.');
-        }
-
-        // Generate a random challenge
-        let challenge = new Uint8Array([0, 1, 2, 3, 4]); //new Uint8Array(32);
-        //window.crypto.getRandomValues(challenge);
-
-        let credential = await navigator.credentials.create({
-          publicKey: {
-            mediation: 'conditional',
-            challenge: challenge,
-            rp: { name: 'Local Password Manager Vault' },
-            user: {
-              id: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),
-              name: 'Local Password Manager Vault',
-              displayName: 'Local Password Manager Vault',
-              password: decryptedPragmaKeyArrayBuffer
-            },
-            pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-          },
-        });
-      }*/
-
       // Show success UI
       $('#vault-creation-progress-modal').hide();
       $('#page-title').text('Your vault is ready');

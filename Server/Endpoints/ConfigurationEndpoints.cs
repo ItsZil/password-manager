@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Server.Utilities;
+using System.Text;
 using UtilitiesLibrary.Models;
 
 namespace Server.Endpoints
@@ -9,7 +10,7 @@ namespace Server.Endpoints
         internal static RouteGroupBuilder MapConfigurationEndpoints(this RouteGroupBuilder group)
         {
             group.MapPost("/generatepassphrase", GeneratePassPhrase);
-            group.MapGet("/generatepragmakey", GeneratePragmaKey);
+            group.MapGet("/generatepassword", GeneratePassword);
             group.MapPost("/isabsolutepathvalid", IsAbsolutePathValid);
             group.MapPost("/setupvault", SetupVault);
 
@@ -26,12 +27,12 @@ namespace Server.Endpoints
             return Results.Ok(new PassphraseResponse { PassphraseBase64 = Convert.ToBase64String(passphraseEncrypted) });
         }
 
-        internal static IResult GeneratePragmaKey(KeyProvider keyProvider)
+        internal static IResult GeneratePassword(KeyProvider keyProvider)
         {
-            byte[] plainPragmaKey = PasswordUtil.GenerateSecurePassword();
-            byte[] pragmaKeyShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(1), plainPragmaKey);
+            byte[] plainPassword = PasswordUtil.GenerateSecurePassword();
+            byte[] passwordEncrypted = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(1), plainPassword);
 
-            return Results.Ok(new PragmaKeyResponse { KeyBase64 = Convert.ToBase64String(pragmaKeyShared) });
+            return Results.Ok(new GeneratedPasswordResponse { PasswordBase64 = Convert.ToBase64String(passwordEncrypted) });
         }
 
         internal static IResult IsAbsolutePathValid([FromBody] PathCheckRequest pathRequest)
@@ -63,7 +64,8 @@ namespace Server.Endpoints
             }
 
             // Update the database connection with the new path and pragma key
-            bool successfullyOpened = await sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
+            string pragmaKeyString = Encoding.UTF8.GetString(plainPragmaKey);
+            bool successfullyOpened = await sqlContext.UpdateDatabaseConnection(dbPath, pragmaKeyString);
 
             if (!successfullyOpened)
             {

@@ -31,7 +31,7 @@ namespace Server.Utilities
                 // Set default values
                 var config = new Dictionary<string, string>
                 {
-                    { "VAULT_LOCATION", Path.Join(folder, "vault.db") }
+                    { "VAULT_LOCATION", Path.Join(Path.GetTempPath(), "initialvault.db") }
                 };
                 var configJson = JsonSerializer.Serialize(config);
                 File.WriteAllText(configPath, configJson);
@@ -40,7 +40,8 @@ namespace Server.Utilities
 
         public static string GetVaultLocation()
         {
-            CreateConfigurationFile(Path.GetDirectoryName(configPath) ?? configPath.Replace("config.json", "")); // Ensure we have a config file. This is necessary for integration tests.
+            // Ensure we have a config file.
+            CreateConfigurationFile(Path.GetDirectoryName(configPath) ?? configPath.Replace("config.json", ""));
 
             // Read the VAULT_LOCATION key from the config.json file
             var configJson = File.ReadAllText(configPath);
