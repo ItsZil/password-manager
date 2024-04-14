@@ -9,7 +9,7 @@ namespace UtilitiesLibrary.Models
     {
         [JsonInclude]
         [JsonPropertyName("sourceId")]
-        public int SourceId { get; set; }
+        public int SourceId { get; set; } // 0 - background, 1 - setup/import
 
         [JsonInclude]
         [JsonPropertyName("clientPublicKey")]

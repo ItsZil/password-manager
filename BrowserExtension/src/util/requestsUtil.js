@@ -112,8 +112,8 @@ export async function generatePragmaKey() {
   }
 }
 
-// Function to create a new vault during the setup process
-// Returns: A boolean indicating if the vault was successfully created
+// Function to create or import a vault during the setup process
+// Returns: A boolean indicating if a vault connection was successfully opened
 export async function sendSetupVaultRequest(setupVaultRequestBody) {
   const apiEndpoint = '/api/setupvault';
 

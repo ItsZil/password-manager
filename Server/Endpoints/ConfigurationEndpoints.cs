@@ -40,6 +40,8 @@ namespace Server.Endpoints
             string normalizedPath = Path.GetFullPath(path);
 
             bool isValid = Directory.Exists(normalizedPath);
+            if (path.EndsWith(".db"))
+                isValid = File.Exists(normalizedPath);
 
             return Results.Ok(new PathCheckResponse { PathValid = isValid });
         }
@@ -61,8 +63,12 @@ namespace Server.Endpoints
             }
 
             // Update the database connection with the new path and pragma key
-            await sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
+            bool successfullyOpened = await sqlContext.UpdateDatabaseConnection(dbPath, plainPragmaKey);
 
+            if (!successfullyOpened)
+            {
+                return Results.BadRequest("Failed to open vault connection.");
+            }
             return Results.Ok();
         }
     }

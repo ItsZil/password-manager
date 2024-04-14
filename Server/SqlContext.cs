@@ -4,6 +4,7 @@ using System.Reflection;
 using UtilitiesLibrary.Models;
 using Server.Utilities;
 using System.Text;
+using System.Data;
 
 namespace Server
 {
@@ -52,7 +53,8 @@ namespace Server
         /// </summary>
         /// <param name="newPath">An absolute path to where the vault should be stored</param>
         /// <param name="plainMasterPassword">A byte array of the plain-text master password</param>
-        internal async Task UpdateDatabaseConnection(string newPath, byte[] plainMasterPassword)
+        /// <returns>A boolean indicating if a database connection was successfully opened</return>
+        internal async Task<bool> UpdateDatabaseConnection(string newPath, byte[] plainMasterPassword)
         {
             if (!newPath.EndsWith(".db"))
             {
@@ -69,6 +71,8 @@ namespace Server
 
             await Database.EnsureCreatedAsync();
             await connection.OpenAsync(); // Re-open the connection with the new connection string
+
+            return connection.State == ConnectionState.Open;
         }
 
         /// <summary>
