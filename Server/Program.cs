@@ -25,6 +25,9 @@ namespace Server
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
 
+            // Use a consistent port
+            builder.WebHost.UseUrls("https://localhost:54782");
+
             var app = builder.Build();
 
             // Ensure the SQLite database is created

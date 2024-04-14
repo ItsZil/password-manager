@@ -1,7 +1,7 @@
 'use strict';
 
 // Constants
-const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
+const ServerUrl = 'https://localhost:54782';
 
 // Variables
 let crypto = null;
