@@ -1,4 +1,4 @@
-@Server_HostAddress = https://localhost:5271
+@Server_HostAddress = https://localhost:54782
 
 GET {{Server_HostAddress}}/api/test/
 Response-Type: application/json

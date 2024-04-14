@@ -1,7 +1,7 @@
 'use strict';
 
 // Constants
-const ServerUrl = 'https://localhost:5271'; // TODO: Do not hardcode like this?
+const ServerUrl = 'https://localhost:54782';
 
 // Function to handle input fields found in the page by sending a domain login details request
 // Return: A DomainLoginResponse JSON object

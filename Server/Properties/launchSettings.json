@@ -3,10 +3,10 @@
     "WSL": {
       "commandName": "WSL2",
       "launchBrowser": true,
-      "launchUrl": "https://localhost:5271/test",
+      "launchUrl": "https://localhost:54782/test",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:5271"
+        "ASPNETCORE_URLS": "https://localhost:54782"
       },
       "distributionName": ""
     },
@@ -17,7 +17,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:5271"
+      "applicationUrl": "https://localhost:54782"
     }
   },
   "$schema": "http://json.schemastore.org/launchsettings.json"
