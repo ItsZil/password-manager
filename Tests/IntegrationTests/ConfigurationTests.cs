@@ -89,7 +89,7 @@ namespace Tests.IntegrationTests.Server
         }
 
         [Fact]
-        public async Task TestGeneratePassphraseReturnsOkAndPassphrase()
+        public async Task TestGenerateFourWordPassphraseReturnsOkAndPassphrase()
         {
             var response = await GeneratePassPhraseAsync(4);
 
@@ -103,6 +103,14 @@ namespace Tests.IntegrationTests.Server
             Assert.NotNull(responseObj);
             Assert.IsType<PassphraseResponse>(responseObj);
             Assert.False(string.IsNullOrWhiteSpace(responseObj.PassphraseBase64));
+        }
+
+        [Fact]
+        public async Task TestGenerateIncorrectWordCountPassphraseReturnsBadRequest()
+        {
+            var response = await GeneratePassPhraseAsync(3);
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]

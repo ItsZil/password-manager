@@ -21,6 +21,11 @@ namespace Server.Endpoints
         {
             int wordCount = passphraseRequest.WordCount;
 
+            if (wordCount < 4 || wordCount > 10)
+            {
+                return Results.BadRequest("Word count must be between 4 and 10.");
+            }
+
             byte[] passphrasePlain = PasswordUtil.GeneratePassphrase(wordCount);
             byte[] passphraseEncrypted = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(1), passphrasePlain);
 
