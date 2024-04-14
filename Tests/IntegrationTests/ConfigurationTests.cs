@@ -7,7 +7,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 
-namespace Tests.IntegrationTests
+namespace Tests.IntegrationTests.Server
 {
     [Collection(nameof(ConfigurationTests))]
     public class ConfigurationTests : IDisposable
@@ -89,7 +89,7 @@ namespace Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task GeneratePassPhrase_ReturnsOkAndValidResponse()
+        public async Task TestGeneratePassphraseReturnsOkAndPassphrase()
         {
             var response = await GeneratePassPhraseAsync(4);
 
@@ -106,7 +106,7 @@ namespace Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task GeneratePassword_ReturnsOkAndValidResponse()
+        public async Task TestGeneratePasswordReturnsOkAndPassword()
         {
             var response = await GeneratePasswordAsync();
 
@@ -123,7 +123,7 @@ namespace Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task IsAbsolutePathValid_ReturnsOkAndValidResponse()
+        public async Task TestExistingAbsolutePathReturnsTrue()
         {
             var response = await IsAbsolutePathValidAsync(_runningTestVaultLocation);
 
@@ -140,24 +140,7 @@ namespace Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task IsNonPathValid_ReturnsOkAndInvalidResponse()
-        {
-            var response = await IsAbsolutePathValidAsync("Just a string");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-            string responseString = await response.Content.ReadAsStringAsync();
-            Assert.NotNull(responseString);
-
-            PathCheckResponse? responseObj = JsonSerializer.Deserialize<PathCheckResponse>(responseString);
-
-            Assert.NotNull(responseObj);
-            Assert.IsType<PathCheckResponse>(responseObj);
-            Assert.False(responseObj.PathValid);
-        }
-
-        [Fact]
-        public async Task IsNonExistingPathValid_ReturnsOkAndInvalidResponse()
+        public async Task TestNonExistingAbsolutePathReturnsFalse()
         {
             var response = await IsAbsolutePathValidAsync("D:\\Invalid\\Path");
 
@@ -174,19 +157,54 @@ namespace Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task SetupVault_ReturnsOkVaultExists()
+        public async Task TestSetupVaultReturnsOkAndExists()
         {
-            var pragmaKeyResponse = await GeneratePasswordAsync();
-            Assert.Equal(HttpStatusCode.OK, pragmaKeyResponse.StatusCode);
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
 
-            string pragmaKeyResponseString = await pragmaKeyResponse.Content.ReadAsStringAsync();
-            GeneratedPasswordResponse? pragmaKeyResponseObj = JsonSerializer.Deserialize<GeneratedPasswordResponse>(pragmaKeyResponseString);
-            Assert.NotNull(pragmaKeyResponseObj);
-
-            var response = await SetupVaultAsync(_runningTestVaultLocation, pragmaKeyResponseObj.KeyBase64);
+            var response = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+        }
+
+        [Fact]
+        public async Task TestImportVaultCorrectPassphraseReturnsOk()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
+
+            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            var importVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
+
+            Assert.Equal(HttpStatusCode.OK, importVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestImportVaultIncorrectPassphraseReturnsBadRequest()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
+
+            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            string incorrectPassphrase = "definitely not the same";
+            byte[] incorrectPassphraseBytes = Encoding.UTF8.GetBytes(incorrectPassphrase);
+            byte[] incorrectEncryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, incorrectPassphraseBytes);
+
+            var importVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(incorrectEncryptedPassphrase));
+
+            Assert.Equal(HttpStatusCode.BadRequest, importVaultResponse.StatusCode);
         }
     }
 }

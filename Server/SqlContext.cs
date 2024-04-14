@@ -17,6 +17,9 @@ namespace Server
 
         private KeyProvider _keyProvider;
 
+        private bool _isTestDatabase = false;
+        private readonly string _defaultInitialPassword = "DoNotUseThisVault";
+
         internal string dbPath { get; private set; }
         internal byte[] hashedVaultPassword = Array.Empty<byte>();
 
@@ -30,6 +33,9 @@ namespace Server
             {
                 // This test is run in an integration test environment.
                 dbPath = testDbPath;
+                _isTestDatabase = true;
+
+                keyProvider.SetVaultPragmaKey(_defaultInitialPassword);
             }
             else if (File.Exists(ConfigUtil.GetVaultLocation()) && keyProvider.HasVaultPragmaKey())
             {
@@ -48,15 +54,17 @@ namespace Server
             InitializeConfiguration();
         }
 
-        public SqlContext(string databaseName)
+        // This constructor is used in unit tests.
+        public SqlContext(string databaseName, KeyProvider keyProvider)
         {
             var path = Assembly.GetExecutingAssembly().Location;
             var folder = Path.GetDirectoryName(path);
             dbPath = Path.Join(folder, databaseName);
+            _keyProvider = keyProvider;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(CreateConnectionString(dbPath, "DoNotUseThisVault"));
+            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
@@ -81,8 +89,17 @@ namespace Server
             await using var connection = Database.GetDbConnection();
             connection.ConnectionString = newConnectionString;
 
-            await Database.EnsureCreatedAsync();
-            await connection.OpenAsync(); // Re-open the connection with the new connection string
+            try
+            {
+                await Database.EnsureCreatedAsync();
+                await connection.OpenAsync(); // Re-open the connection with the new connection string
+            }
+            catch (SqliteException ex)
+            {
+                if (ex.SqliteErrorCode != 26) // Expecting NOTADB if the password is incorrect.
+                    throw;
+                return false;
+            }
 
             bool opened = connection.State == ConnectionState.Open;
             if (opened)
@@ -102,7 +119,7 @@ namespace Server
         private string CreateConnectionString(string databasePath, string plainMasterPassword)
         {
             string pragmaKey = String.Empty;
-            if (_keyProvider.HasVaultPragmaKey())
+            if (_keyProvider.HasVaultPragmaKey() && !_isTestDatabase)
             {
                 // We already have the pragma key, do not re-generate it using the plain password. 
                 // This should be accessed after authentication, in endpoints.

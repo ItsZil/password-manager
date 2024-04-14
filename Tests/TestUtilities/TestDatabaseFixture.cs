@@ -18,7 +18,7 @@ namespace Tests.TestUtilities
 
         internal SqlContext CreateContext()
         {
-            SqlContext context = new SqlContext(DatabaseName);
+            SqlContext context = new SqlContext(DatabaseName, new Server.Utilities.KeyProvider());
             return context;
         }
     }
