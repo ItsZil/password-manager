@@ -76,9 +76,7 @@ namespace Tests.UnitTests.Server
             await context.Database.EnsureCreatedAsync();
             string dbPath = context.Database.GetDbConnection().DataSource;
 
-            string hashInHex = BitConverter.ToString(context.hashedVaultPassword).Replace("-", string.Empty);
-
-            using var connection = new SqliteConnection($"Data Source={dbPath};Password={hashInHex[..32]}");
+            using var connection = new SqliteConnection($"Data Source={dbPath};Password=DoNotUseThisVault");
             int result = AttemptCommand(connection);
 
             // Expecting 0 configuration in the database.

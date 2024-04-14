@@ -50,6 +50,16 @@ namespace Tests.UnitTests.Server.Passwords
         }
 
         [Fact]
+        public void TestHashingMasterPasswordNewHashMatches()
+        {
+            ReadOnlySpan<byte> plainVaultPassword = PasswordUtil.ByteArrayFromPlain("Test123");
+
+            bool hashMatches = Argon2id.VerifyHash(_correctVaultPasswordHash, plainVaultPassword);
+
+            Assert.True(hashMatches);
+        }
+
+        [Fact]
         public void TestHashingMasterPasswordDoesNotMatch()
         {
             ReadOnlySpan<byte> plainIncorrectVaultPassword = PasswordUtil.ByteArrayFromPlain("Test1234");

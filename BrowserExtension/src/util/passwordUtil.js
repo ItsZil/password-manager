@@ -18,7 +18,6 @@ export function init(sourceId, chromeCrypto) {
 // Function to initialize the crypto object from frontend scripts
 export function initPublic(sourceId, windowCrypto) {
   crypto = windowCrypto;
-  console.log(sourceId);
 
   tryHandshake(sourceId);
 }
