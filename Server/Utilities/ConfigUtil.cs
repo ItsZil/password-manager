@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Text;
 using System.Text.Json;
 
 namespace Server.Utilities
@@ -31,7 +32,8 @@ namespace Server.Utilities
                 // Set default values
                 var config = new Dictionary<string, string>
                 {
-                    { "VAULT_LOCATION", Path.Join(Path.GetTempPath(), "initialvault.db") }
+                    { "VAULT_LOCATION", Path.Join(Path.GetTempPath(), "initialvault.db") },
+                    { "JWT_SECRET_KEY", Encoding.UTF8.GetString(PasswordUtil.GenerateSecurePassword(64)) }
                 };
                 var configJson = JsonSerializer.Serialize(config);
                 File.WriteAllText(configPath, configJson);
@@ -71,6 +73,19 @@ namespace Server.Utilities
                 var newConfigJson = JsonSerializer.Serialize(config);
                 File.WriteAllText(configPath, newConfigJson);
             }
+        }
+
+        internal static byte[] GetJwtSecretKey()
+        {
+            // Read the JWT_SECRET_KEY key from the config.json file
+            var configJson = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<Dictionary<string, string>>(configJson);
+
+            if (config != null && config.ContainsKey("JWT_SECRET_KEY"))
+                return Encoding.UTF8.GetBytes(config["JWT_SECRET_KEY"]);
+
+            // This should never be reached
+            return new byte[] { };
         }
     }
 }

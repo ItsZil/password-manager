@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Server.Endpoints;
-using Server.Middleware;
 using Server.Utilities;
 using UtilitiesLibrary.Models;
 
@@ -22,8 +21,11 @@ namespace Server
                 options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
             });
 
+            builder.Services.AddScoped<ServiceCollection>();
             builder.Services.AddDbContext<SqlContext>();
             builder.Services.AddSingleton<KeyProvider>();
+
+            byte[] jwtSecretKey = Encoding.UTF8.GetBytes("FAuiusnhgunhbuafsdnhbJThisIsNotTheRealJwtSecretKeyUGIhgbjnfbds");
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -35,7 +37,11 @@ namespace Server
                     ValidateLifetime = true,
                     RequireExpirationTime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("gADOPGFjaGija3i23jI@#!#SfjiaVJSJIVJSBBS$#$#$!#$b34153afgdgsgsfgagasdfgasfgafgafs3@!q315135")),
+                    IssuerSigningKeyResolver = (token, securityToken, kid, validationParameters) =>
+                    {
+                        SymmetricSecurityKey issuerSigningKey = new SymmetricSecurityKey(ConfigUtil.GetJwtSecretKey());
+                        return new List<SecurityKey>() { issuerSigningKey };
+                    },
                     ClockSkew = TimeSpan.Zero
                 };
             });

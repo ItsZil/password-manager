@@ -9,7 +9,7 @@ namespace Server.Utilities
 {
     internal static class AuthUtil
     {
-        internal static string GenerateRefreshToken(SqlContext sqlContext)
+        internal static string GenerateRefreshToken()
         {
             using (var randomNumberGenerator = RandomNumberGenerator.Create())
             {
@@ -25,12 +25,6 @@ namespace Server.Utilities
             return refreshToken != null;
         }
 
-        internal static async Task SaveRefreshToken(string refreshToken, SqlContext sqlContext)
-        {
-            sqlContext.RefreshTokens.Add(new RefreshToken { Token = refreshToken, ExpiryDate = DateTime.UtcNow.AddDays(7) });
-            await sqlContext.SaveChangesAsync();
-        }
-
         internal static async Task UpdateRefreshToken(string oldRefreshToken, string newRefreshToken, SqlContext sqlContext)
         {
             var oldToken = sqlContext.RefreshTokens.FirstOrDefault(rt => rt.Token == oldRefreshToken);
@@ -42,9 +36,9 @@ namespace Server.Utilities
             await sqlContext.SaveChangesAsync();
         }
 
-        internal static string GenerateJwtToken()
+        internal static string GenerateJwtToken(byte[] secret)
         {
-            var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("gADOPGFjaGija3i23jI@#!#SfjiaVJSJIVJSBBS$#$#$!#$b34153afgdgsgsfgagasdfgasfgafgafs3@!q315135"));
+            var jwtKey = new SymmetricSecurityKey(secret);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -59,27 +53,6 @@ namespace Server.Utilities
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
-        }
-
-        internal static ClaimsPrincipal ValidateJwtToken(string token)
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var jwtKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("gADOPGFjaGija3i23jI@#!#SfjiaVJSJIVJSBBS$#$#$!#$b34153afgdgsgsfgagasdfgasfgafgafs3@!q315135"));
-
-            var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
-            {
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = jwtKey,
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            }, out SecurityToken validatedToken);
-
-            var jwtToken = (JwtSecurityToken)validatedToken;
-            if (jwtToken == null || !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha512, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
-
-            return principal;
         }
     }
 }

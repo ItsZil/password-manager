@@ -5,6 +5,9 @@ using UtilitiesLibrary.Models;
 using Server.Utilities;
 using System.Text;
 using System.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Server
 {
@@ -105,6 +108,7 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKey(plainMasterPassword);
+                InitializeConfiguration();
                 return true;
             }
             return false;

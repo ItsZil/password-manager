@@ -6,7 +6,6 @@ namespace Server.Utilities
     // Singleton
     public class KeyProvider
     {
-        // 32 byte midpoint key hash in hex
         private string _vaultPragmaKey = string.Empty;
 
         // Key: Source ID (0 - background, 1 - setup, 2 - popup), Value: Shared Secret
@@ -19,10 +18,6 @@ namespace Server.Utilities
 
         internal void SetVaultPragmaKey(string pragmaKey)
         {
-            //string hashInHex = BitConverter.ToString(fullPragmaHash).Replace("-", string.Empty);
-            //int midpoint = hashInHex.Length / 2;
-            //string middle32BytesHash = hashInHex.Substring(midpoint - 16, 32);
-
             _vaultPragmaKey = pragmaKey;
         }
 
