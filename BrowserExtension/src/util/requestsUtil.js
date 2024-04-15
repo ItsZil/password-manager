@@ -139,3 +139,76 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
     return false;
   }
 }
+
+// Function to check if a user has an existing vault
+// Returns: A boolean indicating if the user has an existing vault
+export async function sendHasExistingVaultRequest() {
+  const apiEndpoint = '/api/hasexistingvault';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET'
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      return result;
+    } else {
+      console.error(
+        `Failed to check if user has existing vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to check if the server is reachable
+// Returns: A boolean indicating if the server is reachable
+export async function checkIfServerReachable() {
+  try {
+    return await fetch(ServerUrl, { method: 'HEAD' })
+      .then(response => {
+        if (response.ok) {
+          return true;
+        } else {
+          return false;
+        }
+      })
+      .catch(error => {
+        return false;
+      });
+  }
+  catch (error) {
+    return false;
+  }
+}
+
+// Function to send a request to unlock the vault
+// Returns: A UnlockVaultRequestResponse
+export async function sendUnlockVaultRequest(unlockVaultRequestBody) {
+  const apiEndpoint = '/api/unlockvault';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(unlockVaultRequestBody),
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to unlock vault: ${response.status} ${response.statusText}`
+      );
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}

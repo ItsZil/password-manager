@@ -14,6 +14,7 @@ namespace Server
         internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
+        internal DbSet<RefreshToken> RefreshTokens { get; set; }
 
         private KeyProvider _keyProvider;
 
@@ -21,7 +22,6 @@ namespace Server
         private readonly string _defaultInitialPassword = "DoNotUseThisVault";
 
         internal string dbPath { get; private set; }
-        internal byte[] hashedVaultPassword = Array.Empty<byte>();
 
         private byte[] _vaultEncryptionKey = Array.Empty<byte>();
         private byte[] _salt = Array.Empty<byte>();
@@ -157,7 +157,7 @@ namespace Server
         {
             ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(plainVaultPassword);
 
-            hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
+            var hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
 
             Span<byte> generatedSalt = stackalloc byte[16];
             _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
@@ -171,7 +171,6 @@ namespace Server
                 SetVaultMasterPassword(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
                 Configuration.Add(new Configuration
                 {
-                    MasterPasswordHash = hashedVaultPassword,
                     Salt = _salt,
                     VaultEncryptionKey = _vaultEncryptionKey
                 });

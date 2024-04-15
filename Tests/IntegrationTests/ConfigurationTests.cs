@@ -169,7 +169,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
 
             var response = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -182,7 +182,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -199,7 +199,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -208,7 +208,7 @@ namespace Tests.IntegrationTests.Server
 
             string incorrectPassphrase = "definitely not the same";
             byte[] incorrectPassphraseBytes = Encoding.UTF8.GetBytes(incorrectPassphrase);
-            byte[] incorrectEncryptedPassphrase = PasswordUtil.EncryptPassword(_sharedSecretKey, incorrectPassphraseBytes);
+            byte[] incorrectEncryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, incorrectPassphraseBytes);
 
             var importVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(incorrectEncryptedPassphrase));
 

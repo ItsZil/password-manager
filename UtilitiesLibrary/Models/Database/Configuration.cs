@@ -2,11 +2,9 @@
 
 namespace UtilitiesLibrary.Models
 {
-
-    [PrimaryKey("MasterPasswordHash")]
+    [PrimaryKey("Salt")]
     public class Configuration
     {
-        public byte[] MasterPasswordHash { get; set; }
         public byte[] Salt { get; set; }
         public byte[] VaultEncryptionKey { get; set; }
     }

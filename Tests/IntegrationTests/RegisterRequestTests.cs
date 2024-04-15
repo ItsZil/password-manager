@@ -60,7 +60,7 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
         {
-            byte[] encryptedPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword"));
+            byte[] encryptedPassword = await PasswordUtil.EncryptPassword(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword"));
 
             var registerApiEndpoint = "/api/domainregisterrequest";
             var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = Convert.ToBase64String(encryptedPassword) };

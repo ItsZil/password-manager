@@ -1,6 +1,9 @@
 using System.Net;
+using System.Text;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.IdentityModel.Tokens;
 using Server.Endpoints;
 using Server.Middleware;
 using Server.Utilities;
@@ -22,6 +25,23 @@ namespace Server
             builder.Services.AddDbContext<SqlContext>();
             builder.Services.AddSingleton<KeyProvider>();
 
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("gADOPGFjaGija3i23jI@#!#SfjiaVJSJIVJSBBS$#$#$!#$b34153afgdgsgsfgagasdfgasfgafgafs3@!q315135")),
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            builder.Services.AddAuthorization();
+
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
 
@@ -29,6 +49,9 @@ namespace Server
             builder.WebHost.UseUrls("https://localhost:54782");
 
             var app = builder.Build();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             // Ensure the SQLite database is created
             using (var scope = app.Services.CreateScope())
@@ -53,8 +76,11 @@ namespace Server
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
 
+            // Map a HEAD method to allow for health checks
+            app.MapMethods("", new[] { "HEAD" }, () => { });
+
             // Middleware to check if a shared secret key has been computed (handshake process complete)
-            app.UseMiddleware<KeyMiddleware>();
+            //app.UseMiddleware<KeyMiddleware>();
 
             // Middleware to limit access to the local network
             if (!app.Environment.IsEnvironment("TEST_INTEGRATION"))

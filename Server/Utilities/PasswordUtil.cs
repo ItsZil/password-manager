@@ -85,7 +85,7 @@ namespace Server.Utilities
         /// <param name="encryptionKey">The encryption key</param>
         /// <param name="password">The password to be encrypted as a plain-text byte array</param>
         /// <returns>The encrypted password as a byte array</returns>
-        internal static byte[] EncryptPassword(byte[] encryptionKey, byte[] password)
+        internal async static Task<byte[]> EncryptPassword(byte[] encryptionKey, byte[] password)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -96,7 +96,7 @@ namespace Server.Utilities
                 {
                     using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Write))
                     {
-                        csEncrypt.Write(password, 0, password.Length);
+                        await csEncrypt.WriteAsync(password, 0, password.Length);
                         csEncrypt.FlushFinalBlock();
                     }
                     byte[] encryptedPassword = msEncrypt.ToArray();
@@ -117,7 +117,7 @@ namespace Server.Utilities
         /// <param name="encryptionKey">The encryption key</param>
         /// <param name="password">The password to be decrypted as an encrypted byte array</param>
         /// <returns>The encrypted password as a byte array</returns>
-        internal static byte[] DecryptPassword(byte[] encryptionKey, byte[] password)
+        internal async static Task<byte[]> DecryptPassword(byte[] encryptionKey, byte[] password)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -146,7 +146,7 @@ namespace Server.Utilities
 
                                     while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
                                     {
-                                        decryptedData.Write(buffer, 0, bytesRead);
+                                        await decryptedData.WriteAsync(buffer, 0, bytesRead);
                                     }
 
                                     return decryptedData.ToArray();

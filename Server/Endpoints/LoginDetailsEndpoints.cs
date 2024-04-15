@@ -36,11 +36,11 @@ namespace Server.Endpoints
             // TODO: password meets user rule requirements
 
             // Decrypt password with shared secret
-            byte[] decryptedPasswordPlain = passwordIsEncrypted ? PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(request.SourceId), password) : password;
+            byte[] decryptedPasswordPlain = passwordIsEncrypted ? await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(request.SourceId), password) : password;
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
-            byte[] encryptedPassword = PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
+            byte[] encryptedPassword = await PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
 
             // Save it to vault
             await dbContext.LoginDetails.AddAsync(new LoginDetails
@@ -52,7 +52,7 @@ namespace Server.Endpoints
             await dbContext.SaveChangesAsync();
 
             // Encrypt password with shared secret and send it back to the client
-            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+            byte[] encryptedPasswordShared = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
             DomainRegisterResponse response = new(domain, encryptedPasswordShared);
 
             return Results.Ok(response);
@@ -80,10 +80,10 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
-            byte[] decryptedPasswordPlain = PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
             // string
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
-            byte[] encryptedPasswordShared = PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+            byte[] encryptedPasswordShared = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
 
             DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false);
 

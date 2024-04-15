@@ -9,7 +9,7 @@ namespace Server.Utilities
         // 32 byte midpoint key hash in hex
         private string _vaultPragmaKey = string.Empty;
 
-        // Key: Source ID (0 - background, 1 - setup), Value: Shared Secret
+        // Key: Source ID (0 - background, 1 - setup, 2 - popup), Value: Shared Secret
         private Dictionary<int, byte[]> SharedSecrets = new Dictionary<int, byte[]>();
 
         internal bool HasVaultPragmaKey()

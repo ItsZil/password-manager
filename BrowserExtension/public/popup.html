@@ -9,66 +9,101 @@
 
   <body class="d-flex flex-column" data-bs-theme="dark">
     <main class="root">
-      <!-- User has not completed setup -->
-      <div id="initial-setup">
-        <div class="p-5 text-center">
-          <h1 class="mb-3">Welcome</h1>
-          <p class="mb-4">Choose an option to get started</p>
-
-          <button id="newVaultBtn" class="btn btn-info mb-2 w-100">
-            Create New Vault
-          </button>
-          <button id="importVaultBtn" class="btn btn-secondary w-100">
-            Import Existing Vault
-          </button>
+      <div class="container text-center mt-4">
+        <div class="col-md-4" id="connection-status-fail">
+          <div class="bi-database-fill-x" style="font-size: 45px"></div>
+          <h3 class="mb-2">Connection status: FAIL</h3>
+          <p class="animated-dots">Is the vault service running? Retrying</p>
         </div>
-      </div>
 
-      <!-- User has completed setup -->
-      <div id="setup-complete" style="display: none">
-        <div class="container text-center mt-4">
-          <div class="row">
-            <div class="col-md-4">
-              <h2>Connection status: OK</h2>
-              <p>Last request: 2024-04-10 12:53:42</p>
-            </div>
+        <div id="connection-status-ok" style="display: none">
+          <div class="col-md-4">
+            <div class="bi-database-fill-check" id="connection-ok-icon" style="font-size: 45px"></div>
+            <h3 class="mb-2">Connection status: OK</h3>
+          </div>
 
-            <!-- Divider -->
-            <hr class="my-3" />
+          <!-- User has not completed setup -->
+          <div id="initial-setup" style="display: none">
+            <div class="p-5 text-center">
+              <h1 class="mb-3">Welcome</h1>
+              <p class="mb-4">Choose an option to get started</p>
 
-            <div class="col-md-4">
-              <h2>Vault statistics</h2>
-              <p class="mb-0">Number of passwords: 10</p>
-              <p>Number of authenticators: 5</p>
+              <button id="newVaultBtn" class="btn btn-info mb-2 w-100">
+                Create New Vault
+              </button>
+              <button id="importVaultBtn" class="btn btn-secondary w-100">
+                Import Existing Vault
+              </button>
             </div>
           </div>
-        </div>
 
-        <!-- Footer -->
-        <footer class="footer mt-auto py-2 bg-body-secondary">
-          <ul class="nav justify-content-center border-bottom">
-            <li class="nav-item">
-              <a href="#" class="nav-link px-4"
-                ><i class="bi-key-fill h1"></i
-              ></a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link px-4"
-                ><i class="bi-shield-lock-fill h1"></i
-              ></a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link px-4"
-                ><i class="bi-database-fill-gear h1"></i
-              ></a>
-            </li>
-            <li class="nav-item">
-              <a href="#" class="nav-link px-4"
-                ><i class="bi-database-fill-lock h1"></i
-              ></a>
-            </li>
-          </ul>
-        </footer>
+          <div id="not-authenticated">
+            <div class="card-body text-center ps-4 pe-4">
+              <div class="mb-4">
+                <h2 class="card-title">Vault Locked</h2>
+                <p class="text-secondary-emphasis">Please enter your passphrase</p>
+              </div>
+              <div class="mb-4 input-group input-group-flat">
+                <input type="password" class="form-control" id="passphrase-input" placeholder="Passphrase" autocomplete="off">
+                <span class="input-group-text">
+                  <a href="#" class="link-secondary bi-eye" id="toggle-passphrase-visibility"></a>
+                </span>
+              </div>
+              <div>
+                <a class="btn btn-primary w-100" id="unlock-vault-button">
+                  <i class="bi-unlock-fill me-2"></i>
+                  Unlock
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- User has completed setup and is authenticated setup -->
+          <div id="authenticated-ready" style="display: none">
+            <div class="container text-center mt-4">
+              <div class="row">
+                <!-- Divider -->
+                <hr class="my-3" />
+
+                <div class="col-md-4">
+                  <h2>Vault statistics</h2>
+                  <p class="mb-0">Number of passwords: 10</p>
+                  <p>Number of authenticators: 5</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer py-3 bg-body-secondary">
+              <ul class="nav justify-content-center border-bottom">
+                <li class="nav-item">
+                  <a href="#" class="nav-link px-4">
+                    <i class="bi-key-fill h1 mb-0"></i>
+                  </a>
+                  <p class="text-light h5 mt-0">Passwords</p>
+                </li>
+                <li class="nav-item">
+                  <a href="#" class="nav-link px-4">
+                    <i class="bi-shield-lock-fill h1 mb-0"></i>
+                  </a>
+                  <p class="text-light h5 mt-0">Authenticators</p>
+                </li>
+                <li class="nav-item">
+                  <a href="#" class="nav-link px-4">
+                    <i class="bi-database-fill-gear h1 mb-0"></i>
+                  </a>
+                  <p class="text-light h5 mt-0">Options</p>
+                </li>
+                <li class="nav-item">
+                  <a href="#" class="nav-link px-4">
+                    <i class="bi-database-fill-lock h1 mb-0"></i>
+                  </a>
+                  <p class="text-light h5 mt-0">Lock</p>
+                </li>
+              </ul>
+            </footer>
+          </div>
+        </div>
       </div>
     </main>
 
