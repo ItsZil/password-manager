@@ -14,7 +14,7 @@ const {
 
 const {
   isAuthenticated,
-  setCookie
+  setTokens
 } = require('./util/authUtil.js');
 
 let serverIsUp = false;
@@ -83,8 +83,7 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setCookie('accessToken', accessToken);
-    setCookie('refreshToken', refreshToken);
+    setTokens(accessToken, refreshToken);
 
     await setElements();
   }

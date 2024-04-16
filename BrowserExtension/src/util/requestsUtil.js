@@ -1,5 +1,7 @@
 'use strict';
 
+const { getAccessToken } = require('./authUtil.js');
+
 // Constants
 const ServerUrl = 'https://localhost:54782';
 
@@ -9,10 +11,13 @@ export async function domainLoginRequest(domainLoginRequestBody) {
   const apiEndpoint = '/api/domainloginrequest';
 
   try {
+    const accessToken = await getAccessToken();
+    
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainLoginRequestBody),
     });
@@ -20,6 +25,8 @@ export async function domainLoginRequest(domainLoginRequestBody) {
     if (response.status === 200) {
       const responseJson = await response.json();
       return responseJson;
+    } else if (response.status == 401) {
+      // TODO: not logged in
     } else {
       console.error(
         `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
@@ -37,16 +44,21 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
   const apiEndpoint = '/api/domainregisterrequest';
 
   try {
+    const accessToken = await getAccessToken();
+
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainRegisterRequestBody),
     });
 
     if (response.status === 200) {
       return response.json();
+    } else if (response.status == 401) {
+      // TODO: not logged in
     } else {
       console.error(
         `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
@@ -126,8 +138,9 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
       body: JSON.stringify(setupVaultRequestBody),
     });
 
-    if (response.status === 200) {
-      return true;
+    if (response.status === 201) {
+      const json = await response.json();
+      return json;
     } else {
       console.error(
         `Failed to setup new vault: ${response.status} ${response.statusText}`

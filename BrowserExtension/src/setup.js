@@ -11,6 +11,11 @@ const {
   domainRegisterRequest
 } = require('./util/requestsUtil.js');
 
+const {
+  isAuthenticated,
+  setTokens
+} = require('./util/authUtil.js');
+
 $(document).ready(async function () {
   initPublic(1, window.crypto);
   await waitForHandshake();
@@ -96,8 +101,8 @@ $(document).ready(async function () {
 
     $('#vault-creation-progress-modal').show();
 
-    const setupSucceeded = await sendSetupVaultRequest(setupVaultRequestBody);
-    if (setupSucceeded) {
+    const tokenResponse = await sendSetupVaultRequest(setupVaultRequestBody);
+    if (tokenResponse) {
       // Show success UI
       $('#vault-creation-progress-modal').hide();
       $('#page-title').text('Your vault is ready');
@@ -109,6 +114,11 @@ $(document).ready(async function () {
       $('#setup-complete-message').show();
 
       $('#import-hint').hide();
+
+      const accessToken = tokenResponse.accessToken;
+      const refreshToken = tokenResponse.refreshToken;
+
+      setTokens(accessToken, refreshToken);
     }
   });
 });

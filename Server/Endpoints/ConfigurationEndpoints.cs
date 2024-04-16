@@ -100,7 +100,11 @@ namespace Server.Endpoints
             {
                 return Results.BadRequest("Failed to open vault connection.");
             }
-            return Results.Ok();
+
+            string accessToken = AuthUtil.GenerateJwtToken(ConfigUtil.GetJwtSecretKey());
+            string refreshToken = await AuthUtil.GenerateRefreshToken(sqlContext);
+
+            return Results.Created(string.Empty, new TokenResponse { AccessToken = accessToken, RefreshToken = refreshToken });
         }
 
         internal async static Task<IResult> UnlockVault([FromBody] UnlockVaultRequest unlockRequest, SqlContext sqlContext, KeyProvider keyProvider)
@@ -123,10 +127,7 @@ namespace Server.Endpoints
 
             // Generate a JWT token
             var jwtToken = AuthUtil.GenerateJwtToken(ConfigUtil.GetJwtSecretKey());
-            var refreshToken = AuthUtil.GenerateRefreshToken();
-
-            await sqlContext.RefreshTokens.AddAsync(new RefreshToken { Token = refreshToken, ExpiryDate = DateTime.Now.AddDays(7) });
-            await sqlContext.SaveChangesAsync();
+            var refreshToken = await AuthUtil.GenerateRefreshToken(sqlContext);
 
             return Results.Created(string.Empty, new TokenResponse { AccessToken = jwtToken, RefreshToken = refreshToken });
         }
@@ -146,7 +147,7 @@ namespace Server.Endpoints
             }
 
             var jwtToken = AuthUtil.GenerateJwtToken(ConfigUtil.GetJwtSecretKey());
-            var newRefreshToken = AuthUtil.GenerateRefreshToken();
+            var newRefreshToken = await AuthUtil.GenerateRefreshToken(sqlContext);
 
             await AuthUtil.UpdateRefreshToken(oldRefreshToken, newRefreshToken, sqlContext);
 

@@ -5,56 +5,67 @@ const { jwtDecode } = require("jwt-decode");
 
 // Function to check if the user is authenticated
 export async function isAuthenticated() {
-  const accessTokenCookie = await getCookie("accessToken");
-
-  console.log('checking auth');
+  const accessTokenCookie = await getCookie('accessToken');
 
   // Check if the access token cookie exists
   if (accessTokenCookie) {
-    console.log('has access token.. checking if expired')
     const accessToken = accessTokenCookie.value;
 
     // Check if decoded access token is expired
-    const decodedToken = jwtDecode(accessToken);
-    const isExpired = decodedToken.exp < Date.now() / 1000;
+    let isExpired = true;
+    try {
+      const decodedToken = jwtDecode(accessToken);
+      isExpired = decodedToken.exp < Date.now() / 1000;
+    }
+    catch (error) {
+      console.error('Error decoding access token: ', error);
+    }
+
 
     if (isExpired) {
-      console.log('access token is expired');
       // Check if user has a refresh token
       const refreshTokenCookie = await getCookie("refreshToken");
+
       if (refreshTokenCookie) {
-        console.log('has refresh token cookie')
         const refreshToken = refreshTokenCookie.value;
 
         // Send a refresh token request to the server
         const refreshTokenResponse = await sendRefreshTokenRequest(refreshToken);
+
         if (refreshTokenResponse != false) {
           // Refresh token succeeded
           const newAccessToken = refreshTokenResponse.accessToken;
           const newRefreshToken = refreshTokenResponse.refreshToken;
 
-          console.log('refresh succeeded! new token: ', newAccessToken);
-
           // Store the new access token and refresh token in cookies
-          setCookie("accessToken", newAccessToken);
-          setCookie("refreshToken", newRefreshToken);
+          setTokens(newAccessToken, newRefreshToken);
 
           return true;
         }
-        else {
-          console.log('refresh failed, got ' + refreshTokenResponse);
-        }
       }
     } else {
-      console.log('access token is valid');
       // Access token is valid
       return true;
     }
   }
-
-  console.log('no tokens found');
   // No valid access or refresh tokens found
   return false;
+}
+
+// Function to get the access token
+export async function getAccessToken() {
+  const isAuthenticatedResult = await isAuthenticated();
+  if (isAuthenticatedResult) {
+    const accessTokenCookie = await getCookie("accessToken");
+    return accessTokenCookie.value;
+  } else {
+    return null;
+  }
+}
+
+export function setTokens(accessToken, refreshToken) {
+  setCookie('accessToken', accessToken);
+  setCookie('refreshToken', refreshToken);
 }
 
 // Function to retrieve a cookie by name

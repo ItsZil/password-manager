@@ -1,7 +1,6 @@
 ﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using System.Security.Cryptography;
 using UtilitiesLibrary.Models;
 
@@ -9,13 +8,18 @@ namespace Server.Utilities
 {
     internal static class AuthUtil
     {
-        internal static string GenerateRefreshToken()
+        internal static async Task<string> GenerateRefreshToken(SqlContext sqlContext)
         {
             using (var randomNumberGenerator = RandomNumberGenerator.Create())
             {
                 var randomBytes = new byte[64];
                 randomNumberGenerator.GetBytes(randomBytes);
-                return Convert.ToBase64String(randomBytes);
+                string refreshToken = Convert.ToBase64String(randomBytes);
+
+                await sqlContext.RefreshTokens.AddAsync(new RefreshToken { Token = refreshToken, ExpiryDate = DateTime.Now.AddDays(3) });
+                await sqlContext.SaveChangesAsync();
+
+                return refreshToken;
             }
         }
 
@@ -32,7 +36,6 @@ namespace Server.Utilities
             {
                 sqlContext.RefreshTokens.Remove(oldToken); // Invalidate the old refresh token
             }
-            sqlContext.RefreshTokens.Add(new RefreshToken { Token = newRefreshToken, ExpiryDate = DateTime.UtcNow.AddDays(7) });
             await sqlContext.SaveChangesAsync();
         }
 
@@ -46,7 +49,7 @@ namespace Server.Utilities
                 {
                     new Claim(ClaimTypes.Name, "1")
                 }),
-                Expires = DateTime.UtcNow.AddMinutes(1),
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(jwtKey, SecurityAlgorithms.HmacSha512)
             };
 
