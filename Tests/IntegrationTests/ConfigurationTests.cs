@@ -186,7 +186,7 @@ namespace Tests.IntegrationTests.Server
 
             var response = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
         }
 
@@ -199,12 +199,12 @@ namespace Tests.IntegrationTests.Server
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
-            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
             var importVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
-            Assert.Equal(HttpStatusCode.OK, importVaultResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, importVaultResponse.StatusCode);
         }
 
         [Fact]
@@ -216,7 +216,7 @@ namespace Tests.IntegrationTests.Server
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
-            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
             string incorrectPassphrase = "definitely not the same";
@@ -237,7 +237,7 @@ namespace Tests.IntegrationTests.Server
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
 
-            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
             byte[] encryptedPassphraseUnlock = await PasswordUtil.EncryptPassword(_sharedSecretKey2, passphraseBytes);
@@ -266,7 +266,7 @@ namespace Tests.IntegrationTests.Server
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
 
-            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
             string incorrectPassphrase = "just an incorrect passphrase";

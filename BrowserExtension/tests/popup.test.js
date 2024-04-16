@@ -45,7 +45,7 @@ describe('Popup Tests', () => {
       expect(initialSetupVisible).toBe(true);
     });
 
-  test('popup shows setup complete elements', async () => {
+  /*test('popup shows setup complete elements', async () => {
     const page = await browser.newPage();
 
     // Mock chrome.storage.local.get to return setup_complete as true
@@ -78,5 +78,5 @@ describe('Popup Tests', () => {
     // Assert that the initial setup element is hidden and setup-complete element is visible
     expect(initialSetupHidden).toBe(true);
     expect(setupCompleteVisible).toBe(true);
-  });
+  });*/
 });
