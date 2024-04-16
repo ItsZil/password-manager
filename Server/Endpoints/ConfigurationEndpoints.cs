@@ -64,7 +64,6 @@ namespace Server.Endpoints
             return Results.Ok(new GeneratedPasswordResponse { PasswordBase64 = Convert.ToBase64String(passwordEncrypted) });
         }
 
-        [Authorize]
         internal static IResult IsAbsolutePathValid([FromBody] PathCheckRequest pathRequest)
         {
             string path = Uri.UnescapeDataString(pathRequest.AbsolutePathUri);
@@ -129,7 +128,7 @@ namespace Server.Endpoints
             await sqlContext.RefreshTokens.AddAsync(new RefreshToken { Token = refreshToken, ExpiryDate = DateTime.Now.AddDays(7) });
             await sqlContext.SaveChangesAsync();
 
-            return Results.Created(string.Empty, new { Token = jwtToken, RefreshToken = refreshToken });
+            return Results.Created(string.Empty, new TokenResponse { AccessToken = jwtToken, RefreshToken = refreshToken });
         }
 
         internal static async Task<IResult> RefreshToken([FromBody] RefreshTokenRequest request, SqlContext sqlContext, KeyProvider keyProvider)
@@ -151,7 +150,7 @@ namespace Server.Endpoints
 
             await AuthUtil.UpdateRefreshToken(oldRefreshToken, newRefreshToken, sqlContext);
 
-            return Results.Created(string.Empty, new RefreshTokenResponse { AccessToken = jwtToken, RefreshToken = newRefreshToken });
+            return Results.Created(string.Empty, new TokenResponse { AccessToken = jwtToken, RefreshToken = newRefreshToken });
         }
 
         [Authorize]

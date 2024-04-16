@@ -15,7 +15,8 @@ namespace Tests.IntegrationTests.Server
         private HttpClient _client;
         private WebApplicationFactory<Program> _factory;
 
-        private readonly byte[] _sharedSecretKey;
+        private readonly byte[] _sharedSecretKey1;
+        private readonly byte[] _sharedSecretKey2;
 
         private readonly string _runningTestVaultLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"vault_{Guid.NewGuid()}");
 
@@ -33,7 +34,9 @@ namespace Tests.IntegrationTests.Server
                 builder.UseEnvironment("TEST_INTEGRATION");
             });
             _client = _factory.CreateClient();
-            _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client, 1);
+
+            _sharedSecretKey1 = CompleteTestHandshake.GetSharedSecret(_client, 1);
+            _sharedSecretKey2 = CompleteTestHandshake.GetSharedSecret(_client, 2);
         }
 
         public void Dispose()
@@ -83,6 +86,16 @@ namespace Tests.IntegrationTests.Server
             var apiEndpoint = "api/setupvault";
             var setupVaultRequest = new SetupVaultRequest { AbsolutePathUri = Uri.EscapeDataString(path), VaultRawKeyBase64 = vaultRawKeyBase64 };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(setupVaultRequest), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> UnlockVaultAsync(string encryptedPassphraseB64)
+        {
+            var apiEndpoint = "api/unlockvault";
+            var unlockVaultRequest = new UnlockVaultRequest { PassphraseBase64 = encryptedPassphraseB64 };
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(unlockVaultRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
             return response;
@@ -169,7 +182,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey1, passphraseBytes);
 
             var response = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -182,7 +195,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey1, passphraseBytes);
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -199,7 +212,7 @@ namespace Tests.IntegrationTests.Server
         {
             string passphrase = "just a test passphrase";
             byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
-            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, passphraseBytes);
+            byte[] encryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey1, passphraseBytes);
 
             var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphrase));
 
@@ -208,11 +221,61 @@ namespace Tests.IntegrationTests.Server
 
             string incorrectPassphrase = "definitely not the same";
             byte[] incorrectPassphraseBytes = Encoding.UTF8.GetBytes(incorrectPassphrase);
-            byte[] incorrectEncryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey, incorrectPassphraseBytes);
+            byte[] incorrectEncryptedPassphrase = await PasswordUtil.EncryptPassword(_sharedSecretKey1, incorrectPassphraseBytes);
 
             var importVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(incorrectEncryptedPassphrase));
 
             Assert.Equal(HttpStatusCode.BadRequest, importVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestUnlockVaultCorrectPassphraseReturnsTokens()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphraseSetup = await PasswordUtil.EncryptPassword(_sharedSecretKey1, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
+
+            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            byte[] encryptedPassphraseUnlock = await PasswordUtil.EncryptPassword(_sharedSecretKey2, passphraseBytes);
+            var unlockVaultResponse = await UnlockVaultAsync(Convert.ToBase64String(encryptedPassphraseUnlock));
+
+            Assert.Equal(HttpStatusCode.Created, unlockVaultResponse.StatusCode);
+
+            string responseString = await unlockVaultResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            TokenResponse? responseObj = JsonSerializer.Deserialize<TokenResponse>(responseString);
+
+            Assert.NotNull(responseObj);
+            Assert.IsType<TokenResponse>(responseObj);
+            Assert.False(string.IsNullOrWhiteSpace(responseObj.AccessToken));
+            Assert.False(string.IsNullOrWhiteSpace(responseObj.RefreshToken));
+        }
+
+
+        [Fact]
+        public async Task TestUnlockVaultIncorrectPassphraseReturnsForbidden()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphraseSetup = await PasswordUtil.EncryptPassword(_sharedSecretKey1, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
+
+            Assert.Equal(HttpStatusCode.OK, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            string incorrectPassphrase = "just an incorrect passphrase";
+            byte[] incorrectPassphraseBytes = Encoding.UTF8.GetBytes(incorrectPassphrase);
+            byte[] encryptedPassphraseUnlock = await PasswordUtil.EncryptPassword(_sharedSecretKey2, incorrectPassphraseBytes);
+
+            var unlockVaultResponse = await UnlockVaultAsync(Convert.ToBase64String(encryptedPassphraseUnlock));
+
+            Assert.Equal(HttpStatusCode.Forbidden, unlockVaultResponse.StatusCode);
         }
     }
 }

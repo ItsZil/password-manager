@@ -2,7 +2,7 @@
 
 namespace UtilitiesLibrary.Models
 {
-    internal class RefreshTokenResponse
+    internal class TokenResponse
     {
         [JsonInclude]
         [JsonPropertyName("accessToken")]

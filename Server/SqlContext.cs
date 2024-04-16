@@ -54,7 +54,7 @@ namespace Server
             _keyProvider = keyProvider;
 
             Database.EnsureCreated();
-            InitializeConfiguration();
+            _ = InitializeConfiguration();
         }
 
         // This constructor is used in unit tests.
@@ -67,7 +67,7 @@ namespace Server
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
+            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword)).EnableSensitiveDataLogging();
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
@@ -90,12 +90,17 @@ namespace Server
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 
             await using var connection = Database.GetDbConnection();
+            
+            // Close existing connection
+            await connection.CloseAsync();
+
+            // Re-open the connection with the new connection string
             connection.ConnectionString = newConnectionString;
 
             try
             {
                 await Database.EnsureCreatedAsync();
-                await connection.OpenAsync(); // Re-open the connection with the new connection string
+                await connection.OpenAsync();
             }
             catch (SqliteException ex)
             {
@@ -108,7 +113,7 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKey(plainMasterPassword);
-                InitializeConfiguration();
+                await InitializeConfiguration();
                 return true;
             }
             return false;
@@ -168,7 +173,7 @@ namespace Server
             _salt = generatedSalt.ToArray();
         }
 
-        private void InitializeConfiguration()
+        private async Task InitializeConfiguration()
         {
             if (Configuration.Count() == 0 && _keyProvider.HasVaultPragmaKey())
             {
@@ -178,7 +183,7 @@ namespace Server
                     Salt = _salt,
                     VaultEncryptionKey = _vaultEncryptionKey
                 });
-                SaveChanges();
+                await SaveChangesAsync();
             }
         }
     }

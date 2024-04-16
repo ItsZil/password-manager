@@ -14,7 +14,6 @@ const {
 
 const {
   isAuthenticated,
-  getCookie,
   setCookie
 } = require('./util/authUtil.js');
 
@@ -87,7 +86,7 @@ $('#unlock-vault-button').on('click', async function () {
     setCookie('accessToken', accessToken);
     setCookie('refreshToken', refreshToken);
 
-        await setElements();
+    await setElements();
   }
 });
 
