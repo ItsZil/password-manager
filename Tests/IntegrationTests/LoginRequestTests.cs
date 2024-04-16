@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -16,6 +17,7 @@ namespace Tests.IntegrationTests.Server
         private WebApplicationFactory<Program> _factory;
 
         private readonly byte[] _sharedSecretKey;
+        private readonly string _accessToken;
 
         public LoginRequestTests()
         {
@@ -26,6 +28,10 @@ namespace Tests.IntegrationTests.Server
             });
             _client = _factory.CreateClient();
             _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client);
+
+            byte[] unlockSharedSecret = CompleteTestHandshake.GetSharedSecret(_client, 2);
+            _accessToken = CompleteTestAuth.GetAccessToken(_client, unlockSharedSecret);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         }
 
         public void Dispose()

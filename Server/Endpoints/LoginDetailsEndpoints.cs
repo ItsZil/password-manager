@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
 using UtilitiesLibrary.Models;
@@ -15,6 +16,7 @@ namespace Server.Endpoints
             return group;
         }
 
+        [Authorize]
         internal async static Task<IResult> DomainRegisterRequest([FromBody] DomainRegisterRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             string domain = request.Domain;
@@ -58,6 +60,7 @@ namespace Server.Endpoints
             return Results.Ok(response);
         }
 
+        [Authorize]
         internal async static Task<IResult> DomainLoginRequest([FromBody] DomainLoginRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             // If the username is null, respond with first found login details for the domain
@@ -81,7 +84,6 @@ namespace Server.Endpoints
                 return Results.NotFound();
 
             byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
-            // string
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
 
