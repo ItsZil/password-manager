@@ -30,7 +30,7 @@ namespace Server.Utilities
             var oldToken = sqlContext.RefreshTokens.FirstOrDefault(rt => rt.Token == oldRefreshToken);
             if (oldToken != null)
             {
-                oldToken.ExpiryDate = DateTime.UtcNow; // Invalidate the old refresh token
+                sqlContext.RefreshTokens.Remove(oldToken); // Invalidate the old refresh token
             }
             sqlContext.RefreshTokens.Add(new RefreshToken { Token = newRefreshToken, ExpiryDate = DateTime.UtcNow.AddDays(7) });
             await sqlContext.SaveChangesAsync();

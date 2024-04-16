@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
 using System.Reflection;
 using System.Text;
@@ -111,8 +112,8 @@ namespace Server.Endpoints
                 return Results.BadRequest("Passphrase is empty.");
             }
 
-            //byte[] passphrasePlain = await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
-            string passphraseString = "unison spill grading garment";//Encoding.UTF8.GetString(passphrasePlain);
+            byte[] passphrasePlain = await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
+            string passphraseString = Encoding.UTF8.GetString(passphrasePlain);
 
             // Attempt to unlock the vault
             bool successfullyOpened = await sqlContext.UpdateDatabaseConnection(ConfigUtil.GetVaultLocation(), passphraseString);
@@ -133,6 +134,11 @@ namespace Server.Endpoints
 
         internal static async Task<IResult> RefreshToken([FromBody] RefreshTokenRequest request, SqlContext sqlContext, KeyProvider keyProvider)
         {
+            if (!keyProvider.HasVaultPragmaKey())
+            {
+                return Results.BadRequest("Vault is not unlocked.");
+            }
+
             string oldRefreshToken = request.RefreshToken;
 
             if (!AuthUtil.ValidateRefreshToken(oldRefreshToken, sqlContext))
@@ -140,28 +146,27 @@ namespace Server.Endpoints
                 return Results.BadRequest("Invalid refresh token.");
             }
 
-            if (!keyProvider.HasVaultPragmaKey())
-            {
-                return Results.BadRequest("Vault is not unlocked.");
-            }
-
             var jwtToken = AuthUtil.GenerateJwtToken(ConfigUtil.GetJwtSecretKey());
             var newRefreshToken = AuthUtil.GenerateRefreshToken();
 
             await AuthUtil.UpdateRefreshToken(oldRefreshToken, newRefreshToken, sqlContext);
 
-            return Results.Created(string.Empty, new { Token = jwtToken, RefreshToken = newRefreshToken });
+            return Results.Created(string.Empty, new RefreshTokenResponse { AccessToken = jwtToken, RefreshToken = newRefreshToken });
         }
 
         [Authorize]
         internal static async Task<IResult> LockVault(SqlContext sqlContext)
         {
-            var refreshToken = sqlContext.RefreshTokens.FirstOrDefault(rt => rt.ExpiryDate > DateTime.UtcNow);
-            if (refreshToken != null)
+            var validRefreshTokens = sqlContext.RefreshTokens.Where(rt => rt.ExpiryDate > DateTime.UtcNow);
+            if (validRefreshTokens.Count() > 0)
             {
-                refreshToken.ExpiryDate = DateTime.UtcNow;
+                // Invalidate all refresh tokens.
+                await validRefreshTokens.ForEachAsync(rt => rt.ExpiryDate = DateTime.UtcNow);
+                await sqlContext.SaveChangesAsync();
             }
-            await sqlContext.SaveChangesAsync();
+
+            // Reset the JWT secret key
+            ConfigUtil.ResetJwtSecretKey();
 
             return Results.NoContent();
         }

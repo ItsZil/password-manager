@@ -200,12 +200,42 @@ export async function sendUnlockVaultRequest(unlockVaultRequestBody) {
       body: JSON.stringify(unlockVaultRequestBody),
     });
 
-    if (response.status === 200) {
+    if (response.status === 201) {
       return response.json();
     } else {
       console.error(
         `Failed to unlock vault: ${response.status} ${response.statusText}`
       );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to refresh the access token
+// Returns a RefreshTokenResponse
+export async function sendRefreshTokenRequest(refreshToken) {
+  const apiEndpoint = '/api/refreshtoken';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: refreshToken }),
+    });
+
+    if (response.status === 201) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to refresh token: ${response.status} ${response.statusText}`
+      );
+      return false;
     }
   } catch (error) {
     console.error('Error retrieving response: ', error);

@@ -87,5 +87,22 @@ namespace Server.Utilities
             // This should never be reached
             return new byte[] { };
         }
+
+        internal static void ResetJwtSecretKey()
+        {
+            byte[] newKey = PasswordUtil.GenerateSecurePassword();
+            string newKeyString = Encoding.UTF8.GetString(newKey);
+
+            // Add it as the JWT_SECRET_KEY key in the config.json file
+            var configJson = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<Dictionary<string, string>>(configJson);
+
+            if (config != null)
+            {
+                config["JWT_SECRET_KEY"] = newKeyString;
+                var newConfigJson = JsonSerializer.Serialize(config);
+                File.WriteAllText(configPath, newConfigJson);
+            }
+        }
     }
 }

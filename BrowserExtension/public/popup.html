@@ -41,19 +41,30 @@
             <div class="card-body text-center ps-4 pe-4">
               <div class="mb-4">
                 <h2 class="card-title">Vault Locked</h2>
-                <p class="text-secondary-emphasis">Please enter your passphrase</p>
               </div>
-              <div class="mb-4 input-group input-group-flat">
-                <input type="password" class="form-control" id="passphrase-input" placeholder="Passphrase" autocomplete="off">
-                <span class="input-group-text">
-                  <a href="#" class="link-secondary bi-eye" id="toggle-passphrase-visibility"></a>
-                </span>
+
+              <div id="passphrase-input-fields">
+                <p class="text-secondary-emphasis mt-0">Please enter your passphrase</p>
+                <div class="mb-3 input-group input-group-flat">
+                  <input type="password" class="form-control" id="passphrase-input" placeholder="Passphrase" autocomplete="off">
+                  <span class="input-group-text">
+                    <a href="#" class="link-secondary bi-eye" id="toggle-passphrase-visibility"></a>
+                  </span>
+                </div>
+                <div>
+                  <a class="btn btn-primary w-100 mb-4" id="unlock-vault-button">
+                    <i class="bi-unlock-fill me-2"></i>
+                    Unlock
+                  </a>
+                </div>
               </div>
-              <div>
-                <a class="btn btn-primary w-100" id="unlock-vault-button">
-                  <i class="bi-unlock-fill me-2"></i>
-                  Unlock
-                </a>
+
+              <div id="unlock-in-progress" style="display: none">
+                <div class="modal-title mb-4">Unlocking vault</div>
+                <div class="spinner-border mb-2"></div>
+                <div class="text-secondary-emphasis mb-4">
+                  This won't take long.
+                </div>
               </div>
             </div>
           </div>
@@ -72,39 +83,40 @@
                 </div>
               </div>
             </div>
-
-            <!-- Footer -->
-            <footer class="footer py-3 bg-body-secondary">
-              <ul class="nav justify-content-center border-bottom">
-                <li class="nav-item">
-                  <a href="#" class="nav-link px-4">
-                    <i class="bi-key-fill h1 mb-0"></i>
-                  </a>
-                  <p class="text-light h5 mt-0">Passwords</p>
-                </li>
-                <li class="nav-item">
-                  <a href="#" class="nav-link px-4">
-                    <i class="bi-shield-lock-fill h1 mb-0"></i>
-                  </a>
-                  <p class="text-light h5 mt-0">Authenticators</p>
-                </li>
-                <li class="nav-item">
-                  <a href="#" class="nav-link px-4">
-                    <i class="bi-database-fill-gear h1 mb-0"></i>
-                  </a>
-                  <p class="text-light h5 mt-0">Options</p>
-                </li>
-                <li class="nav-item">
-                  <a href="#" class="nav-link px-4">
-                    <i class="bi-database-fill-lock h1 mb-0"></i>
-                  </a>
-                  <p class="text-light h5 mt-0">Lock</p>
-                </li>
-              </ul>
-            </footer>
           </div>
         </div>
       </div>
+
+
+      <!-- Footer -->
+      <footer class="footer py-3 bg-body-secondary text-center" id="footer" style="display: none">
+        <ul class="nav justify-content-center border-bottom">
+          <li class="nav-item">
+            <a href="#" class="nav-link px-4">
+              <i class="bi-key-fill h1 mb-0"></i>
+            </a>
+            <p class="text-light h5 mt-0">Passwords</p>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link px-4">
+              <i class="bi-shield-lock-fill h1 mb-0"></i>
+            </a>
+            <p class="text-light h5 mt-0">Authenticators</p>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link px-4">
+              <i class="bi-database-fill-gear h1 mb-0"></i>
+            </a>
+            <p class="text-light h5 mt-0">Options</p>
+          </li>
+          <li class="nav-item">
+            <a href="#" class="nav-link px-4">
+              <i class="bi-database-fill-lock h1 mb-0"></i>
+            </a>
+            <p class="text-light h5 mt-0">Lock</p>
+          </li>
+        </ul>
+      </footer>
     </main>
 
     <script src="./popup.js"></script>

@@ -25,8 +25,6 @@ namespace Server
             builder.Services.AddDbContext<SqlContext>();
             builder.Services.AddSingleton<KeyProvider>();
 
-            byte[] jwtSecretKey = Encoding.UTF8.GetBytes("FAuiusnhgunhbuafsdnhbJThisIsNotTheRealJwtSecretKeyUGIhgbjnfbds");
-
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {

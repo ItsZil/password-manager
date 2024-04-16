@@ -7,7 +7,15 @@ const {
 } = require('./util/requestsUtil.js');
 
 const {
-  isAuthenticated
+  initPublic,
+  isHandshakeComplete,
+  encryptPassword
+} = require('./util/passwordUtil.js');
+
+const {
+  isAuthenticated,
+  getCookie,
+  setCookie
 } = require('./util/authUtil.js');
 
 let serverIsUp = false;
@@ -39,6 +47,9 @@ $('#toggle-passphrase-visibility').on('click', function () {
 });
 
 $('#unlock-vault-button').on('click', async function () {
+  if (!isHandshakeComplete()) {
+    return;
+  }
   const passphrase = $('#passphrase-input').val();
 
   const words = passphrase.split(' ');
@@ -49,15 +60,46 @@ $('#unlock-vault-button').on('click', async function () {
     return false;
   }
 
-  const response = await sendUnlockVaultRequest(passphrase);
+  const encryptedPassphrase = await encryptPassword(passphrase);
+  const unlockVaultRequestBody = {
+    passphraseBase64: encryptedPassphrase
+  }
+
+  // Set UI elements to indicate that we are loading
+  $('#passphrase-input-fields').hide();
+  $('#unlock-in-progress').show();
+
+  const response = await sendUnlockVaultRequest(unlockVaultRequestBody);
+  console.log(response);
+
+  if (response == false) {
+    // Unlock failed.
+    $('#passphrase-input-fields').show();
+    $('#unlock-in-progress').hide();
+  } else {
+    // Unlock succeeded.
+    isUserAuthenticated = true;
+
+    const accessToken = response.token;
+    const refreshToken = response.refreshToken;
+
+    // Store accessToken and refreshToken in a secure HttpOnly cookie
+    setCookie('accessToken', accessToken);
+    setCookie('refreshToken', refreshToken);
+
+        await setElements();
+  }
 });
 
 $(async () => {
+  initPublic(2, window.crypto);
+
   serverIsUp = await checkIfServerReachable();
   isUserAuthenticated = await isAuthenticated();
 
   await setElements();
   await ConfirmServerStatus();
+  await ConfirmIsAuthenticated();
 });
 
 // Check every 2 seconds if the server is reachable
@@ -95,7 +137,7 @@ async function setElements() {
     const authenticatedReadyElement = $('#authenticated-ready');
     const notAuthenticatedElement = $('#not-authenticated');
 
-    if (serverIsUp && result.setup_complete && hasExistingVault) {
+    if (serverIsUp && hasExistingVault) {
       // Display the default popup.
       initialSetupElement.hide();
 
@@ -104,6 +146,10 @@ async function setElements() {
         authenticatedReadyElement.show();
         notAuthenticatedElement.hide();
 
+        $('#passphrase-input-fields').hide();
+        $('#unlock-in-progress').hide();
+
+        $('#footer').show();
         $('#connection-ok-icon').removeClass('bi-database-fill-lock').addClass('bi-database-fill-check');
       } else {
         // User is not authenticated, display only login element.
