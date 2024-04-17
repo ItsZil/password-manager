@@ -82,7 +82,7 @@ namespace Server
             ConfigUtil.SetVaultLocation(newPath);
             dbPath = newPath;
 
-            GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
+            //GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
 
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 

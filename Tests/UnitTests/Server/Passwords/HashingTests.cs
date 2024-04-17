@@ -92,7 +92,7 @@ namespace Tests.UnitTests.Server.Passwords
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
 
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            byte[] passwordHash = await PasswordUtil.EncryptMessage(_correctSharedEncryptionKey, plainPassword);
 
             Assert.NotEqual(plainPassword, passwordHash);
             Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), PasswordUtil.PlainFromContainer(passwordHash));
@@ -102,9 +102,9 @@ namespace Tests.UnitTests.Server.Passwords
         public async Task TestDecryptPasswordCorrectKey()
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            byte[] passwordHash = await PasswordUtil.EncryptMessage(_correctSharedEncryptionKey, plainPassword);
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(_correctSharedEncryptionKey, passwordHash);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptMessage(_correctSharedEncryptionKey, passwordHash);
             string decryptedPassword = PasswordUtil.PlainFromContainer(decryptedPasswordPlain);
 
             Assert.Equal(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
@@ -114,9 +114,9 @@ namespace Tests.UnitTests.Server.Passwords
         public async Task TestDecryptPasswordIncorrectKey()
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            byte[] passwordHash = await PasswordUtil.EncryptMessage(_correctSharedEncryptionKey, plainPassword);
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(_incorrectSharedEncryptionKey, passwordHash);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptMessage(_incorrectSharedEncryptionKey, passwordHash);
             string decryptedPassword = PasswordUtil.PlainFromContainer(decryptedPasswordPlain);
 
             Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);

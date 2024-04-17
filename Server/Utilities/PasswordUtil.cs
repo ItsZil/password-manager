@@ -76,7 +76,7 @@ namespace Server.Utilities
             Span<byte> encryptionKey = stackalloc byte[32];
             SecureRandom.Fill(salt);
 
-            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 268435456);
+            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 67108864);
 
             return ByteArrayFromSpan(encryptionKey);
         }
@@ -85,18 +85,44 @@ namespace Server.Utilities
         {
             Span<byte> encryptionKey = stackalloc byte[32];
 
-            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 268435456);
+            Argon2id.DeriveKey(encryptionKey, sourcePassword, salt, 3, 67108864);
 
             return ByteArrayFromSpan(encryptionKey);
         }
 
+        internal async static Task<(byte[], byte[])> EncryptPassword(byte[] sourcePassword)
+        {
+            // Generate a random salt
+            byte[] salt = new byte[32];
+            SecureRandom.Fill(salt);
+
+            // Derive an encryption key from the master password
+            byte[] encryptionKey = DeriveEncryptionKeyFromMasterPassword(sourcePassword, salt);
+
+            // Encrypt the password using the derived key
+            byte[] encryptedPassword = await EncryptMessage(encryptionKey, sourcePassword);
+
+            return (encryptedPassword, salt);
+        }
+
+        internal async static Task<byte[]> DecryptPassword(byte[] sourcePassword, byte[] salt)
+        {
+            // Derive an encryption key from the master password
+            byte[] encryptionKey = DeriveEncryptionKeyFromMasterPassword(sourcePassword, salt);
+
+            // Decrypt the password using the derived key
+            byte[] decryptedPassword = await DecryptMessage(encryptionKey, sourcePassword);
+
+            return decryptedPassword;
+        }
+
         /// <summary>
-        /// Encrypts a password using AES encryption with a provided encryption key
+        /// Encrypts a message using AES encryption with a provided encryption key
         /// </summary>
         /// <param name="encryptionKey">The encryption key</param>
-        /// <param name="password">The password to be encrypted as a plain-text byte array</param>
-        /// <returns>The encrypted password as a byte array</returns>
-        internal async static Task<byte[]> EncryptPassword(byte[] encryptionKey, byte[] password)
+        /// <param name="message">The message to be encrypted as a plain-text byte array</param>
+        /// <returns>The encrypted message as a byte array</returns>
+        internal async static Task<byte[]> EncryptMessage(byte[] encryptionKey, byte[] message)
         {
             using (Aes aesAlg = Aes.Create())
             {
@@ -107,15 +133,15 @@ namespace Server.Utilities
                 {
                     using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Write))
                     {
-                        await csEncrypt.WriteAsync(password, 0, password.Length);
+                        await csEncrypt.WriteAsync(message, 0, message.Length);
                         csEncrypt.FlushFinalBlock();
                     }
-                    byte[] encryptedPassword = msEncrypt.ToArray();
+                    byte[] encryptedMessage = msEncrypt.ToArray();
                     byte[] iv = aesAlg.IV;
 
-                    byte[] result = new byte[iv.Length + encryptedPassword.Length];
+                    byte[] result = new byte[iv.Length + encryptedMessage.Length];
                     Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
-                    Buffer.BlockCopy(encryptedPassword, 0, result, iv.Length, encryptedPassword.Length);
+                    Buffer.BlockCopy(encryptedMessage, 0, result, iv.Length, encryptedMessage.Length);
 
                     return result;
                 }
@@ -123,30 +149,30 @@ namespace Server.Utilities
         }
 
         /// <summary>
-        /// Decrypts a password using AES encryption a provided encryption key
+        /// Decrypts a message using AES encryption a provided encryption key
         /// </summary>
         /// <param name="encryptionKey">The encryption key</param>
-        /// <param name="password">The password to be decrypted as an encrypted byte array</param>
-        /// <returns>The encrypted password as a byte array</returns>
-        internal async static Task<byte[]> DecryptPassword(byte[] encryptionKey, byte[] password)
+        /// <param name="message">The message to be decrypted as an encrypted byte array</param>
+        /// <returns>The decrypted messaged as a byte array</returns>
+        internal async static Task<byte[]> DecryptMessage(byte[] encryptionKey, byte[] message)
         {
             using (Aes aesAlg = Aes.Create())
             {
                 aesAlg.Key = encryptionKey;
 
-                // Extract IV from the password
+                // Extract IV from the message
                 byte[] iv = new byte[aesAlg.BlockSize / 8];
-                Buffer.BlockCopy(password, 0, iv, 0, iv.Length);
+                Buffer.BlockCopy(message, 0, iv, 0, iv.Length);
 
-                // Remove IV from the password
-                byte[] encryptedPassword = new byte[password.Length - iv.Length];
-                Buffer.BlockCopy(password, iv.Length, encryptedPassword, 0, encryptedPassword.Length);
+                // Remove IV from the message
+                byte[] encryptedMessage = new byte[message.Length - iv.Length];
+                Buffer.BlockCopy(message, iv.Length, encryptedMessage, 0, encryptedMessage.Length);
 
                 aesAlg.IV = iv;
 
                 try
                 {
-                    using (MemoryStream msDecrypt = new MemoryStream(encryptedPassword))
+                    using (MemoryStream msDecrypt = new MemoryStream(encryptedMessage))
                     {
                         using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV), CryptoStreamMode.Read))
                         {
