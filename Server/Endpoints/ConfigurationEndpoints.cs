@@ -155,7 +155,7 @@ namespace Server.Endpoints
         }
 
         [Authorize]
-        internal static async Task<IResult> LockVault(SqlContext sqlContext)
+        internal static async Task<IResult> LockVault(SqlContext sqlContext, KeyProvider keyProvider)
         {
             var validRefreshTokens = sqlContext.RefreshTokens.Where(rt => rt.ExpiryDate > DateTime.UtcNow);
             if (validRefreshTokens.Count() > 0)
@@ -167,6 +167,12 @@ namespace Server.Endpoints
 
             // Reset the JWT secret key
             ConfigUtil.ResetJwtSecretKey();
+
+            // Disconnect from the vault
+            await sqlContext.Database.CloseConnectionAsync();
+
+            // Clear the pragma key from memory
+            keyProvider.ClearPragmaKey();
 
             return Results.NoContent();
         }

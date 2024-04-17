@@ -255,3 +255,27 @@ export async function sendRefreshTokenRequest(refreshToken) {
     return false;
   }
 }
+
+// Function to send a request to lock the vault
+// Returns a boolean indicating if the vault was successfully locked
+export async function sendLockVaultRequest() {
+  const apiEndpoint = '/api/lockvault';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to lock vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}

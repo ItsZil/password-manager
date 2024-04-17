@@ -22,7 +22,17 @@ namespace Server.Utilities
             byte[] hash = new byte[32];
             BLAKE2b.ComputeHash(hash, Encoding.UTF8.GetBytes(pragmaKey));
 
-            _vaultPragmaKey = Encoding.UTF8.GetString(hash);
+            _vaultPragmaKey = Convert.ToBase64String(hash);
+        }
+
+        internal void SetVaultPragmaKeyHashed(string base64HashedPragmaKey)
+        {
+            _vaultPragmaKey = base64HashedPragmaKey;
+        }
+
+        internal void ClearPragmaKey()
+        {
+            _vaultPragmaKey = string.Empty;
         }
 
         internal string GetVaultPragmaKey()

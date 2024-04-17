@@ -66,6 +66,19 @@ namespace Server.Utilities
         }
 
         /// <summary>
+        /// Hashes a pragma key using BLAKE2b
+        /// </summary>
+        /// <param name="pragmaKey">The plain-text pragma key to hash</param>
+        /// <returns>Base64 encoded hash</returns>
+        internal static string HashPragmaKey(string pragmaKey)
+        {
+            Span<byte> computedHash = stackalloc byte[32];
+            BLAKE2b.ComputeHash(computedHash, Encoding.UTF8.GetBytes(pragmaKey));
+
+            return Convert.ToBase64String(computedHash);
+        }
+
+        /// <summary>
         /// Derives an encryption key from a plain password using Argon2id
         /// This key is only used for long-term password storage in the vault
         /// </summary>

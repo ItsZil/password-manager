@@ -75,7 +75,8 @@ namespace Server
             ConfigUtil.SetVaultLocation(newPath);
             dbPath = newPath;
 
-            var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
+            string hashedPragmaKeyB64 = PasswordUtil.HashPragmaKey(plainMasterPassword);
+            var newConnectionString = CreateConnectionString(dbPath, hashedPragmaKeyB64);
 
             await using var connection = Database.GetDbConnection();
             
@@ -100,7 +101,7 @@ namespace Server
             bool opened = connection.State == ConnectionState.Open;
             if (opened)
             {
-                _keyProvider.SetVaultPragmaKey(plainMasterPassword);
+                _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
                 return true;
             }
             return false;
