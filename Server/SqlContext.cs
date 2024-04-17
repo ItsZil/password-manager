@@ -14,7 +14,7 @@ namespace Server
     internal class SqlContext : DbContext
     {
         internal DbSet<TestModel> TestModels { get; set; }
-        internal DbSet<Configuration> Configuration { get; set; }
+        //internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -25,9 +25,6 @@ namespace Server
         private readonly string _defaultInitialPassword = "DoNotUseThisVault";
 
         internal string dbPath { get; private set; }
-
-        private byte[] _vaultEncryptionKey = Array.Empty<byte>();
-        private byte[] _salt = Array.Empty<byte>();
 
         public SqlContext(IConfiguration configuration, KeyProvider keyProvider)
         {
@@ -54,7 +51,7 @@ namespace Server
             _keyProvider = keyProvider;
 
             Database.EnsureCreated();
-            _ = InitializeConfiguration();
+            //_ = InitializeConfiguration();
         }
 
         // This constructor is used in unit tests.
@@ -85,7 +82,7 @@ namespace Server
             ConfigUtil.SetVaultLocation(newPath);
             dbPath = newPath;
 
-            SetVaultMasterPassword(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
+            GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
 
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 
@@ -113,7 +110,7 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKey(plainMasterPassword);
-                await InitializeConfiguration();
+                //await InitializeConfiguration();
                 return true;
             }
             return false;
@@ -155,36 +152,40 @@ namespace Server
 
         internal byte[] GetEncryptionKey()
         {
-            if (Configuration.Count() == 0)
+            /*if (Configuration.Count() == 0)
             {
                 throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
             }
-            return Configuration.First().VaultEncryptionKey;
+            return Configuration.First().VaultEncryptionKey;*/
+            return new byte[16];
         }
 
-        private void SetVaultMasterPassword(byte[] plainVaultPassword)
+        private void GenerateVaultEncryptionKey(byte[] plainVaultPassword)
         {
             ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(plainVaultPassword);
 
             var hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
 
             Span<byte> generatedSalt = stackalloc byte[16];
-            _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
-            _salt = generatedSalt.ToArray();
+            byte[] vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
+            byte[] salt = generatedSalt.ToArray();
+
+            /*return new Configuration
+            {
+                VaultEncryptionKey = vaultEncryptionKey,
+                Salt = salt
+            };*/
         }
 
-        private async Task InitializeConfiguration()
+        /*private async Task InitializeConfiguration()
         {
             if (Configuration.Count() == 0 && _keyProvider.HasVaultPragmaKey())
             {
-                SetVaultMasterPassword(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
-                Configuration.Add(new Configuration
-                {
-                    Salt = _salt,
-                    VaultEncryptionKey = _vaultEncryptionKey
-                });
+                Configuration newConfiguration = GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
+
+                Configuration.Add(newConfiguration);
                 await SaveChangesAsync();
             }
-        }
+        }*/
     }
 }
