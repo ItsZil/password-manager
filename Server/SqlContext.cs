@@ -17,7 +17,7 @@ namespace Server
         private KeyProvider _keyProvider;
 
         private bool _isTestDatabase = false;
-        private readonly string _defaultInitialPassword = "DoNotUseThisVault";
+        private readonly string _defaultInitialPassword = PasswordUtil.HashPragmaKey("DoNotUseThisVault");
 
         internal string dbPath { get; private set; }
 
@@ -30,7 +30,7 @@ namespace Server
                 dbPath = testDbPath;
                 _isTestDatabase = true;
 
-                keyProvider.SetVaultPragmaKey(_defaultInitialPassword);
+                keyProvider.SetVaultPragmaKeyHashed(_defaultInitialPassword);
             }
             else if (File.Exists(ConfigUtil.GetVaultLocation()) && keyProvider.HasVaultPragmaKey())
             {

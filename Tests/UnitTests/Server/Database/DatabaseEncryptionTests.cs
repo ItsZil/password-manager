@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Server.Utilities;
 
 namespace Tests.UnitTests.Server
 {
@@ -17,7 +18,7 @@ namespace Tests.UnitTests.Server
             connection.Open();
 
             using var command = connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM Configuration";
+            command.CommandText = "SELECT COUNT(*) FROM LoginDetails";
 
             // If the database is encrypted, then this should throw an SqliteException.
             using var reader = command.ExecuteReader();
@@ -76,7 +77,7 @@ namespace Tests.UnitTests.Server
             await context.Database.EnsureCreatedAsync();
             string dbPath = context.Database.GetDbConnection().DataSource;
 
-            using var connection = new SqliteConnection($"Data Source={dbPath};Password=DoNotUseThisVault");
+            using var connection = new SqliteConnection($"Data Source={dbPath};Password={PasswordUtil.HashPragmaKey("DoNotUseThisVault")}");
             int result = AttemptCommand(connection);
 
             // Expecting 0 configuration in the database.
