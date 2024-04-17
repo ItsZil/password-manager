@@ -42,7 +42,7 @@ namespace Server.Endpoints
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
-            (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(decryptedPasswordPlain);
+            (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(decryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
 
             // Save it to vault
             await dbContext.LoginDetails.AddAsync(new LoginDetails
@@ -82,7 +82,7 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);

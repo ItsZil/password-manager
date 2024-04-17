@@ -71,7 +71,7 @@ namespace Server.Utilities
         /// </summary>
         /// <param name="sourcePassword">The master password to derive encryption key from</param>
         /// <returns>A key to use for encrypting passwords before storage in the vault</returns>
-        internal static byte[] DeriveEncryptionKeyFromMasterPassword(ReadOnlySpan<byte> sourcePassword, ref Span<byte> salt)
+        internal static byte[] DeriveEncryptionKeyFromPassword(ReadOnlySpan<byte> sourcePassword, ref Span<byte> salt)
         {
             Span<byte> encryptionKey = stackalloc byte[32];
             SecureRandom.Fill(salt);
@@ -81,7 +81,7 @@ namespace Server.Utilities
             return ByteArrayFromSpan(encryptionKey);
         }
 
-        internal static byte[] DeriveEncryptionKeyFromMasterPassword(ReadOnlySpan<byte> sourcePassword, Span<byte> salt)
+        internal static byte[] DeriveEncryptionKeyFromPassword(ReadOnlySpan<byte> sourcePassword, Span<byte> salt)
         {
             Span<byte> encryptionKey = stackalloc byte[32];
 
@@ -90,14 +90,14 @@ namespace Server.Utilities
             return ByteArrayFromSpan(encryptionKey);
         }
 
-        internal async static Task<(byte[], byte[])> EncryptPassword(byte[] sourcePassword)
+        internal async static Task<(byte[], byte[])> EncryptPassword(byte[] sourcePassword, byte[] pragmaKey)
         {
             // Generate a random salt
-            byte[] salt = new byte[32];
+            byte[] salt = new byte[16];
             SecureRandom.Fill(salt);
 
-            // Derive an encryption key from the master password
-            byte[] encryptionKey = DeriveEncryptionKeyFromMasterPassword(sourcePassword, salt);
+            // Derive an encryption key from the master password's hash
+            byte[] encryptionKey = DeriveEncryptionKeyFromPassword(pragmaKey, salt);
 
             // Encrypt the password using the derived key
             byte[] encryptedPassword = await EncryptMessage(encryptionKey, sourcePassword);
@@ -105,13 +105,13 @@ namespace Server.Utilities
             return (encryptedPassword, salt);
         }
 
-        internal async static Task<byte[]> DecryptPassword(byte[] sourcePassword, byte[] salt)
+        internal async static Task<byte[]> DecryptPassword(byte[] sourcePasswordHash, byte[] salt, byte[] pragmaKey)
         {
-            // Derive an encryption key from the master password
-            byte[] encryptionKey = DeriveEncryptionKeyFromMasterPassword(sourcePassword, salt);
+            // Derive an encryption key from the master password's hash
+            byte[] encryptionKey = DeriveEncryptionKeyFromPassword(pragmaKey, salt);
 
             // Decrypt the password using the derived key
-            byte[] decryptedPassword = await DecryptMessage(encryptionKey, sourcePassword);
+            byte[] decryptedPassword = await DecryptMessage(encryptionKey, sourcePasswordHash);
 
             return decryptedPassword;
         }

@@ -3,18 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using UtilitiesLibrary.Models;
 using Server.Utilities;
-using System.Text;
 using System.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Server
 {
     internal class SqlContext : DbContext
     {
         internal DbSet<TestModel> TestModels { get; set; }
-        //internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -51,7 +46,6 @@ namespace Server
             _keyProvider = keyProvider;
 
             Database.EnsureCreated();
-            //_ = InitializeConfiguration();
         }
 
         // This constructor is used in unit tests.
@@ -64,14 +58,13 @@ namespace Server
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword)).EnableSensitiveDataLogging();
+            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
         /// </summary>
         /// <param name="newPath">An absolute path to where the vault should be stored</param>
         /// <param name="plainMasterPassword">A plain-text master password</param>
-        /// <param name="keyProvider">Key provider singleton to store pragma key in memory</param>
         /// <returns>A boolean indicating if a database connection was successfully opened</return>
         internal async Task<bool> UpdateDatabaseConnection(string newPath, string plainMasterPassword)
         {
@@ -81,8 +74,6 @@ namespace Server
             }
             ConfigUtil.SetVaultLocation(newPath);
             dbPath = newPath;
-
-            //GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
 
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 
@@ -110,7 +101,6 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKey(plainMasterPassword);
-                //await InitializeConfiguration();
                 return true;
             }
             return false;
@@ -149,43 +139,5 @@ namespace Server
         {
             dbPath = newPath;
         }
-
-        internal byte[] GetEncryptionKey()
-        {
-            /*if (Configuration.Count() == 0)
-            {
-                throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
-            }
-            return Configuration.First().VaultEncryptionKey;*/
-            return new byte[16];
-        }
-
-        private void GenerateVaultEncryptionKey(byte[] plainVaultPassword)
-        {
-            ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(plainVaultPassword);
-
-            var hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
-
-            Span<byte> generatedSalt = stackalloc byte[16];
-            byte[] vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
-            byte[] salt = generatedSalt.ToArray();
-
-            /*return new Configuration
-            {
-                VaultEncryptionKey = vaultEncryptionKey,
-                Salt = salt
-            };*/
-        }
-
-        /*private async Task InitializeConfiguration()
-        {
-            if (Configuration.Count() == 0 && _keyProvider.HasVaultPragmaKey())
-            {
-                Configuration newConfiguration = GenerateVaultEncryptionKey(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
-
-                Configuration.Add(newConfiguration);
-                await SaveChangesAsync();
-            }
-        }*/
     }
 }
