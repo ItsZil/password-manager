@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -16,6 +17,7 @@ namespace Tests.IntegrationTests.Server
         private WebApplicationFactory<Program> _factory;
 
         private readonly byte[] _sharedSecretKey;
+        private readonly string _accessToken;
 
         public LoginRequestTests()
         {
@@ -26,6 +28,10 @@ namespace Tests.IntegrationTests.Server
             });
             _client = _factory.CreateClient();
             _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client);
+
+            byte[] unlockSharedSecret = CompleteTestHandshake.GetSharedSecret(_client, 2);
+            _accessToken = CompleteTestAuth.GetAccessToken(_client, unlockSharedSecret);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         }
 
         public void Dispose()
@@ -39,7 +45,7 @@ namespace Tests.IntegrationTests.Server
         private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword");
-            byte[] encryptedSharedKeyPassword = PasswordUtil.EncryptPassword(_sharedSecretKey, plainPassword);
+            byte[] encryptedSharedKeyPassword = await PasswordUtil.EncryptPassword(_sharedSecretKey, plainPassword);
 
             var registerApiEndpoint = "/api/domainregisterrequest";
             var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
@@ -139,7 +145,7 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
+            byte[] decryptedPasword = await PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
             string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
 
             Assert.Equal("loginrequesttestspassword", decryptedPasswordString);
@@ -166,7 +172,7 @@ namespace Tests.IntegrationTests.Server
             Assert.IsType<DomainLoginResponse>(responseObj);
             Assert.NotNull(responseObj.Password);
 
-            byte[] decryptedPasword = PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
+            byte[] decryptedPasword = await PasswordUtil.DecryptPassword(_sharedSecretKey, Convert.FromBase64String(responseObj.Password));
             string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
 
             Assert.NotEqual("loginrequesttestspassword123", decryptedPasswordString);

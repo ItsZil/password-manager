@@ -5,6 +5,9 @@ using UtilitiesLibrary.Models;
 using Server.Utilities;
 using System.Text;
 using System.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Server
 {
@@ -14,6 +17,7 @@ namespace Server
         internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
+        internal DbSet<RefreshToken> RefreshTokens { get; set; }
 
         private KeyProvider _keyProvider;
 
@@ -21,7 +25,6 @@ namespace Server
         private readonly string _defaultInitialPassword = "DoNotUseThisVault";
 
         internal string dbPath { get; private set; }
-        internal byte[] hashedVaultPassword = Array.Empty<byte>();
 
         private byte[] _vaultEncryptionKey = Array.Empty<byte>();
         private byte[] _salt = Array.Empty<byte>();
@@ -51,7 +54,7 @@ namespace Server
             _keyProvider = keyProvider;
 
             Database.EnsureCreated();
-            InitializeConfiguration();
+            _ = InitializeConfiguration();
         }
 
         // This constructor is used in unit tests.
@@ -64,7 +67,7 @@ namespace Server
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
+            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword)).EnableSensitiveDataLogging();
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
@@ -87,12 +90,17 @@ namespace Server
             var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
 
             await using var connection = Database.GetDbConnection();
+            
+            // Close existing connection
+            await connection.CloseAsync();
+
+            // Re-open the connection with the new connection string
             connection.ConnectionString = newConnectionString;
 
             try
             {
                 await Database.EnsureCreatedAsync();
-                await connection.OpenAsync(); // Re-open the connection with the new connection string
+                await connection.OpenAsync();
             }
             catch (SqliteException ex)
             {
@@ -105,6 +113,7 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKey(plainMasterPassword);
+                await InitializeConfiguration();
                 return true;
             }
             return false;
@@ -157,25 +166,24 @@ namespace Server
         {
             ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(plainVaultPassword);
 
-            hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
+            var hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
 
             Span<byte> generatedSalt = stackalloc byte[16];
             _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
             _salt = generatedSalt.ToArray();
         }
 
-        private void InitializeConfiguration()
+        private async Task InitializeConfiguration()
         {
             if (Configuration.Count() == 0 && _keyProvider.HasVaultPragmaKey())
             {
                 SetVaultMasterPassword(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
                 Configuration.Add(new Configuration
                 {
-                    MasterPasswordHash = hashedVaultPassword,
                     Salt = _salt,
                     VaultEncryptionKey = _vaultEncryptionKey
                 });
-                SaveChanges();
+                await SaveChangesAsync();
             }
         }
     }

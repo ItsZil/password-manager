@@ -1,5 +1,7 @@
 'use strict';
 
+const { getAccessToken } = require('./authUtil.js');
+
 // Constants
 const ServerUrl = 'https://localhost:54782';
 
@@ -9,10 +11,13 @@ export async function domainLoginRequest(domainLoginRequestBody) {
   const apiEndpoint = '/api/domainloginrequest';
 
   try {
+    const accessToken = await getAccessToken();
+    
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainLoginRequestBody),
     });
@@ -20,6 +25,8 @@ export async function domainLoginRequest(domainLoginRequestBody) {
     if (response.status === 200) {
       const responseJson = await response.json();
       return responseJson;
+    } else if (response.status == 401) {
+      // TODO: not logged in
     } else {
       console.error(
         `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
@@ -37,16 +44,21 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
   const apiEndpoint = '/api/domainregisterrequest';
 
   try {
+    const accessToken = await getAccessToken();
+
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainRegisterRequestBody),
     });
 
     if (response.status === 200) {
       return response.json();
+    } else if (response.status == 401) {
+      // TODO: not logged in
     } else {
       console.error(
         `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
@@ -126,11 +138,115 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
       body: JSON.stringify(setupVaultRequestBody),
     });
 
-    if (response.status === 200) {
-      return true;
+    if (response.status === 201) {
+      const json = await response.json();
+      return json;
     } else {
       console.error(
         `Failed to setup new vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to check if a user has an existing vault
+// Returns: A boolean indicating if the user has an existing vault
+export async function sendHasExistingVaultRequest() {
+  const apiEndpoint = '/api/hasexistingvault';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET'
+    });
+
+    if (response.status === 200) {
+      const result = await response.json();
+      return result;
+    } else {
+      console.error(
+        `Failed to check if user has existing vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to check if the server is reachable
+// Returns: A boolean indicating if the server is reachable
+export async function checkIfServerReachable() {
+  try {
+    return await fetch(ServerUrl, { method: 'HEAD' })
+      .then(response => {
+        if (response.ok) {
+          return true;
+        } else {
+          return false;
+        }
+      })
+      .catch(error => {
+        return false;
+      });
+  }
+  catch (error) {
+    return false;
+  }
+}
+
+// Function to send a request to unlock the vault
+// Returns: A UnlockVaultRequestResponse
+export async function sendUnlockVaultRequest(unlockVaultRequestBody) {
+  const apiEndpoint = '/api/unlockvault';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(unlockVaultRequestBody),
+    });
+
+    if (response.status === 201) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to unlock vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to refresh the access token
+// Returns a RefreshTokenResponse
+export async function sendRefreshTokenRequest(refreshToken) {
+  const apiEndpoint = '/api/refreshtoken';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken: refreshToken }),
+    });
+
+    if (response.status === 201) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to refresh token: ${response.status} ${response.statusText}`
       );
       return false;
     }

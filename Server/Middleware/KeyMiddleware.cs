@@ -1,10 +1,12 @@
 ﻿using Server.Utilities;
+using System.Linq;
 
 namespace Server.Middleware
 {
     public class KeyMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly List<string> exceptionEndpoints = new List<string> { "/api/handshake", "/api/hasexistingvault" };
 
         public KeyMiddleware(RequestDelegate next)
         {
@@ -14,7 +16,7 @@ namespace Server.Middleware
         public async Task InvokeAsync(HttpContext context, KeyProvider keyProvider)
         {
             // Check if this is not a request to handshake
-            if (!context.Request.Path.StartsWithSegments("/api/handshake") && context.Request.Method != "POST")
+            if (!exceptionEndpoints.Contains(context.Request.Path) && context.Request.Method != "POST" && context.Request.Method != "HEAD")
             {
                 // Check if KeyProvider.GetSharedSecret() is null
                 if (!keyProvider.SharedSecretNotNull())

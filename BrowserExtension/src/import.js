@@ -80,6 +80,8 @@ $(document).ready(async function () {
 
       $('#setup-fields').hide();
       $('#setup-complete-message').show();
+
+      chrome.storage.local.set({ setup_complete: true });
     }
   });
 });
