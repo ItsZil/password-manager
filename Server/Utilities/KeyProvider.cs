@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using Geralt;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace Server.Utilities
@@ -18,12 +19,30 @@ namespace Server.Utilities
 
         internal void SetVaultPragmaKey(string pragmaKey)
         {
-            _vaultPragmaKey = pragmaKey;
+            byte[] hash = new byte[32];
+            BLAKE2b.ComputeHash(hash, Encoding.UTF8.GetBytes(pragmaKey));
+
+            _vaultPragmaKey = Convert.ToBase64String(hash);
+        }
+
+        internal void SetVaultPragmaKeyHashed(string base64HashedPragmaKey)
+        {
+            _vaultPragmaKey = base64HashedPragmaKey;
+        }
+
+        internal void ClearPragmaKey()
+        {
+            _vaultPragmaKey = string.Empty;
         }
 
         internal string GetVaultPragmaKey()
         {
             return _vaultPragmaKey;
+        }
+
+        internal byte[] GetVaultPragmaKeyBytes()
+        {
+            return Encoding.UTF8.GetBytes(_vaultPragmaKey);
         }
 
         internal byte[] ComputeSharedSecret(int sourceId, byte[] clientPublicKey)

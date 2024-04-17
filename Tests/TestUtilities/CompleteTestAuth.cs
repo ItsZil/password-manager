@@ -16,7 +16,7 @@ namespace Tests.TestUtilities
             // Because the login and register request tests use the default vault, we can use the default password to unlock it.
             string defaultPassword = "DoNotUseThisVault";
             byte[] defaultPasswordBytes = PasswordUtil.ByteArrayFromPlain(defaultPassword);
-            byte[] encryptedPassword = PasswordUtil.EncryptPassword(sharedSecret, defaultPasswordBytes).Result;
+            byte[] encryptedPassword = PasswordUtil.EncryptMessage(sharedSecret, defaultPasswordBytes).Result;
 
             UnlockVaultRequest request = new() { PassphraseBase64 = Convert.ToBase64String(encryptedPassword) };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");

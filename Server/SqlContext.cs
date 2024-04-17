@@ -3,18 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using UtilitiesLibrary.Models;
 using Server.Utilities;
-using System.Text;
 using System.Data;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Server
 {
     internal class SqlContext : DbContext
     {
         internal DbSet<TestModel> TestModels { get; set; }
-        internal DbSet<Configuration> Configuration { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -22,12 +17,9 @@ namespace Server
         private KeyProvider _keyProvider;
 
         private bool _isTestDatabase = false;
-        private readonly string _defaultInitialPassword = "DoNotUseThisVault";
+        private readonly string _defaultInitialPassword = PasswordUtil.HashPragmaKey("DoNotUseThisVault");
 
         internal string dbPath { get; private set; }
-
-        private byte[] _vaultEncryptionKey = Array.Empty<byte>();
-        private byte[] _salt = Array.Empty<byte>();
 
         public SqlContext(IConfiguration configuration, KeyProvider keyProvider)
         {
@@ -38,7 +30,7 @@ namespace Server
                 dbPath = testDbPath;
                 _isTestDatabase = true;
 
-                keyProvider.SetVaultPragmaKey(_defaultInitialPassword);
+                keyProvider.SetVaultPragmaKeyHashed(_defaultInitialPassword);
             }
             else if (File.Exists(ConfigUtil.GetVaultLocation()) && keyProvider.HasVaultPragmaKey())
             {
@@ -54,7 +46,6 @@ namespace Server
             _keyProvider = keyProvider;
 
             Database.EnsureCreated();
-            _ = InitializeConfiguration();
         }
 
         // This constructor is used in unit tests.
@@ -67,14 +58,13 @@ namespace Server
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword)).EnableSensitiveDataLogging();
+            => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
         /// </summary>
         /// <param name="newPath">An absolute path to where the vault should be stored</param>
         /// <param name="plainMasterPassword">A plain-text master password</param>
-        /// <param name="keyProvider">Key provider singleton to store pragma key in memory</param>
         /// <returns>A boolean indicating if a database connection was successfully opened</return>
         internal async Task<bool> UpdateDatabaseConnection(string newPath, string plainMasterPassword)
         {
@@ -85,9 +75,8 @@ namespace Server
             ConfigUtil.SetVaultLocation(newPath);
             dbPath = newPath;
 
-            SetVaultMasterPassword(Encoding.UTF8.GetBytes(plainMasterPassword)); // might only need to call this on first creation, so we can store the salt etc in configuration table
-
-            var newConnectionString = CreateConnectionString(dbPath, plainMasterPassword);
+            string hashedPragmaKeyB64 = PasswordUtil.HashPragmaKey(plainMasterPassword);
+            var newConnectionString = CreateConnectionString(dbPath, hashedPragmaKeyB64);
 
             await using var connection = Database.GetDbConnection();
             
@@ -112,8 +101,7 @@ namespace Server
             bool opened = connection.State == ConnectionState.Open;
             if (opened)
             {
-                _keyProvider.SetVaultPragmaKey(plainMasterPassword);
-                await InitializeConfiguration();
+                _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
                 return true;
             }
             return false;
@@ -151,40 +139,6 @@ namespace Server
         internal void ChangeDatabasePath(string newPath)
         {
             dbPath = newPath;
-        }
-
-        internal byte[] GetEncryptionKey()
-        {
-            if (Configuration.Count() == 0)
-            {
-                throw new Exception("No configuration found in database. Did InitializeConfiguration not get called?");
-            }
-            return Configuration.First().VaultEncryptionKey;
-        }
-
-        private void SetVaultMasterPassword(byte[] plainVaultPassword)
-        {
-            ReadOnlySpan<byte> hashedMasterPassword = PasswordUtil.HashMasterPassword(plainVaultPassword);
-
-            var hashedVaultPassword = PasswordUtil.ByteArrayFromSpan(hashedMasterPassword);
-
-            Span<byte> generatedSalt = stackalloc byte[16];
-            _vaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(hashedVaultPassword, ref generatedSalt);
-            _salt = generatedSalt.ToArray();
-        }
-
-        private async Task InitializeConfiguration()
-        {
-            if (Configuration.Count() == 0 && _keyProvider.HasVaultPragmaKey())
-            {
-                SetVaultMasterPassword(Encoding.UTF8.GetBytes(_keyProvider.GetVaultPragmaKey()));
-                Configuration.Add(new Configuration
-                {
-                    Salt = _salt,
-                    VaultEncryptionKey = _vaultEncryptionKey
-                });
-                await SaveChangesAsync();
-            }
         }
     }
 }

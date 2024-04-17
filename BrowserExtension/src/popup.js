@@ -3,7 +3,8 @@
 const {
   checkIfServerReachable,
   sendHasExistingVaultRequest,
-  sendUnlockVaultRequest
+  sendUnlockVaultRequest,
+  sendLockVaultRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -69,7 +70,6 @@ $('#unlock-vault-button').on('click', async function () {
   $('#unlock-in-progress').show();
 
   const response = await sendUnlockVaultRequest(unlockVaultRequestBody);
-  console.log(response);
 
   if (response == false) {
     // Unlock failed.
@@ -134,6 +134,7 @@ async function setElements() {
     const initialSetupElement = $('#initial-setup');
     const authenticatedReadyElement = $('#authenticated-ready');
     const notAuthenticatedElement = $('#not-authenticated');
+    const footerElement = $('#footer');
 
     if (serverIsUp && hasExistingVault) {
       // Display the default popup.
@@ -147,12 +148,13 @@ async function setElements() {
         $('#passphrase-input-fields').hide();
         $('#unlock-in-progress').hide();
 
-        $('#footer').show();
+        footerElement.show();
         $('#connection-ok-icon').removeClass('bi-database-fill-lock').addClass('bi-database-fill-check');
       } else {
         // User is not authenticated, display only login element.
         notAuthenticatedElement.show();
         authenticatedReadyElement.hide();
+        footerElement.hide();
 
         $('#connection-ok-icon').removeClass('bi-database-fill-check').addClass('bi-database-fill-lock');
       }
@@ -163,3 +165,13 @@ async function setElements() {
     }
   });
 }
+
+$('#lock-vault-button').on('click', async function () {
+  // Remove tokens from secure HttpOnly cookie
+  setTokens(null, null);
+  isUserAuthenticated = false;
+  await setElements();
+
+  // Make a request for the server to invalidate all tokens and close connection to database
+  await sendLockVaultRequest();
+});

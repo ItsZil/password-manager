@@ -51,7 +51,7 @@ namespace Server.Endpoints
             }
 
             byte[] passphrasePlain = PasswordUtil.GeneratePassphrase(wordCount);
-            byte[] passphraseEncrypted = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(1), passphrasePlain);
+            byte[] passphraseEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), passphrasePlain);
 
             return Results.Ok(new PassphraseResponse { PassphraseBase64 = Convert.ToBase64String(passphraseEncrypted) });
         }
@@ -59,7 +59,7 @@ namespace Server.Endpoints
         internal async static Task<IResult> GeneratePassword(KeyProvider keyProvider)
         {
             byte[] plainPassword = PasswordUtil.GenerateSecurePassword();
-            byte[] passwordEncrypted = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(1), plainPassword);
+            byte[] passwordEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), plainPassword);
 
             return Results.Ok(new GeneratedPasswordResponse { PasswordBase64 = Convert.ToBase64String(passwordEncrypted) });
         }
@@ -85,7 +85,7 @@ namespace Server.Endpoints
             }
 
             byte[] encryptedPragmaKey = Convert.FromBase64String(setupRequest.VaultRawKeyBase64);
-            byte[] plainPragmaKey = await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(1), encryptedPragmaKey);
+            byte[] plainPragmaKey = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(1), encryptedPragmaKey);
 
             if (string.IsNullOrWhiteSpace(dbPath) || plainPragmaKey.Length == 0)
             {
@@ -115,7 +115,7 @@ namespace Server.Endpoints
                 return Results.BadRequest("Passphrase is empty.");
             }
 
-            byte[] passphrasePlain = await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
+            byte[] passphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
             string passphraseString = Encoding.UTF8.GetString(passphrasePlain);
 
             // Attempt to unlock the vault
@@ -155,7 +155,7 @@ namespace Server.Endpoints
         }
 
         [Authorize]
-        internal static async Task<IResult> LockVault(SqlContext sqlContext)
+        internal static async Task<IResult> LockVault(SqlContext sqlContext, KeyProvider keyProvider)
         {
             var validRefreshTokens = sqlContext.RefreshTokens.Where(rt => rt.ExpiryDate > DateTime.UtcNow);
             if (validRefreshTokens.Count() > 0)
@@ -167,6 +167,12 @@ namespace Server.Endpoints
 
             // Reset the JWT secret key
             ConfigUtil.ResetJwtSecretKey();
+
+            // Disconnect from the vault
+            await sqlContext.Database.CloseConnectionAsync();
+
+            // Clear the pragma key from memory
+            keyProvider.ClearPragmaKey();
 
             return Results.NoContent();
         }

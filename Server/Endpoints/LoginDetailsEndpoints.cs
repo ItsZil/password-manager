@@ -38,23 +38,24 @@ namespace Server.Endpoints
             // TODO: password meets user rule requirements
 
             // Decrypt password with shared secret
-            byte[] decryptedPasswordPlain = passwordIsEncrypted ? await PasswordUtil.DecryptPassword(keyProvider.GetSharedSecret(request.SourceId), password) : password;
+            byte[] decryptedPasswordPlain = passwordIsEncrypted ? await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), password) : password;
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
-            byte[] encryptedPassword = await PasswordUtil.EncryptPassword(dbContext.GetEncryptionKey(), decryptedPasswordPlain);
+            (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(decryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
 
             // Save it to vault
             await dbContext.LoginDetails.AddAsync(new LoginDetails
             {
                 RootDomain = domain,
                 Username = username,
-                Password = encryptedPassword
+                Password = encryptedPassword,
+                Salt = salt
             });
             await dbContext.SaveChangesAsync();
 
             // Encrypt password with shared secret and send it back to the client
-            byte[] encryptedPasswordShared = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+            byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
             DomainRegisterResponse response = new(domain, encryptedPasswordShared);
 
             return Results.Ok(response);
@@ -67,8 +68,6 @@ namespace Server.Endpoints
             string domain = request.Domain;
             string username = request.Username ?? string.Empty;
             bool lookupByUsername = !string.IsNullOrEmpty(username);
-
-            // TODO: auth
 
             var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == domain);
             if (!detailsExist)
@@ -83,12 +82,12 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(dbContext.GetEncryptionKey(), loginDetails.Password);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
-            byte[] encryptedPasswordShared = await PasswordUtil.EncryptPassword(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+
+            byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
 
             DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false);
-
             return Results.Ok(response);
         }
     }

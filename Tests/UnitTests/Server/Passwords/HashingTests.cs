@@ -11,18 +11,23 @@ namespace Tests.UnitTests.Server.Passwords
         private byte[] _correctSharedEncryptionKey;
         private byte[] _incorrectSharedEncryptionKey;
 
-        private byte[] _correctVaultEncryptionKey;
-        private byte[] _correctVaultEncryptionSalt;
+        private byte[] _correctEncryptionKey;
+        private byte[] _correctEncryptionSalt;
+
+        private KeyProvider _keyProvider;
 
         public HashingTests()
         {
             // Ensure that there is a shared secret to use as key for encryption
-            KeyProvider keyProvider = new();
-            byte[] clientPublicKey = keyProvider.GenerateClientPublicKey(out _);
-            keyProvider.ComputeSharedSecret(0, clientPublicKey);
+            _keyProvider = new();
+            byte[] clientPublicKey = _keyProvider.GenerateClientPublicKey(out _);
+            _keyProvider.ComputeSharedSecret(0, clientPublicKey);
 
             // Store the shared password encryption keys
-            _correctSharedEncryptionKey = keyProvider.GetSharedSecret();
+            _correctSharedEncryptionKey = _keyProvider.GetSharedSecret();
+
+            // Store a vault pragma key
+            _keyProvider.SetVaultPragmaKey("Test123");
 
             // Make sure the incorrect encryption key is different
             _incorrectSharedEncryptionKey = new byte[_correctSharedEncryptionKey.Length];
@@ -34,8 +39,8 @@ namespace Tests.UnitTests.Server.Passwords
             _correctVaultPasswordHash = PasswordUtil.HashMasterPassword(plainVaultPassword);
 
             Span<byte> salt = stackalloc byte[16];
-            _correctVaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, ref salt);
-            _correctVaultEncryptionSalt = salt.ToArray();
+            _correctEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromPassword(PasswordUtil.ByteArrayFromPlain("Test1234"), ref salt);
+            _correctEncryptionSalt = salt.ToArray();
 
             ReadOnlySpan<byte> plainIncorrectVaultPassword = PasswordUtil.ByteArrayFromPlain("Test1234");
             _incorrectVaultPasswordHash = PasswordUtil.HashMasterPassword(plainIncorrectVaultPassword);
@@ -72,51 +77,72 @@ namespace Tests.UnitTests.Server.Passwords
         }
 
         [Fact]
-        public void TestHashingMasterPasswordVaultEncryptionKeyMatches()
+        public void TestDerivingEncryptionKeySamePasswordMatches()
         {
-            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, _correctVaultEncryptionSalt);
+            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromPassword(PasswordUtil.ByteArrayFromPlain("Test1234"), _correctEncryptionSalt);
 
-            Assert.Equal(_correctVaultEncryptionKey, encryptionKey);
+            Assert.Equal(_correctEncryptionKey, encryptionKey);
         }
 
         [Fact]
-        public void TestHashingMasterPasswordVaultEncryptionKeyDoesNotMatch()
+        public void TestDerivingEncryptionKeySamePasswordDoesNotMatch()
         {
-            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, _correctVaultEncryptionSalt);
+            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromPassword(PasswordUtil.ByteArrayFromPlain("Test12345"), _correctEncryptionSalt);
 
-            Assert.NotEqual(_correctVaultEncryptionKey, encryptionKey);
+            Assert.NotEqual(_correctEncryptionKey, encryptionKey);
         }
         
         [Fact]
-        public async Task TestEncryptPasswordReturnsEncrypted()
+        public async Task TestEncryptPasswordReturnsEncryptedAndSalt()
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
 
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            (byte[] passwordHash, byte[] salt) = await PasswordUtil.EncryptPassword(plainPassword, _keyProvider.GetVaultPragmaKeyBytes());
+
+            Assert.NotNull(passwordHash);
+            Assert.NotNull(salt);
 
             Assert.NotEqual(plainPassword, passwordHash);
             Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), PasswordUtil.PlainFromContainer(passwordHash));
         }
 
         [Fact]
-        public async Task TestDecryptPasswordCorrectKey()
+        public async Task TestDecryptPasswordCorrectSalt()
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            (byte[] passwordHash, byte[] salt) = await PasswordUtil.EncryptPassword(plainPassword, _keyProvider.GetVaultPragmaKeyBytes());
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(_correctSharedEncryptionKey, passwordHash);
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(passwordHash, salt, _keyProvider.GetVaultPragmaKeyBytes());
             string decryptedPassword = PasswordUtil.PlainFromContainer(decryptedPasswordPlain);
 
             Assert.Equal(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
         }
 
         [Fact]
-        public async Task TestDecryptPasswordIncorrectKey()
+        public async Task TestDecryptPasswordIncorrectSalt()
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
-            byte[] passwordHash = await PasswordUtil.EncryptPassword(_correctSharedEncryptionKey, plainPassword);
+            (byte[] passwordHash, byte[] salt) = await PasswordUtil.EncryptPassword(plainPassword, _keyProvider.GetVaultPragmaKeyBytes());
 
-            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(_incorrectSharedEncryptionKey, passwordHash);
+            byte[] randomSalt = new byte[16];
+            SecureRandom.Fill(randomSalt);
+
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(passwordHash, randomSalt, _keyProvider.GetVaultPragmaKeyBytes());
+            string decryptedPassword = PasswordUtil.PlainFromContainer(decryptedPasswordPlain);
+
+            Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
+        }
+
+        [Fact]
+        public async Task TestDecryptPasswordIncorrectPragmaKey()
+        {
+            byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("averylongpasswordwithsomenumbersandcharacters5311#@@!");
+            (byte[] passwordHash, byte[] salt) = await PasswordUtil.EncryptPassword(plainPassword, _keyProvider.GetVaultPragmaKeyBytes());
+
+            byte[] randomSalt = new byte[16];
+            SecureRandom.Fill(randomSalt);
+
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(passwordHash, randomSalt, randomSalt);
             string decryptedPassword = PasswordUtil.PlainFromContainer(decryptedPasswordPlain);
 
             Assert.NotEqual(PasswordUtil.PlainFromContainer(plainPassword), decryptedPassword);
