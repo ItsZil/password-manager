@@ -12,6 +12,7 @@ namespace Tests.UnitTests.Server.Passwords
         private byte[] _incorrectSharedEncryptionKey;
 
         private byte[] _correctVaultEncryptionKey;
+        private byte[] _correctVaultEncryptionSalt;
 
         public HashingTests()
         {
@@ -34,6 +35,7 @@ namespace Tests.UnitTests.Server.Passwords
 
             Span<byte> salt = stackalloc byte[16];
             _correctVaultEncryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, ref salt);
+            _correctVaultEncryptionSalt = salt.ToArray();
 
             ReadOnlySpan<byte> plainIncorrectVaultPassword = PasswordUtil.ByteArrayFromPlain("Test1234");
             _incorrectVaultPasswordHash = PasswordUtil.HashMasterPassword(plainIncorrectVaultPassword);
@@ -72,8 +74,7 @@ namespace Tests.UnitTests.Server.Passwords
         [Fact]
         public void TestHashingMasterPasswordVaultEncryptionKeyMatches()
         {
-            Span<byte> salt = stackalloc byte[16];
-            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, ref salt);
+            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_correctVaultPasswordHash, _correctVaultEncryptionSalt);
 
             Assert.Equal(_correctVaultEncryptionKey, encryptionKey);
         }
@@ -81,8 +82,7 @@ namespace Tests.UnitTests.Server.Passwords
         [Fact]
         public void TestHashingMasterPasswordVaultEncryptionKeyDoesNotMatch()
         {
-            Span<byte> salt = stackalloc byte[16];
-            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, ref salt);
+            byte[] encryptionKey = PasswordUtil.DeriveEncryptionKeyFromMasterPassword(_incorrectVaultPasswordHash, _correctVaultEncryptionSalt);
 
             Assert.NotEqual(_correctVaultEncryptionKey, encryptionKey);
         }
