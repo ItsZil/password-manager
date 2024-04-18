@@ -20,6 +20,14 @@ $(document).ready(async function () {
   initPublic(1, window.crypto);
   await waitForHandshake();
 
+  if (isAuthenticated()) {
+    // Open the options page
+    chrome.runtime.openOptionsPage();
+
+    // Close the setup page
+    window.close();
+  }
+
   // Show/hide custom path input based on radio button selection
   $('input[type=radio][name=select-vault-location]').change(function () {
     if (this.id === 'custom-path-location') {

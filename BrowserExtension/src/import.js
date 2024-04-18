@@ -8,9 +8,22 @@ const {
   sendSetupVaultRequest
 } = require('./util/requestsUtil.js');
 
+const {
+  isAuthenticated,
+  setTokens
+} = require('./util/authUtil.js');
+
 $(document).ready(async function () {
   initPublic(1, window.crypto);
   await waitForHandshake();
+
+  if (isAuthenticated()) {
+    // Open the options page
+    chrome.runtime.openOptionsPage();
+
+    // Close the setup page
+    window.close();
+  }
 
   // Validate custom path when user enters input
   $('#vaultPathInput').on('input', async function () {
@@ -81,7 +94,10 @@ $(document).ready(async function () {
       $('#setup-fields').hide();
       $('#setup-complete-message').show();
 
-      chrome.storage.local.set({ setup_complete: true });
+      const accessToken = tokenResponse.accessToken;
+      const refreshToken = tokenResponse.refreshToken;
+
+      setTokens(accessToken, refreshToken);
     }
   });
 });
