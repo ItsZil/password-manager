@@ -5,7 +5,8 @@ const {
 } = require('./util/passwordUtil.js');
 const {
   isAbsolutePathValid,
-  sendSetupVaultRequest
+  sendSetupVaultRequest,
+  sendHasExistingVaultRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -17,7 +18,9 @@ $(document).ready(async function () {
   initPublic(1, window.crypto);
   await waitForHandshake();
 
-  if (isAuthenticated()) {
+  const isAuthenticatedResult = await isAuthenticated();
+  const hasExistingVault = await sendHasExistingVaultRequest();
+  if (isAuthenticatedResult && hasExistingVault) {
     // Open the options page
     chrome.runtime.openOptionsPage();
 
@@ -98,6 +101,10 @@ $(document).ready(async function () {
       const refreshToken = tokenResponse.refreshToken;
 
       setTokens(accessToken, refreshToken);
+    } else {
+      // Show failure UI
+      $('#vault-import-progress-modal').hide();
+      $('#vault-import-failure-modal').show();
     }
   });
 });
@@ -164,3 +171,8 @@ function validatePassphrase(passphrase) {
   const isValid = words.length >= 4 && words.length <= 10 && words.every((word) => word === word.toLowerCase());
   return isValid;
 }
+
+$('#restart-import-button').on('click', function () {
+  // Reload the page
+  location.reload();
+});
