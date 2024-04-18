@@ -8,7 +8,8 @@ const {
 const {
   isAbsolutePathValid,
   sendSetupVaultRequest,
-  domainRegisterRequest
+  domainRegisterRequest,
+  sendHasExistingVaultRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -19,6 +20,16 @@ const {
 $(document).ready(async function () {
   initPublic(1, window.crypto);
   await waitForHandshake();
+
+  const isAuthenticatedResult = await isAuthenticated();
+  const hasExistingVault = await sendHasExistingVaultRequest();
+  if (isAuthenticatedResult && hasExistingVault) {
+    // Open the options page
+    chrome.runtime.openOptionsPage();
+
+    // Close the setup page
+    window.close();
+  }
 
   // Show/hide custom path input based on radio button selection
   $('input[type=radio][name=select-vault-location]').change(function () {
@@ -92,6 +103,10 @@ $(document).ready(async function () {
 
     // Use the pass phrase or random password as the pragma key
     const passPhrase = $('#passPhraseInput').val();
+    const passPhraseIsEmpty = passPhrase.trim().length == 0;
+    if (passPhraseIsEmpty)
+      return;
+
     const vaultKey = await encryptPassword(passPhrase);
 
     const setupVaultRequestBody = {
@@ -119,6 +134,10 @@ $(document).ready(async function () {
       const refreshToken = tokenResponse.refreshToken;
 
       setTokens(accessToken, refreshToken);
+    } else {
+      // Show failure UI
+      $('#vault-creation-progress-modal').hide();
+      $('#vault-creation-failure-modal').show();
     }
   });
 });
@@ -209,3 +228,8 @@ async function validatePath(path) {
   }
   return isPathValid;
 }
+
+$('#restart-setup-button').on('click', function () {
+  // Reload the page
+  location.reload();
+});
