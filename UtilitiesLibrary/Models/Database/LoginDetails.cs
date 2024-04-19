@@ -11,7 +11,6 @@ namespace UtilitiesLibrary.Models
         public byte[] Password { get; set; }
         public byte[] Salt { get; set; }
 
-        public DateOnly CreationDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public DateTime LastUsedDate { get; set; } = DateTime.Now;
     }
 }

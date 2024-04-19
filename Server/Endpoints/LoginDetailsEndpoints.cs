@@ -13,8 +13,9 @@ namespace Server.Endpoints
             group.MapPost("/domainregisterrequest", DomainRegisterRequest);
             group.MapPost("/domainloginrequest", DomainLoginRequest);
 
-            group.MapGet("/logindetails/count", LoginDetailsCount);
             group.MapGet("/logindetails", LoginDetails);
+            group.MapGet("/logindetailscount", LoginDetailsCount);
+            group.MapPost("/logindetailspassword", GetLoginDetailsPassword);
 
             return group;
         }
@@ -113,13 +114,31 @@ namespace Server.Endpoints
             {
                 results.Add(new LoginDetailsViewResponse
                 {
+                    DetailsId = loginDetails.DetailsId,
                     Domain = loginDetails.RootDomain,
                     Username = loginDetails.Username,
-                    CreationDate = loginDetails.CreationDate,
                     LastUsedDate = loginDetails.LastUsedDate
                 });
             }
             return Results.Ok(results);
+        }
+
+        [Authorize]
+        internal async static Task<IResult> GetLoginDetailsPassword([FromBody] DomainLoginPasswordRequest request, SqlContext dbContext, KeyProvider keyProvider)
+        {
+            // Check if login details exist
+            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.DetailsId == request.LoginDetailsId);
+            if (loginDetails == null)
+                return Results.NotFound();
+
+            // Decrypt password with long-term encryption key
+            byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
+            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+
+            // Encrypt password with shared secret and send it back to the client
+            string encryptedPasswordShared = Convert.ToBase64String(await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain));
+
+            return Results.Ok(new { passwordB64 = encryptedPasswordShared } );
         }
     }
 }

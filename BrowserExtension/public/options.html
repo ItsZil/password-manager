@@ -8,6 +8,44 @@
   </head>
 
   <body class="d-flex flex-column" data-bs-theme="dark">
+    <div class="page page-center" id="page-loader">
+      <div class="container container-slim py-4">
+        <div class="text-center">
+          <div class="mb-3">
+            <div class="bi-database-fill" style="font-size: 45px"></div>
+          </div>
+          <div class="text-secondary mb-3">
+            Tip: avoid writing down your passphrase
+          </div>
+          <div class="progress progress-sm">
+            <div class="progress-bar progress-bar-indeterminate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page page-center"
+         id="waiting-for-handshake"
+         style="display: none">
+      <div class="container container-slim py-4">
+        <div class="text-center">
+          <div class="mb-3">
+            <i class="navbar-brand-image navbar-brand navbar-brand-autodark"
+               id="handshake-retry-icon"
+               style="font-size: xx-large"
+               alt="Password Manager"></i>
+          </div>
+          <div class="text-secondary">Connecting to vault service</div>
+          <div class="text-secondary mb-3" id="handshake-retry-text">
+            Retrying in 3
+          </div>
+          <div class="progress progress-sm">
+            <div class="progress-bar progress-bar-indeterminate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="page-body">
       <div class="container-xl mt-6">
         <div class="card">
@@ -16,9 +54,12 @@
               <div class="card-body">
                 <h4 class="subheader">Vault options</h4>
                 <div class="list-group list-group-transparent">
-                  <a href="#" class="list-group-item list-group-item-action d-flex align-items-center active">Configuration</a>
-                  <a href="./passwords.html" class="list-group-item list-group-item-action d-flex align-items-center">Passwords</a>
-                  <a href="./authenticators.html" class="list-group-item list-group-item-action d-flex align-items-center">Authenticators</a>
+                  <a href="#"
+                     class="list-group-item list-group-item-action d-flex align-items-center active">Configuration</a>
+                  <a href="./passwords.html"
+                     class="list-group-item list-group-item-action d-flex align-items-center">Passwords</a>
+                  <a href="./authenticators.html"
+                     class="list-group-item list-group-item-action d-flex align-items-center">Authenticators</a>
                 </div>
               </div>
             </div>
@@ -26,9 +67,10 @@
               <div class="card-body">
                 <h2 class="mb-4">Vault Configuration</h2>
                 <h3 class="card-title mt-4">Passphrase</h3>
-                <p class="card-subtitle text-dark-emphasis">You can generate or specify a new vault passphrase here.</p>
+                <p class="card-subtitle text-dark-emphasis">
+                  You can generate or specify a new vault passphrase here.
+                </p>
                 <div id="passphraseSettings" class="mt-2 w-75">
-
                   <div class="input-group mb-2">
                     <!-- Passphrase -->
                     <input type="text"
@@ -63,7 +105,8 @@
                   <hr class="mt-5 mb-3" />
                   <h3 class="card-title mt-4">Export Vault</h3>
                   <p class="card-subtitle text-dark-emphasis">
-                    You can make a backup of your vault by exporting it to a selected location.
+                    You can make a backup of your vault by exporting it to a
+                    selected location.
                   </p>
 
                   <div>
@@ -76,9 +119,7 @@
                                  id="vaultPathInput"
                                  class="form-control is-invalid is-invalid-lite"
                                  placeholder="Enter absolute path" />
-                          <a href="#" class="btn btn-primary">
-                            Export
-                          </a>
+                          <a href="#" class="btn btn-primary"> Export </a>
                         </div>
                         <div class="mt-2 input-group">
                           <small id="vaultPathError"
@@ -89,7 +130,6 @@
                             Example: C:\Users\Name\Desktop\Backups
                           </p>
                         </div>
-
                       </div>
                     </div>
                   </div>
@@ -97,7 +137,8 @@
                   <h3 class="card-title mt-4">Access Control</h3>
                   <p class="card-subtitle text-dark-emphasis">
                     <!-- Message to allow user to log out of all devices -->
-                    You can make changes to various access control settings here.
+                    You can make changes to various access control settings
+                    here.
                   </p>
 
                   <div>
@@ -107,7 +148,11 @@
                       <div class="mt-2">
                         <div class="input-group-flat gap-2">
                           <!-- Settings to control access and refresh token lifetimes -->
-                          <p class="page-subtitle">Access tokens grant access to the vault. On expiration, refresh tokens allow creation of new access tokens.</p>
+                          <p class="page-subtitle">
+                            Access tokens grant access to the vault. On
+                            expiration, refresh tokens allow creation of new
+                            access tokens.
+                          </p>
                           <div class="input-group w-100">
                             <!--- Access token lifetime -->
                             <button id="decreaseAccessTokenLifetime"
@@ -143,7 +188,6 @@
                               +
                             </button>
                           </div>
-
                         </div>
                       </div>
                     </div>
@@ -153,8 +197,15 @@
                       <label class="form-label"></label>
                       <div class="mt-2">
                         <div class="input-group-flat gap-2">
-                          <p class="page-subtitle">If you suspect unauthorized access to your vault, you can log out of all authenticated devices.</p>
-                          <a href="#" class="btn btn-danger" id="reset-jwt-secret-button" data-bs-toggle="modal" data-bs-target="#modal-danger">
+                          <p class="page-subtitle">
+                            If you suspect unauthorized access to your vault,
+                            you can log out of all authenticated devices.
+                          </p>
+                          <a href="#"
+                             class="btn btn-danger"
+                             id="reset-jwt-secret-button"
+                             data-bs-toggle="modal"
+                             data-bs-target="#modal-danger">
                             Log out of all devices
                           </a>
                         </div>
@@ -164,16 +215,26 @@
                   <div class="card-footer bg-transparent mt-auto"></div>
                 </div>
 
-
-                <div class="modal modal-blur fade" id="modal-danger" tabindex="-1" role="dialog">
-                  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                <div class="modal modal-blur fade"
+                     id="modal-danger"
+                     tabindex="-1"
+                     role="dialog">
+                  <div class="modal-dialog modal-sm modal-dialog-centered"
+                       role="document">
                     <div class="modal-content">
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      <button type="button"
+                              class="btn-close"
+                              data-bs-dismiss="modal"
+                              aria-label="Close"></button>
                       <div class="modal-status bg-danger"></div>
                       <div class="modal-body text-center py-4">
-                        <i class="bi bi-exclamation-triangle" style="font-size: 45px; color: red"></i>
+                        <i class="bi bi-exclamation-triangle"
+                           style="font-size: 45px; color: red"></i>
                         <h3>Are you sure?</h3>
-                        <div class="text-secondary">Do you really want to log out of all devices?<br />You will need to re-enter your passphrase.</div>
+                        <div class="text-secondary">
+                          Do you really want to log out of all devices?<br />You
+                          will need to re-enter your passphrase.
+                        </div>
                       </div>
                       <div class="modal-footer">
                         <div class="w-100">
@@ -184,7 +245,9 @@
                               </a>
                             </div>
                             <div class="col">
-                              <a class="btn btn-danger w-100" data-bs-dismiss="modal" id="confirm-log-out-button">
+                              <a class="btn btn-danger w-100"
+                                 data-bs-dismiss="modal"
+                                 id="confirm-log-out-button">
                                 Log out of all devices
                               </a>
                             </div>
@@ -195,8 +258,67 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="vault-login-modal"
+           data-bs-target="#staticBackdrop"
+           style="display: none">
+        <div class="modal modal-blur fade show"
+             id="modal-small"
+             tabindex="-1"
+             style="display: block"
+             aria-modal="true"
+             role="dialog">
+          <div class="modal-dialog modal-sm modal-dialog-centered"
+               role="document">
+            <div class="modal-content">
+              <div class="modal-body">
+                <div class="mb-4">
+                  <div class="bi-database-fill-lock text-center"
+                       style="font-size: 45px"></div>
+                  <h2 class="card-title text-center">Vault Locked</h2>
+                </div>
+
+                <div id="passphrase-input-fields">
+                  <p class="text-secondary-emphasis mt-0">
+                    Please enter your passphrase
+                  </p>
+                  <div class="mb-3 input-group input-group-flat">
+                    <input type="password"
+                           class="form-control"
+                           id="passphrase-input"
+                           placeholder="Passphrase"
+                           autocomplete="off" />
+                    <span class="input-group-text">
+                      <a href="#"
+                         class="link-secondary bi-eye"
+                         id="toggle-passphrase-visibility"></a>
+                    </span>
+                  </div>
+                  <div>
+                    <a class="btn btn-primary w-100 mb-4"
+                       id="unlock-vault-button">
+                      <i class="bi-unlock-fill me-2"></i>
+                      Unlock
+                    </a>
+                  </div>
+                </div>
+
+                <div class="text-center"
+                     id="unlock-in-progress"
+                     style="display: none">
+                  <div class="modal-title mb-4">Unlocking vault</div>
+                  <div class="spinner-border mb-2"></div>
+                  <div class="text-secondary-emphasis mb-4">
+                    This won't take long.
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
         </div>
       </div>
     </div>

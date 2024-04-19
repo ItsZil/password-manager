@@ -1,7 +1,10 @@
 'use strict';
 
-const { sendRefreshTokenRequest, sendCheckAuthRequest } = require('./requestsUtil.js');
-const { jwtDecode } = require("jwt-decode");
+const {
+  sendRefreshTokenRequest,
+  sendCheckAuthRequest,
+} = require('./requestsUtil.js');
+const { jwtDecode } = require('jwt-decode');
 
 // Function to check if the user is authenticated
 export async function isAuthenticated() {
@@ -16,20 +19,21 @@ export async function isAuthenticated() {
     try {
       const decodedToken = jwtDecode(accessToken);
       isExpired = decodedToken.exp < Date.now() / 1000;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error decoding access token: ', error);
     }
 
     if (isExpired) {
       // Check if user has a refresh token
-      const refreshTokenCookie = await getCookie("refreshToken");
+      const refreshTokenCookie = await getCookie('refreshToken');
 
       if (refreshTokenCookie) {
         const refreshToken = refreshTokenCookie.value;
 
         // Send a refresh token request to the server
-        const refreshTokenResponse = await sendRefreshTokenRequest(refreshToken);
+        const refreshTokenResponse = await sendRefreshTokenRequest(
+          refreshToken
+        );
 
         if (refreshTokenResponse != false) {
           // Refresh token succeeded
@@ -64,7 +68,7 @@ async function confirmAuth() {
 export async function getAccessToken() {
   const isAuthenticatedResult = await isAuthenticated();
   if (isAuthenticatedResult) {
-    const accessTokenCookie = await getCookie("accessToken");
+    const accessTokenCookie = await getCookie('accessToken');
     return accessTokenCookie.value;
   } else {
     return null;
@@ -79,9 +83,12 @@ export function setTokens(accessToken, refreshToken) {
 // Function to retrieve a cookie by name
 export function getCookie(name) {
   return new Promise((resolve) => {
-    chrome.cookies.get({ url: 'https://localhost:54782', name: name }, (cookie) => {
-      resolve(cookie);
-    });
+    chrome.cookies.get(
+      { url: 'https://localhost:54782', name: name },
+      (cookie) => {
+        resolve(cookie);
+      }
+    );
   });
 }
 
@@ -92,6 +99,6 @@ export function setCookie(name, value) {
     name: name,
     value: value,
     httpOnly: true,
-    secure: true
+    secure: true,
   });
 }

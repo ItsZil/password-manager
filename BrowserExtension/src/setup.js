@@ -2,20 +2,17 @@ const {
   initPublic,
   isHandshakeComplete,
   fetchPassphrase,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 
 const {
   isAbsolutePathValid,
   sendSetupVaultRequest,
   domainRegisterRequest,
-  sendHasExistingVaultRequest
+  sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
 const sourceId = 2;
 
@@ -106,8 +103,7 @@ $(document).ready(async function () {
     // Use the pass phrase or random password as the pragma key
     const passPhrase = $('#passPhraseInput').val();
     const passPhraseIsEmpty = passPhrase.trim().length == 0;
-    if (passPhraseIsEmpty)
-      return;
+    if (passPhraseIsEmpty) return;
 
     const vaultKey = await encryptPassword(passPhrase);
 

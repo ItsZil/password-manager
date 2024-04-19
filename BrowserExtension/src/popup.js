@@ -4,19 +4,16 @@ const {
   checkIfServerReachable,
   sendHasExistingVaultRequest,
   sendUnlockVaultRequest,
-  sendLockVaultRequest
+  sendLockVaultRequest,
 } = require('./util/requestsUtil.js');
 
 const {
   initPublic,
   isHandshakeComplete,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
 const sourceId = 1;
 
@@ -34,7 +31,9 @@ $('#importVaultBtn').on('click', function () {
 });
 
 $('#passphrase-input').on('input', function () {
-  $('#passphrase-input').removeClass('is-invalid').removeClass('is-invalid-lite');
+  $('#passphrase-input')
+    .removeClass('is-invalid')
+    .removeClass('is-invalid-lite');
 });
 
 $('#toggle-passphrase-visibility').on('click', function () {
@@ -54,7 +53,10 @@ $('#unlock-vault-button').on('click', async function () {
   const passphrase = $('#passphrase-input').val();
 
   const words = passphrase.split(' ');
-  const isValid = words.length >= 4 && words.length <= 10 && words.every((word) => word === word.toLowerCase());
+  const isValid =
+    words.length >= 4 &&
+    words.length <= 10 &&
+    words.every((word) => word === word.toLowerCase());
 
   if (!isValid) {
     $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
@@ -64,8 +66,8 @@ $('#unlock-vault-button').on('click', async function () {
   const encryptedPassphrase = await encryptPassword(passphrase);
   const unlockVaultRequestBody = {
     sourceId: sourceId,
-    passphraseBase64: encryptedPassphrase
-  }
+    passphraseBase64: encryptedPassphrase,
+  };
 
   // Set UI elements to indicate that we are loading
   $('#passphrase-input-fields').hide();
@@ -121,8 +123,7 @@ async function setElements() {
   if (serverIsUp) {
     $('#connection-status-ok').show();
     $('#connection-status-fail').hide();
-  }
-  else {
+  } else {
     $('#connection-status-ok').hide();
     $('#connection-status-error').show();
 
@@ -151,14 +152,18 @@ async function setElements() {
         $('#unlock-in-progress').hide();
 
         footerElement.show();
-        $('#connection-ok-icon').removeClass('bi-database-fill-lock').addClass('bi-database-fill-check');
+        $('#connection-ok-icon')
+          .removeClass('bi-database-fill-lock')
+          .addClass('bi-database-fill-check');
       } else {
         // User is not authenticated, display only login element.
         notAuthenticatedElement.show();
         authenticatedReadyElement.hide();
         footerElement.hide();
 
-        $('#connection-ok-icon').removeClass('bi-database-fill-check').addClass('bi-database-fill-lock');
+        $('#connection-ok-icon')
+          .removeClass('bi-database-fill-check')
+          .addClass('bi-database-fill-lock');
       }
     } else if (serverIsUp && !hasExistingVault) {
       // Display setup options.

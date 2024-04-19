@@ -7,6 +7,10 @@ namespace UtilitiesLibrary.Models
     /// </summary>
     internal class LoginDetailsViewResponse
     {
+        // The ID of the login details.
+        [JsonInclude]
+        internal int DetailsId { get; set; }
+
         // The domain (website.com)
         [JsonInclude]
         internal string Domain { get; set; }

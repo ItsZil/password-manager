@@ -66,13 +66,18 @@
               <div class="mb-4">
                 <label class="form-label">Vault location</label>
                 <div class="mt-2">
-                  <input type="text"
-                         id="vaultPathInput"
-                         class="form-control is-invalid is-invalid-lite"
-                         placeholder="Enter absolute path" />
-                  <small id="vaultPathError"
-                         class="text-danger"
-                         style="display: none">Invalid path</small>
+                  <input
+                    type="text"
+                    id="vaultPathInput"
+                    class="form-control is-invalid is-invalid-lite"
+                    placeholder="Enter absolute path"
+                  />
+                  <small
+                    id="vaultPathError"
+                    class="text-danger"
+                    style="display: none"
+                    >Invalid path</small
+                  >
                   <div class="mt-2">
                     <p class="bi-info-circle-fill ps-1 form-text">
                       Example: C:\Users\Name\Private\Vault\vault.db
@@ -87,10 +92,12 @@
                 <div class="mt-2">
                   <!-- Passphrase -->
                   <div class="mb-2">
-                    <input type="text"
-                           class="form-control is-invalid is-invalid-lite"
-                           id="passPhraseInput"
-                           placeholder="Vault Passphrase" />
+                    <input
+                      type="text"
+                      class="form-control is-invalid is-invalid-lite"
+                      id="passPhraseInput"
+                      placeholder="Vault Passphrase"
+                    />
                   </div>
                   <div class="mt-2">
                     <p class="bi-info-circle-fill ps-1 form-text">
@@ -107,22 +114,30 @@
               </div>
             </div>
 
-            <div id="vault-import-progress-modal"
-                 data-bs-target="#staticBackdrop"
-                 style="display: none">
-              <div class="modal modal-blur fade show"
-                   id="modal-small"
-                   tabindex="-1"
-                   style="display: block"
-                   aria-modal="true"
-                   role="dialog">
-                <div class="modal-dialog modal-sm modal-dialog-centered"
-                     role="document">
+            <div
+              id="vault-import-progress-modal"
+              data-bs-target="#staticBackdrop"
+              style="display: none"
+            >
+              <div
+                class="modal modal-blur fade show"
+                id="modal-small"
+                tabindex="-1"
+                style="display: block"
+                aria-modal="true"
+                role="dialog"
+              >
+                <div
+                  class="modal-dialog modal-sm modal-dialog-centered"
+                  role="document"
+                >
                   <div class="modal-content">
                     <div class="modal-body">
                       <div class="modal-title">Importing vault</div>
                       <div class="progress progress-bar-striped mb-3">
-                        <div class="progress-bar progress-bar-indeterminate"></div>
+                        <div
+                          class="progress-bar progress-bar-indeterminate"
+                        ></div>
                       </div>
                       <div class="card-subtitle mb-0">
                         This won't take long.
@@ -133,19 +148,37 @@
               </div>
             </div>
 
-            <div id="vault-import-failure-modal"
-                 style="display: none">
-              <div class="modal modal-blur fade show" id="modal-simple" tabindex="-1" style="display: block">
-                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div id="vault-import-failure-modal" style="display: none">
+              <div
+                class="modal modal-blur fade show"
+                id="modal-simple"
+                tabindex="-1"
+                style="display: block"
+              >
+                <div
+                  class="modal-dialog modal-sm modal-dialog-centered"
+                  role="document"
+                >
                   <div class="modal-content">
                     <div class="modal-status bg-red"></div>
                     <div class="modal-body text-center py-4">
-                      <i class="bi bi-database-fill-x" style="font-size: 45px; color: red"></i>
-                      <div class="text-secondary-emphasis">Something went wrong importing your vault. Restart the vault service and try again.</div>
+                      <i
+                        class="bi bi-database-fill-x"
+                        style="font-size: 45px; color: red"
+                      ></i>
+                      <div class="text-secondary-emphasis">
+                        Something went wrong importing your vault. Restart the
+                        vault service and try again.
+                      </div>
                     </div>
                     <div class="modal-footer">
                       <div class="w-100">
-                        <a href="#" class="btn btn-primary w-100" data-bs-dismiss="modal" id="restart-import-button">
+                        <a
+                          href="#"
+                          class="btn btn-primary w-100"
+                          data-bs-dismiss="modal"
+                          id="restart-import-button"
+                        >
                           Restart import
                         </a>
                       </div>
@@ -155,9 +188,11 @@
               </div>
             </div>
 
-            <div class="container"
-                 id="setup-complete-message"
-                 style="display: none">
+            <div
+              class="container"
+              id="setup-complete-message"
+              style="display: none"
+            >
               <div class="text-center mb-4">
                 <div class="d-grid gap-2">
                   <a href="./options.html" class="btn btn-info">Options</a>

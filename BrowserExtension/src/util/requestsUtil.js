@@ -12,12 +12,12 @@ export async function domainLoginRequest(domainLoginRequestBody) {
 
   try {
     const accessToken = await getAccessToken();
-    
+
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainLoginRequestBody),
     });
@@ -50,7 +50,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainRegisterRequestBody),
     });
@@ -160,7 +160,7 @@ export async function sendHasExistingVaultRequest() {
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (response.status === 200) {
@@ -183,18 +183,17 @@ export async function sendHasExistingVaultRequest() {
 export async function checkIfServerReachable() {
   try {
     return await fetch(ServerUrl, { method: 'HEAD' })
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
           return true;
         } else {
           return false;
         }
       })
-      .catch(error => {
+      .catch((error) => {
         return false;
       });
-  }
-  catch (error) {
+  } catch (error) {
     return false;
   }
 }
@@ -289,7 +288,7 @@ export async function sendCheckAuthRequest(accessToken) {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -307,21 +306,20 @@ export async function sendCheckAuthRequest(accessToken) {
 // Function to send a request to retrieve the count of login details
 // Returns: The count of login details
 export async function sendLoginDetailsCountRequest() {
-  const apiEndpoint = '/api/logindetails/count';
+  const apiEndpoint = '/api/logindetailscount';
   const accessToken = await getAccessToken();
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
     if (response.status === 200) {
-      const json = await response.json();
-      console.log(json);
-      return json.count;
+      const count = await response.json();
+      return count;
     } else {
       console.error(
         `Failed to retrieve login details count: ${response.status} ${response.statusText}`
@@ -344,7 +342,7 @@ export async function sendLoginDetailsViewRequest(page) {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${accessToken}`
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
@@ -354,6 +352,37 @@ export async function sendLoginDetailsViewRequest(page) {
     } else {
       console.error(
         `Failed to retrieve login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a login details' password by ID
+// Returns: A base64 encoded, shared key encrypted password
+export async function sendLoginDetailsPasswordRequest(domainLoginPasswordRequestBody) {
+  const apiEndpoint = `/api/logindetailspassword`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(domainLoginPasswordRequestBody),
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json.passwordB64;
+    } else {
+      console.error(
+        `Failed to retrieve login details password: ${response.status} ${response.statusText}`
       );
       return false;
     }

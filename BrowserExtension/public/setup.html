@@ -66,28 +66,41 @@
               <div class="mb-4">
                 <label class="form-label">Vault location</label>
                 <div class="btn-group w-100" role="group">
-                  <input type="radio"
-                         class="btn-check"
-                         name="select-vault-location"
-                         id="my-documents-location"
-                         autocomplete="off"
-                         checked="" />
-                  <label for="my-documents-location" type="button" class="btn">My Documents</label>
-                  <input type="radio"
-                         class="btn-check"
-                         name="select-vault-location"
-                         id="custom-path-location"
-                         autocomplete="off" />
-                  <label for="custom-path-location" type="button" class="btn">Custom path (specify)</label>
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="select-vault-location"
+                    id="my-documents-location"
+                    autocomplete="off"
+                    checked=""
+                  />
+                  <label for="my-documents-location" type="button" class="btn"
+                    >My Documents</label
+                  >
+                  <input
+                    type="radio"
+                    class="btn-check"
+                    name="select-vault-location"
+                    id="custom-path-location"
+                    autocomplete="off"
+                  />
+                  <label for="custom-path-location" type="button" class="btn"
+                    >Custom path (specify)</label
+                  >
                 </div>
                 <div id="customPathInput" class="mt-2" style="display: none">
-                  <input type="text"
-                         id="customPath"
-                         class="form-control is-invalid is-invalid-lite"
-                         placeholder="Enter absolute path" />
-                  <small id="customPathError"
-                         class="text-danger"
-                         style="display: none">Invalid path</small>
+                  <input
+                    type="text"
+                    id="customPath"
+                    class="form-control is-invalid is-invalid-lite"
+                    placeholder="Enter absolute path"
+                  />
+                  <small
+                    id="customPathError"
+                    class="text-danger"
+                    style="display: none"
+                    >Invalid path</small
+                  >
                   <div class="mt-2">
                     <p class="bi-info-circle-fill ps-1 form-text">
                       Example: C:\Users\Name\Private\Vault
@@ -102,36 +115,48 @@
                 <div id="passphraseSettings" class="mt-2">
                   <!-- Passphrase word count-->
                   <div class="counter-input input-group mb-2">
-                    <button id="decreaseWordCount"
-                            class="btn btn-outline-secondary"
-                            type="button">
+                    <button
+                      id="decreaseWordCount"
+                      class="btn btn-outline-secondary"
+                      type="button"
+                    >
                       -
                     </button>
-                    <input id="wordCount"
-                           type="text"
-                           class="form-control"
-                           value="Word count: 4"
-                           readonly />
-                    <button id="increaseWordCount"
-                            class="btn btn-outline-secondary"
-                            type="button">
+                    <input
+                      id="wordCount"
+                      type="text"
+                      class="form-control"
+                      value="Word count: 4"
+                      readonly
+                    />
+                    <button
+                      id="increaseWordCount"
+                      class="btn btn-outline-secondary"
+                      type="button"
+                    >
                       +
                     </button>
                   </div>
 
                   <!-- Passphrase -->
                   <div class="input-group mb-2">
-                    <input type="text"
-                           class="form-control"
-                           id="passPhraseInput"
-                           placeholder="Generate Passphrase"
-                           readonly />
-                    <button class="bi bi-arrow-clockwise btn"
-                            id="generatePassphrase"
-                            type="button"></button>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="passPhraseInput"
+                      placeholder="Generate Passphrase"
+                      readonly
+                    />
+                    <button
+                      class="bi bi-arrow-clockwise btn"
+                      id="generatePassphrase"
+                      type="button"
+                    ></button>
                   </div>
                   <div class="mt-2">
-                    <p class="bi-exclamation-diamond-fill ps-1 mt-2 mb-0 form-text">
+                    <p
+                      class="bi-exclamation-diamond-fill ps-1 mt-2 mb-0 form-text"
+                    >
                       Memorize it: if you write it down, keep it secure.
                     </p>
                     <p class="ps-1 mt-0 form-text">
@@ -148,22 +173,30 @@
               </div>
             </div>
 
-            <div id="vault-creation-progress-modal"
-                 data-bs-target="#staticBackdrop"
-                 style="display: none">
-              <div class="modal modal-blur fade show"
-                   id="modal-small"
-                   tabindex="-1"
-                   style="display: block"
-                   aria-modal="true"
-                   role="dialog">
-                <div class="modal-dialog modal-sm modal-dialog-centered"
-                     role="document">
+            <div
+              id="vault-creation-progress-modal"
+              data-bs-target="#staticBackdrop"
+              style="display: none"
+            >
+              <div
+                class="modal modal-blur fade show"
+                id="modal-small"
+                tabindex="-1"
+                style="display: block"
+                aria-modal="true"
+                role="dialog"
+              >
+                <div
+                  class="modal-dialog modal-sm modal-dialog-centered"
+                  role="document"
+                >
                   <div class="modal-content">
                     <div class="modal-body">
                       <div class="modal-title">Initializing vault</div>
                       <div class="progress progress-bar-striped mb-3">
-                        <div class="progress-bar progress-bar-indeterminate"></div>
+                        <div
+                          class="progress-bar progress-bar-indeterminate"
+                        ></div>
                       </div>
                       <div class="card-subtitle mb-0">
                         This won't take long.
@@ -174,19 +207,37 @@
               </div>
             </div>
 
-            <div id="vault-creation-failure-modal"
-                 style="display: none">
-              <div class="modal modal-blur fade show" id="modal-simple" tabindex="-1" style="display: block">
-                <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div id="vault-creation-failure-modal" style="display: none">
+              <div
+                class="modal modal-blur fade show"
+                id="modal-simple"
+                tabindex="-1"
+                style="display: block"
+              >
+                <div
+                  class="modal-dialog modal-sm modal-dialog-centered"
+                  role="document"
+                >
                   <div class="modal-content">
                     <div class="modal-status bg-red"></div>
                     <div class="modal-body text-center py-4">
-                      <i class="bi bi-database-fill-x" style="font-size: 45px; color: red"></i>
-                      <div class="text-secondary-emphasis">Something went wrong initializing your vault. Restart the vault service and try again.</div>
+                      <i
+                        class="bi bi-database-fill-x"
+                        style="font-size: 45px; color: red"
+                      ></i>
+                      <div class="text-secondary-emphasis">
+                        Something went wrong initializing your vault. Restart
+                        the vault service and try again.
+                      </div>
                     </div>
                     <div class="modal-footer">
                       <div class="w-100">
-                        <a href="#" class="btn btn-primary w-100" data-bs-dismiss="modal" id="restart-setup-button">
+                        <a
+                          href="#"
+                          class="btn btn-primary w-100"
+                          data-bs-dismiss="modal"
+                          id="restart-setup-button"
+                        >
                           Restart setup
                         </a>
                       </div>
@@ -196,9 +247,11 @@
               </div>
             </div>
 
-            <div class="container"
-                 id="setup-complete-message"
-                 style="display: none">
+            <div
+              class="container"
+              id="setup-complete-message"
+              style="display: none"
+            >
               <div class="text-center mb-4">
                 <div class="d-grid gap-2">
                   <a href="./options.html" class="btn btn-info">Options</a>
