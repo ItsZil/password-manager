@@ -14,8 +14,10 @@ const {
   setTokens
 } = require('./util/authUtil.js');
 
+const sourceId = 2;
+
 $(document).ready(async function () {
-  initPublic(1, window.crypto);
+  initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();

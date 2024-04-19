@@ -85,12 +85,12 @@ namespace Server.Utilities
                 return Encoding.UTF8.GetBytes(config["JWT_SECRET_KEY"]);
 
             // This should never be reached
-            return new byte[] { };
+            return Array.Empty<byte>();
         }
 
         internal static void ResetJwtSecretKey()
         {
-            byte[] newKey = PasswordUtil.GenerateSecurePassword();
+            byte[] newKey = PasswordUtil.GenerateSecurePassword(64);
             string newKeyString = Encoding.UTF8.GetString(newKey);
 
             // Add it as the JWT_SECRET_KEY key in the config.json file

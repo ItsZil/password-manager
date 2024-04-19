@@ -17,8 +17,10 @@ const {
   setTokens
 } = require('./util/authUtil.js');
 
+const sourceId = 2;
+
 $(document).ready(async function () {
-  initPublic(1, window.crypto);
+  initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();
@@ -146,7 +148,7 @@ $('#create-test-details').on('click', async function () {
   let password = 'Password123';
   const encryptedPassword = await encryptPassword(password);
   const domainRegisterRequestBody = {
-    sourceId: 1,
+    sourceId: sourceId,
     domain: 'practicetestautomation.com',
     username: 'student',
     password: encryptedPassword,

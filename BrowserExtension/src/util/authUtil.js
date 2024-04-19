@@ -1,6 +1,6 @@
 'use strict';
 
-const { sendRefreshTokenRequest } = require('./requestsUtil.js');
+const { sendRefreshTokenRequest, sendCheckAuthRequest } = require('./requestsUtil.js');
 const { jwtDecode } = require("jwt-decode");
 
 // Function to check if the user is authenticated
@@ -20,7 +20,6 @@ export async function isAuthenticated() {
     catch (error) {
       console.error('Error decoding access token: ', error);
     }
-
 
     if (isExpired) {
       // Check if user has a refresh token
@@ -44,12 +43,21 @@ export async function isAuthenticated() {
         }
       }
     } else {
-      // Access token is valid
-      return true;
+      // Access token is valid, confirm that the vault is unlocked
+      const authConfirmed = await sendCheckAuthRequest(accessToken);
+      return authConfirmed;
     }
   }
   // No valid access or refresh tokens found
   return false;
+}
+
+// Function to make a request to the server to confirm the user is authenticated
+// Needed in cases where the JWT secret key has been changed
+async function confirmAuth() {
+  console.log('attempting to confirm auth');
+  const isAuthed = await sendCheckAuthRequest(getCookie('accessToken'));
+  return isAuthed;
 }
 
 // Function to get the access token

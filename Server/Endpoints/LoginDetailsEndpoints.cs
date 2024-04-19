@@ -13,6 +13,9 @@ namespace Server.Endpoints
             group.MapPost("/domainregisterrequest", DomainRegisterRequest);
             group.MapPost("/domainloginrequest", DomainLoginRequest);
 
+            group.MapGet("/logindetails/count", LoginDetailsCount);
+            group.MapGet("/logindetails", LoginDetails);
+
             return group;
         }
 
@@ -89,6 +92,34 @@ namespace Server.Endpoints
 
             DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false);
             return Results.Ok(response);
+        }
+
+        [Authorize]
+        internal async static Task<IResult> LoginDetailsCount(SqlContext dbContext)
+        {
+            return Results.Ok(await dbContext.LoginDetails.CountAsync());
+        }
+
+        [Authorize]
+        internal async static Task<IResult> LoginDetails(SqlContext dbContext, [FromQuery] int page = 1)
+        {
+            int pageSize = 10;
+            int skip = (page - 1) * pageSize;
+
+            var details = await dbContext.LoginDetails.Skip(skip).Take(pageSize).ToListAsync();
+            
+            List<LoginDetailsViewResponse> results = new List<LoginDetailsViewResponse>();
+            foreach (var loginDetails in details)
+            {
+                results.Add(new LoginDetailsViewResponse
+                {
+                    Domain = loginDetails.RootDomain,
+                    Username = loginDetails.Username,
+                    CreationDate = loginDetails.CreationDate,
+                    LastUsedDate = loginDetails.LastUsedDate
+                });
+            }
+            return Results.Ok(results);
         }
     }
 }

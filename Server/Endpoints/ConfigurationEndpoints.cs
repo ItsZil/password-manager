@@ -20,6 +20,7 @@ namespace Server.Endpoints
             group.MapPost("/unlockvault", UnlockVault);
             group.MapPost("/refreshtoken", RefreshToken);
             group.MapGet("/lockvault", LockVault);
+            group.MapGet("/checkauth", CheckAuth);
 
             return group;
         }
@@ -115,7 +116,7 @@ namespace Server.Endpoints
                 return Results.BadRequest("Passphrase is empty.");
             }
 
-            byte[] passphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
+            byte[] passphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(unlockRequest.SourceId), Convert.FromBase64String(passphraseEncrypted));
             string passphraseString = Encoding.UTF8.GetString(passphrasePlain);
 
             // Attempt to unlock the vault
@@ -175,6 +176,16 @@ namespace Server.Endpoints
             keyProvider.ClearPragmaKey();
 
             return Results.NoContent();
+        }
+
+        [Authorize]
+        internal static IResult CheckAuth(KeyProvider keyProvider)
+        {
+            if (keyProvider.HasVaultPragmaKey())
+            {
+                return Results.Ok();
+            }
+            return Results.Forbid();
         }
     }
 }

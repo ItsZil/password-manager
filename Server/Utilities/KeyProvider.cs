@@ -9,7 +9,7 @@ namespace Server.Utilities
     {
         private string _vaultPragmaKey = string.Empty;
 
-        // Key: Source ID (0 - background, 1 - setup, 2 - popup), Value: Shared Secret
+        // Key: Source ID (0 - background, 1 - public scripts, 2 - popup), Value: Shared Secret
         private Dictionary<int, byte[]> SharedSecrets = new Dictionary<int, byte[]>();
 
         internal bool HasVaultPragmaKey()

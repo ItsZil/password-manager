@@ -18,6 +18,8 @@ const {
   setTokens
 } = require('./util/authUtil.js');
 
+const sourceId = 1;
+
 let serverIsUp = false;
 let isUserAuthenticated = false;
 
@@ -37,7 +39,6 @@ $('#passphrase-input').on('input', function () {
 
 $('#toggle-passphrase-visibility').on('click', function () {
   const input = $('#passphrase-input');
-  const icon = $('#toggle-passphrase-visibility-icon');
 
   if (input.attr('type') === 'password') {
     input.attr('type', 'text');
@@ -62,6 +63,7 @@ $('#unlock-vault-button').on('click', async function () {
 
   const encryptedPassphrase = await encryptPassword(passphrase);
   const unlockVaultRequestBody = {
+    sourceId: sourceId,
     passphraseBase64: encryptedPassphrase
   }
 
@@ -79,7 +81,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock succeeded.
     isUserAuthenticated = true;
 
-    const accessToken = response.token;
+    const accessToken = response.accessToken;
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
@@ -90,7 +92,7 @@ $('#unlock-vault-button').on('click', async function () {
 });
 
 $(async () => {
-  initPublic(2, window.crypto);
+  initPublic(sourceId, window.crypto);
 
   serverIsUp = await checkIfServerReachable();
   isUserAuthenticated = await isAuthenticated();
@@ -130,7 +132,7 @@ async function setElements() {
   if (hasExistingVault == null)
     hasExistingVault = await sendHasExistingVaultRequest();
 
-  chrome.storage.local.get(['setup_complete'], function (result) {
+  if (hasExistingVault) {
     const initialSetupElement = $('#initial-setup');
     const authenticatedReadyElement = $('#authenticated-ready');
     const notAuthenticatedElement = $('#not-authenticated');
@@ -163,7 +165,7 @@ async function setElements() {
       initialSetupElement.show();
       authenticatedReadyElement.hide();
     }
-  });
+  }
 }
 
 $('#lock-vault-button').on('click', async function () {

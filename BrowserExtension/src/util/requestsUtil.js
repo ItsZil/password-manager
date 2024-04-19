@@ -279,3 +279,86 @@ export async function sendLockVaultRequest() {
     return false;
   }
 }
+
+// Function to send a request to see if the user is authenticated
+// Returns a boolean indicating if the user is authenticated
+export async function sendCheckAuthRequest(accessToken) {
+  const apiEndpoint = '/api/checkauth';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+    });
+
+    if (response.status === 200) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve the count of login details
+// Returns: The count of login details
+export async function sendLoginDetailsCountRequest() {
+  const apiEndpoint = '/api/logindetails/count';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      console.log(json);
+      return json.count;
+    } else {
+      console.error(
+        `Failed to retrieve login details count: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a batch of login details for view
+// Returns: List<LoginDetailsResponse>
+export async function sendLoginDetailsViewRequest(page) {
+  const apiEndpoint = `/api/logindetails?page=${page}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to retrieve login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
