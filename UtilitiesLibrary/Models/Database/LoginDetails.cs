@@ -1,9 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace UtilitiesLibrary.Models
 {
-    [Index(nameof(RootDomain))]
     public class LoginDetails
     {
         [Key]
@@ -12,5 +10,8 @@ namespace UtilitiesLibrary.Models
         public string Username { get; set; }
         public byte[] Password { get; set; }
         public byte[] Salt { get; set; }
+
+        public DateOnly CreationDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
+        public DateTime LastUsedDate { get; set; } = DateTime.Now;
     }
 }
