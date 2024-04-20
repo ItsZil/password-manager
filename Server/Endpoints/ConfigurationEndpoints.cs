@@ -52,15 +52,15 @@ namespace Server.Endpoints
             }
 
             byte[] passphrasePlain = PasswordUtil.GeneratePassphrase(wordCount);
-            byte[] passphraseEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), passphrasePlain);
+            byte[] passphraseEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(passphraseRequest.SourceId), passphrasePlain);
 
             return Results.Ok(new PassphraseResponse { PassphraseBase64 = Convert.ToBase64String(passphraseEncrypted) });
         }
 
-        internal async static Task<IResult> GeneratePassword(KeyProvider keyProvider)
+        internal async static Task<IResult> GeneratePassword(KeyProvider keyProvider, [FromQuery] int sourceId = 1)
         {
-            byte[] plainPassword = PasswordUtil.GenerateSecurePassword();
-            byte[] passwordEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), plainPassword);
+            byte[] plainPassword = PasswordUtil.GenerateSecurePassword(32);
+            byte[] passwordEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(sourceId), plainPassword);
 
             return Results.Ok(new GeneratedPasswordResponse { PasswordBase64 = Convert.ToBase64String(passwordEncrypted) });
         }
@@ -86,7 +86,7 @@ namespace Server.Endpoints
             }
 
             byte[] encryptedPragmaKey = Convert.FromBase64String(setupRequest.VaultRawKeyBase64);
-            byte[] plainPragmaKey = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(1), encryptedPragmaKey);
+            byte[] plainPragmaKey = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(setupRequest.SourceId), encryptedPragmaKey);
 
             if (string.IsNullOrWhiteSpace(dbPath) || plainPragmaKey.Length == 0)
             {

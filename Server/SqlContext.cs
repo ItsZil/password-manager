@@ -13,6 +13,7 @@ namespace Server
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
+        internal DbSet<Passkey> Passkeys { get; set; }
 
         private KeyProvider _keyProvider;
 

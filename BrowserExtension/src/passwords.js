@@ -2,16 +2,18 @@ const {
   initPublic,
   isHandshakeComplete,
   encryptPassword,
-  decryptPassword
+  decryptPassword,
 } = require('./util/passwordUtil.js');
 
 const {
+  generatePassword,
   domainRegisterRequest,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
   sendLoginDetailsCountRequest,
   sendLoginDetailsViewRequest,
-  sendLoginDetailsPasswordRequest
+  sendLoginDetailsPasswordRequest,
+  sendCreatePasskeyRequest,
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -36,6 +38,7 @@ async function setElements() {
   if (!isAuthenticatedResult && hasExistingVault) {
     // Show login modal
     $('#vault-login-modal').show();
+    $('#vault-login-modal-inner').addClass('show');
   } else if (!hasExistingVault) {
     // Open setup
     window.location.replace('./setup.html');
@@ -43,6 +46,7 @@ async function setElements() {
     // User is authenticated and has an existing vault
     $('#page-loader').show();
     $('#vault-login-modal').hide();
+    $('#vault-login-modal-inner').removeClass('show');
 
     // Get count of login details
     loginDetailsCount = await sendLoginDetailsCountRequest();
@@ -57,18 +61,7 @@ async function setElements() {
 async function refreshLoginDetailsTable(page) {
   // Retrieve the requested batch of login details.
   let loginDetails = await sendLoginDetailsViewRequest(page);
-
-  // Duplicate the login details array elements by 20
-  loginDetails = loginDetails.concat(loginDetails);
-  loginDetails = loginDetails.concat(loginDetails);
-  loginDetails = loginDetails.concat(loginDetails);
-  loginDetails = loginDetails.concat(loginDetails);
-
-  // Delete any elements past 10
-  loginDetails.splice(10);
-
   loginDetailsCount = loginDetails.length;
-
 
   $('#details-current-min').text((page - 1) * 10 + 1);
   $('#details-current-max').text(Math.min(page * 10, loginDetailsCount));
@@ -106,14 +99,18 @@ async function refreshLoginDetailsTable(page) {
     if ($(this).hasClass('bi-eye')) {
       // User wants to view password
       // Remove the eye icon and replace it with a spinner
-      $(this).removeClass('bi-eye').addClass('spinner-border spinner-border-sm text-secondary');
+      $(this)
+        .removeClass('bi-eye')
+        .addClass('spinner-border spinner-border-sm text-secondary');
       $(this).attr('role', 'status');
 
       const domainLoginPasswordRequestBody = {
         sourceId: sourceId,
-        loginDetailsId: id
-      }
-      const encryptedPasswordB64 = await sendLoginDetailsPasswordRequest(domainLoginPasswordRequestBody);
+        loginDetailsId: id,
+      };
+      const encryptedPasswordB64 = await sendLoginDetailsPasswordRequest(
+        domainLoginPasswordRequestBody
+      );
       const decryptedPassword = await decryptPassword(encryptedPasswordB64);
 
       // Replace the password with the decrypted password
@@ -121,7 +118,9 @@ async function refreshLoginDetailsTable(page) {
       $('#password-input-' + id).attr('type', 'text');
 
       // Replace the spinner with the eye icon
-      $(this).removeClass('spinner-border spinner-border-sm text-secondary').addClass('bi-eye-slash');
+      $(this)
+        .removeClass('spinner-border spinner-border-sm text-secondary')
+        .addClass('bi-eye-slash');
       $(this).removeAttr('role');
     } else {
       // Hide the password
@@ -131,8 +130,6 @@ async function refreshLoginDetailsTable(page) {
       // Replace the eye-slash icon with the eye icon
       $(this).removeClass('bi-eye-slash').addClass('bi-eye');
     }
-
-
   });
 }
 
@@ -155,16 +152,20 @@ function populateLoginDetailsTable(page, loginDetails) {
     // Add columns to the row
     row.append('<td>' + loginDetail.detailsId + '</td>'); // ID
     row.append(
-      '<td><a href="http://' + loginDetail.domain + '" target="_blank" class="text-reset">' +
+      '<td><a href="http://' +
+        loginDetail.domain +
+        '" target="_blank" class="text-reset">' +
         loginDetail.domain +
         '</a></td>'
     ); // Domain
     row.append(
       '<td>' +
-      '<input type="text" class="form-control" id="username-' +
-      loginDetail.detailsId +
-      '-input" value="' + loginDetail.username + '">' +
-      '</td>'
+        '<input type="text" class="form-control" id="username-' +
+        loginDetail.detailsId +
+        '-input" value="' +
+        loginDetail.username +
+        '">' +
+        '</td>'
     ); // Username input field
     row.append(
       '<td>' +
@@ -178,14 +179,18 @@ function populateLoginDetailsTable(page, loginDetails) {
         '"></a>' +
         '</span>' +
         '</div>' +
-      '</td>'
+        '</td>'
     ); // Password input field and eye icon
     row.append('<td> ' + 'TODO' + '</td>'); // Extra auth
     row.append('<td>' + formatDate(loginDetail.lastUsedDate) + '</td>'); // Last Accessed
     row.append(
       '<td class="text-end">' +
-        '<a href="#" class="me-2" id="delete-details-' + loginDetail.detailsId + '"><i class="bi bi-trash3-fill" style="color: darkred; font-size: 21px"></i></a>' +
-        '<a href="#" id=save-details-' + loginDetail.detailsId + '"><i class="bi bi-floppy-fill" style="color: #0054a6; font-size: 21px"></i></a>' +
+        '<a href="#" class="me-2" id="delete-details-' +
+        loginDetail.detailsId +
+        '"><i class="bi bi-trash3-fill" style="color: darkred; font-size: 21px"></i></a>' +
+        '<a href="#" id=save-details-' +
+        loginDetail.detailsId +
+        '"><i class="bi bi-floppy-fill" style="color: #0054a6; font-size: 21px"></i></a>' +
         '</td>'
     ); // Action buttons
 
@@ -208,19 +213,29 @@ function generatePagination(page, totalPages) {
   paginationUl.empty();
 
   // Add previous page link
-  paginationUl.append('<li class="page-item"><a class="page-link" href="#" tabindex="-1"><i class="bi bi-chevron-left"></i></a></li>');
+  paginationUl.append(
+    '<li class="page-item"><a class="page-link" href="#" tabindex="-1"><i class="bi bi-chevron-left"></i></a></li>'
+  );
 
   // Add page links
   for (var i = 1; i <= totalPages; i++) {
     if (i === page) {
-      paginationUl.append('<li class="page-item active"><a class="page-link" href="#">' + i + '</a></li>');
+      paginationUl.append(
+        '<li class="page-item active"><a class="page-link" href="#">' +
+          i +
+          '</a></li>'
+      );
     } else {
-      paginationUl.append('<li class="page-item"><a class="page-link" href="#">' + i + '</a></li>');
+      paginationUl.append(
+        '<li class="page-item"><a class="page-link" href="#">' + i + '</a></li>'
+      );
     }
   }
 
   // Add next page link
-  paginationUl.append('<li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a></li>');
+  paginationUl.append(
+    '<li class="page-item"><a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a></li>'
+  );
 }
 
 function formatDate(dateString) {
@@ -235,6 +250,212 @@ function formatDate(dateString) {
   });
   return formattedDate;
 }
+
+$('#generate-new-details-password').on('click', async function () {
+  const generatedEncryptedPassword = await generatePassword(sourceId);
+  const decryptedPassword = await decryptPassword(generatedEncryptedPassword);
+
+  $('#create-new-details-password-input').val(decryptedPassword);
+});
+
+$('#creation-extra-auth-selection').on('change', function () {
+  const selectedValue = $(this).val();
+
+  switch (selectedValue) {
+    case 'pin-extra-auth':
+      $('#extra-auth-pin-setup').show();
+      break;
+    default:
+      $('#extra-auth-pin-setup').hide();
+      break;
+  }
+  $('#create-error-text').hide();
+});
+
+$('#extra-auth-pin-input').on('input', function () {
+  // Remove non-digit characters from input
+  var inputValue = $(this).val().replace(/\D/g, '');
+
+  // Update input value with only digits
+  $(this).val(inputValue);
+  $('#extra-auth-pin-input').removeClass('is-invalid is-invalid-lite');
+  $('#create-error-text').hide();
+});
+
+$('#create-new-details-domain-input').on('input', function () {
+  $('#create-new-details-domain-input').removeClass(
+    'is-invalid is-invalid-lite'
+  );
+  $('#create-error-text').hide();
+});
+
+$('#create-new-details-username-input').on('input', function () {
+  $('#create-new-details-username-input').removeClass(
+    'is-invalid is-invalid-lite'
+  );
+  $('#create-error-text').hide();
+});
+
+async function setupPasskey(loginDetailsId, domain) {
+  const randomChallenge = window.crypto.getRandomValues(new Uint8Array(16));
+  const randomUserId = window.crypto.getRandomValues(new Uint8Array(16));
+
+  const publicKeyCredentialCreationOptions = {
+    challenge: randomChallenge,
+    rp: {
+      name: 'Password Manager Vault',
+    },
+    user: {
+      id: randomUserId,
+      name: 'Vault Authentication: ' + domain,
+      displayName: 'Vault Authentication: ' + domain,
+    },
+    pubKeyCredParams: [
+      { alg: -7, type: 'public-key' },
+      { alg: -257, type: 'public-key' },
+    ],
+    userVerifiation: 'required',
+  };
+
+  const credential = await navigator.credentials.create({
+    publicKey: publicKeyCredentialCreationOptions,
+  });
+
+  const credentialPublicKey = credential.response.getPublicKey();
+
+  // Base64 encoded values to store in database
+  const credentialIdBase64 = credential.id;
+  const randomChallengeBase64 = btoa(
+    String.fromCharCode.apply(null, new Uint8Array(randomChallenge))
+  );
+  const userIdBase64 = btoa(
+    String.fromCharCode.apply(null, new Uint8Array(randomUserId))
+  );
+  const credentialPublicKeyBase64 = btoa(
+    String.fromCharCode.apply(null, new Uint8Array(credentialPublicKey))
+  );
+
+  const encryptedChallenge = await encryptPassword(randomChallengeBase64);
+
+  const createPasskeyRequestBody = {
+    sourceId: sourceId,
+    credentialId: credentialIdBase64,
+    userId: userIdBase64,
+    publicKey: credentialPublicKeyBase64,
+    challenge: encryptedChallenge,
+    loginDetailsId: loginDetailsId,
+  };
+  const passkeySaved = await sendCreatePasskeyRequest(createPasskeyRequestBody);
+  if (!passkeySaved) {
+    $('#create-error-text').text(
+      'Something went wrong setting up your passkey. Please try again.'
+    );
+    $('#create-error-text').show();
+  }
+  return passkeySaved;
+  // TODO: test passkey auth, show spinner while registering domain and setting up passkey
+
+  /* TEST AUTH
+
+
+  const publicKeyCredentialRequestOptions2 = {
+    // Server generated challenge
+    challenge: randomChallenge,
+    userVerifiation: 'required',
+    allowCredentials: [{
+      type: 'public-key',
+      id: credential.rawId
+    }]
+  };
+
+  const credential2 = await navigator.credentials.get({
+    publicKey: publicKeyCredentialRequestOptions2
+  });
+
+  console.log(btoa(String.fromCharCode.apply(null, new Uint8Array(credential2.response.getSignature()))));
+  console.log(credential2.id);*/
+
+  // Encode and send the credential to the server for verification.
+}
+
+function parseDomain() {
+  // Verify domain
+  let domain = $('#create-new-details-domain-input').val().trim();
+  if (!domain || !domain.includes('.')) {
+    $('#create-new-details-domain-input').addClass(
+      'is-invalid is-invalid-lite'
+    );
+
+    $('#create-error-text').text('Please enter a valid domain.');
+    $('#create-error-text').show();
+    return false;
+  }
+  // Parse domain
+  domain = domain.replace(/^(https?:\/\/)?(www\.)?/, ''); // Remove protocol
+  domain = domain.replace(/\/[^\/]*$/, ''); // Remove everything after /
+  domain = domain.replace(/^[^a-zA-Z0-9]*/, ''); // Remove non-letter and non-number characters at the beginning
+  $('#create-new-details-domain-input').val(domain);
+
+  return domain;
+}
+
+$('#finish-create-details-button').on('click', async function () {
+  const domain = parseDomain();
+
+  const username = $('#create-new-details-username-input').val();
+  if (username.length < 1) {
+    $('#create-new-details-username-input').addClass(
+      'is-invalid is-invalid-lite'
+    );
+
+    $('#create-error-text').text('Please enter a valid username.');
+    $('#create-error-text').show();
+    return;
+  }
+
+  // Ensure password is at least 8 characters long
+  let password = $('#create-new-details-password-input').val();
+  if (password.length < 8) {
+    $('#create-new-details-password-input').addClass(
+      'is-invalid is-invalid-lite'
+    );
+
+    $('#create-error-text').text(
+      'Your password must be at least 8 characters long.'
+    );
+    $('#create-error-text').show();
+    return;
+  }
+
+  // We need to create the LoginDetails first in order to link the extra authentication to it.
+  const encryptedPassword = await encryptPassword(password);
+  const domainRegisterRequestBody = {
+    sourceId: sourceId,
+    domain: domain,
+    username: 'student',
+    password: encryptedPassword,
+  };
+
+  const createdDetails = await domainRegisterRequest(domainRegisterRequestBody);
+
+  // Process extra authentication on autofill
+  const selectedExtraAuth = $('#creation-extra-auth-selection').val();
+  switch (selectedExtraAuth) {
+    case 'pin-extra-auth':
+      // Retrieve the PIN input value
+      const pinInput = $('#extra-auth-pin-input').val();
+      if (pinInput.length !== 4) {
+        $('#extra-auth-pin-input').addClass('is-invalid is-invalid-lite');
+
+        $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
+        $('#create-error-text').show();
+      }
+      break;
+    case 'passkey-extra-auth':
+      await setupPasskey(createdDetails.id, createdDetails.domain);
+      break;
+  }
+});
 
 $('#toggle-passphrase-visibility').on('click', function () {
   const input = $('#passphrase-input');
@@ -289,18 +510,6 @@ $('#unlock-vault-button').on('click', async function () {
 
     await setElements();
   }
-});
-
-$('#create-test-details').on('click', async function () {
-  let password = 'Password123';
-  const encryptedPassword = await encryptPassword(password);
-  const domainRegisterRequestBody = {
-    sourceId: sourceId,
-    domain: 'practicetestautomation.com',
-    username: 'student',
-    password: encryptedPassword,
-  };
-  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 // Function to wait for handshake to complete and show the appropriate UI

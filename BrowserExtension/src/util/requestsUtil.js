@@ -101,8 +101,8 @@ export async function isAbsolutePathValid(absolutePathUri) {
 
 // Function to generate a new secure password
 // Returns: A string containing the base64 encoded, encrypted password. False if unsuccessful
-export async function generatePassword() {
-  const apiEndpoint = '/api/generatepassword';
+export async function generatePassword(sourceId) {
+  const apiEndpoint = `/api/generatepassword?sourceId=${sourceId}`;
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
@@ -111,7 +111,7 @@ export async function generatePassword() {
 
     if (response.status === 200) {
       const json = await response.json();
-      return json.key;
+      return json.password;
     } else {
       console.error(
         `Failed to retrieve generated password: ${response.status} ${response.statusText}`
@@ -363,7 +363,9 @@ export async function sendLoginDetailsViewRequest(page) {
 
 // Function to send a request to retrieve a login details' password by ID
 // Returns: A base64 encoded, shared key encrypted password
-export async function sendLoginDetailsPasswordRequest(domainLoginPasswordRequestBody) {
+export async function sendLoginDetailsPasswordRequest(
+  domainLoginPasswordRequestBody
+) {
   const apiEndpoint = `/api/logindetailspassword`;
   const accessToken = await getAccessToken();
 
@@ -383,6 +385,36 @@ export async function sendLoginDetailsPasswordRequest(domainLoginPasswordRequest
     } else {
       console.error(
         `Failed to retrieve login details password: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to store a new passkey for a specific login detail ID
+// Returns: A boolean indicating if the passkey was successfully stored
+export async function sendCreatePasskeyRequest(passkeyCreationRequestBody) {
+  const apiEndpoint = '/api/passkey';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(passkeyCreationRequestBody),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(
+        `Failed to create passkey: ${response.status} ${response.statusText}`
       );
       return false;
     }

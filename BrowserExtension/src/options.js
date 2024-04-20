@@ -7,7 +7,7 @@ const {
 const {
   domainRegisterRequest,
   sendUnlockVaultRequest,
-  sendHasExistingVaultRequest
+  sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -30,6 +30,7 @@ async function setElements() {
   if (!isAuthenticatedResult && hasExistingVault) {
     // Show login modal
     $('#vault-login-modal').show();
+    $('#vault-login-modal-inner').addClass('show');
   } else if (!hasExistingVault) {
     // Open setup
     window.location.replace('./setup.html');
@@ -37,6 +38,7 @@ async function setElements() {
     // User is authenticated and has an existing vault
     $('#page-loader').show();
     $('#vault-login-modal').hide();
+    $('#vault-login-modal-inner').removeClass('show');
 
     // Do something
 
@@ -44,7 +46,6 @@ async function setElements() {
     $('#passwords-options').show();
   }
 }
-
 
 $('#toggle-passphrase-visibility').on('click', function () {
   const input = $('#passphrase-input');

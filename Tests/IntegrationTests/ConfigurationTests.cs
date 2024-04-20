@@ -57,7 +57,7 @@ namespace Tests.IntegrationTests.Server
         private async Task<HttpResponseMessage> GeneratePassPhraseAsync(int wordCount)
         {
             var apiEndpoint = "api/generatepassphrase";
-            var passphraseRequest = new PassphraseRequest { WordCount = wordCount };
+            var passphraseRequest = new PassphraseRequest { SourceId = 1, WordCount = wordCount };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(passphraseRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
@@ -84,7 +84,7 @@ namespace Tests.IntegrationTests.Server
         private async Task<HttpResponseMessage> SetupVaultAsync(string path, string vaultRawKeyBase64)
         {
             var apiEndpoint = "api/setupvault";
-            var setupVaultRequest = new SetupVaultRequest { AbsolutePathUri = Uri.EscapeDataString(path), VaultRawKeyBase64 = vaultRawKeyBase64 };
+            var setupVaultRequest = new SetupVaultRequest { SourceId = 1, AbsolutePathUri = Uri.EscapeDataString(path), VaultRawKeyBase64 = vaultRawKeyBase64 };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(setupVaultRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);

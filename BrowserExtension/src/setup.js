@@ -108,6 +108,7 @@ $(document).ready(async function () {
     const vaultKey = await encryptPassword(passPhrase);
 
     const setupVaultRequestBody = {
+      sourceId: sourceId,
       absolutePathUri: vaultLocation,
       vaultRawKeyBase64: vaultKey,
     };
@@ -159,7 +160,7 @@ $('#generatePassphrase').on('click', async function () {
     wordCount = parseInt(wordCount.match(/\d+/)[0]);
 
     // Generate a secure passphrase
-    const passphrase = await fetchPassphrase(wordCount);
+    const passphrase = await fetchPassphrase(sourceId, wordCount);
 
     // Set the generated passphrase to the input field
     $('#passPhraseInput').val(passphrase);

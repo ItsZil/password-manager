@@ -107,6 +107,7 @@ namespace Server
             rootApi.MapLoginDetailsEndpoints();
             rootApi.MapHandshakeEndpoints();
             rootApi.MapConfigurationEndpoints();
+            rootApi.MapPasskeyEndpoints();
 
             if (app.Environment.IsEnvironment("TEST_INTEGRATION"))
                 rootApi.MapTestEndpoints();

@@ -133,43 +133,41 @@ async function setElements() {
   if (hasExistingVault == null)
     hasExistingVault = await sendHasExistingVaultRequest();
 
-  if (hasExistingVault) {
-    const initialSetupElement = $('#initial-setup');
-    const authenticatedReadyElement = $('#authenticated-ready');
-    const notAuthenticatedElement = $('#not-authenticated');
-    const footerElement = $('#footer');
+  const initialSetupElement = $('#initial-setup');
+  const authenticatedReadyElement = $('#authenticated-ready');
+  const notAuthenticatedElement = $('#not-authenticated');
+  const footerElement = $('#footer');
 
-    if (serverIsUp && hasExistingVault) {
-      // Display the default popup.
-      initialSetupElement.hide();
+  if (serverIsUp && hasExistingVault) {
+    // Display the default popup.
+    initialSetupElement.hide();
 
-      if (isUserAuthenticated) {
-        // User is authenticated, display all elements.
-        authenticatedReadyElement.show();
-        notAuthenticatedElement.hide();
+    if (isUserAuthenticated) {
+      // User is authenticated, display all elements.
+      authenticatedReadyElement.show();
+      notAuthenticatedElement.hide();
 
-        $('#passphrase-input-fields').hide();
-        $('#unlock-in-progress').hide();
+      $('#passphrase-input-fields').hide();
+      $('#unlock-in-progress').hide();
 
-        footerElement.show();
-        $('#connection-ok-icon')
-          .removeClass('bi-database-fill-lock')
-          .addClass('bi-database-fill-check');
-      } else {
-        // User is not authenticated, display only login element.
-        notAuthenticatedElement.show();
-        authenticatedReadyElement.hide();
-        footerElement.hide();
-
-        $('#connection-ok-icon')
-          .removeClass('bi-database-fill-check')
-          .addClass('bi-database-fill-lock');
-      }
-    } else if (serverIsUp && !hasExistingVault) {
-      // Display setup options.
-      initialSetupElement.show();
+      footerElement.show();
+      $('#connection-ok-icon')
+        .removeClass('bi-database-fill-lock')
+        .addClass('bi-database-fill-check');
+    } else {
+      // User is not authenticated, display only login element.
+      notAuthenticatedElement.show();
       authenticatedReadyElement.hide();
+      footerElement.hide();
+
+      $('#connection-ok-icon')
+        .removeClass('bi-database-fill-check')
+        .addClass('bi-database-fill-lock');
     }
+  } else if (serverIsUp && !hasExistingVault) {
+    // Display setup options.
+    initialSetupElement.show();
+    authenticatedReadyElement.hide();
   }
 }
 

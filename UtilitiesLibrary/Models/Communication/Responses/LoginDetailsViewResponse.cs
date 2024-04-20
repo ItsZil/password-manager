@@ -19,10 +19,6 @@ namespace UtilitiesLibrary.Models
         [JsonInclude]
         internal string Username { get; set; }
 
-        // The date when the login details were created.
-        [JsonInclude]
-        public DateOnly CreationDate { get; set; }
-
         // The date when the login details were last used.
         [JsonInclude]
         public DateTime LastUsedDate { get; set; }

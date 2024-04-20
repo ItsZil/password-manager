@@ -92,7 +92,7 @@ const common = {
     new webpack.ProvidePlugin({
       $: 'jquery',
       'window.jQuery': 'jquery',
-    })
+    }),
   ],
 };
 

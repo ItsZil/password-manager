@@ -49,18 +49,19 @@ namespace Server.Endpoints
             (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(decryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
 
             // Save it to vault
-            await dbContext.LoginDetails.AddAsync(new LoginDetails
+            var newLoginDetails = new LoginDetails
             {
                 RootDomain = domain,
                 Username = username,
                 Password = encryptedPassword,
                 Salt = salt
-            });
+            };
+            await dbContext.LoginDetails.AddAsync(newLoginDetails);
             await dbContext.SaveChangesAsync();
 
             // Encrypt password with shared secret and send it back to the client
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
-            DomainRegisterResponse response = new(domain, encryptedPasswordShared);
+            DomainRegisterResponse response = new(newLoginDetails.DetailsId, domain, encryptedPasswordShared);
 
             return Results.Ok(response);
         }

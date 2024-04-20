@@ -10,7 +10,6 @@ namespace UtilitiesLibrary.Models
         public string Type { get; set; } // TOTP, HOTP, etc.
         public string Secret { get; set; }
 
-        public DateOnly CreationDate = DateOnly.FromDateTime(DateTime.Now);
         public DateTime LastUsedDate = DateTime.Now;
 
         public virtual LoginDetails LoginDetails { get; set; }
