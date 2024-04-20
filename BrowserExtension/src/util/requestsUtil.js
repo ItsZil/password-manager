@@ -63,6 +63,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
       console.error(
         `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
       );
+      return response.status;
     }
   } catch (error) {
     console.error('Error retrieving response: ', error);
@@ -415,6 +416,36 @@ export async function sendCreatePasskeyRequest(passkeyCreationRequestBody) {
     } else {
       console.error(
         `Failed to create passkey: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a passkey for a specific login detail ID
+// Returns: A PasskeyCredentialResponse object
+export async function sendGetPasskeyCredentialRequest(sourceId, loginDetailsId) {
+  const apiEndpoint = `/api/passkey?sourceId=${sourceId}&loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      }
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to retrieve passkey credential: ${response.status} ${response.statusText}`
       );
       return false;
     }

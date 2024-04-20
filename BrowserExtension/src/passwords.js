@@ -14,6 +14,7 @@ const {
   sendLoginDetailsViewRequest,
   sendLoginDetailsPasswordRequest,
   sendCreatePasskeyRequest,
+  sendGetPasskeyCredentialRequest
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -21,12 +22,30 @@ const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 const sourceId = 2;
 
 let loginDetailsCount = 0;
+let currentPage = 1;
 
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
 
   await waitForHandshake();
 });
+
+function setPageUrlParam() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const pageParam = urlParams.get('page');
+
+  if (pageParam) {
+    currentPage = parseInt(pageParam);
+  }
+
+  if (currentPage * 10 > loginDetailsCount) {
+    currentPage = Math.ceil(loginDetailsCount / 10);
+  }
+
+  if (currentPage !== 1 || !urlParams.has('page')) {
+    window.history.replaceState({}, '', `?page=${currentPage}`);
+  }
+}
 
 async function setElements() {
   const isAuthenticatedResult = await isAuthenticated();
@@ -51,7 +70,9 @@ async function setElements() {
     // Get count of login details
     loginDetailsCount = await sendLoginDetailsCountRequest();
 
-    await refreshLoginDetailsTable(1);
+    setPageUrlParam();
+
+    await refreshLoginDetailsTable(currentPage);
 
     $('#page-loader').hide();
     $('#passwords-options').show();
@@ -60,8 +81,10 @@ async function setElements() {
 
 async function refreshLoginDetailsTable(page) {
   // Retrieve the requested batch of login details.
+  $('#loading-passwords-table').show();
+  $('#passwords-table').hide();
+
   let loginDetails = await sendLoginDetailsViewRequest(page);
-  loginDetailsCount = loginDetails.length;
 
   $('#details-current-min').text((page - 1) * 10 + 1);
   $('#details-current-max').text(Math.min(page * 10, loginDetailsCount));
@@ -69,6 +92,9 @@ async function refreshLoginDetailsTable(page) {
 
   // Populate the login details table
   populateLoginDetailsTable(page, loginDetails);
+
+  $('#loading-passwords-table').hide();
+  $('#passwords-table').show();
 
   $('[id^="save-details-"]').on('click', async function () {
     const idText = $(this).attr('id');
@@ -86,6 +112,17 @@ async function refreshLoginDetailsTable(page) {
     const idText = $(this).attr('id');
     const id = parseInt(idText.split('-')[2]);
     console.log('DELETE Clicked button ID:', id);
+  });
+
+  $('[id^="passwords-page-"]').on('click', async function () {
+    const idText = $(this).attr('id');
+    const id = parseInt(idText.split('-')[2]);
+
+    if (id != currentPage) {
+      window.history.replaceState({}, '', `?page=${id}`);
+      currentPage = id;
+      await refreshLoginDetailsTable(id);
+    }
   });
 
   $('[id^="password-toggle-"]').on('click', async function () {
@@ -221,13 +258,13 @@ function generatePagination(page, totalPages) {
   for (var i = 1; i <= totalPages; i++) {
     if (i === page) {
       paginationUl.append(
-        '<li class="page-item active"><a class="page-link" href="#">' +
+        '<li class="page-item active"><a class="page-link" href="#" id="passwords-page-' + i + '">' +
           i +
           '</a></li>'
       );
     } else {
       paginationUl.append(
-        '<li class="page-item"><a class="page-link" href="#">' + i + '</a></li>'
+        '<li class="page-item"><a class="page-link" href="#" id="passwords-page-' + i + '">' + i + '</a></li>'
       );
     }
   }
@@ -336,7 +373,6 @@ async function setupPasskey(loginDetailsId, domain) {
   );
 
   const encryptedChallenge = await encryptPassword(randomChallengeBase64);
-
   const createPasskeyRequestBody = {
     sourceId: sourceId,
     credentialId: credentialIdBase64,
@@ -348,12 +384,17 @@ async function setupPasskey(loginDetailsId, domain) {
   const passkeySaved = await sendCreatePasskeyRequest(createPasskeyRequestBody);
   if (!passkeySaved) {
     $('#create-error-text').text(
-      'Something went wrong setting up your passkey. Please try again.'
+      'Something went wrong setting up your passkey. Your login details have been created, edit them to try again.'
     );
     $('#create-error-text').show();
+
+    return false;
   }
-  return passkeySaved;
-  // TODO: test passkey auth, show spinner while registering domain and setting up passkey
+
+  //return passkeySaved;
+
+  const passkeyCredential = await sendGetPasskeyCredentialRequest(sourceId, loginDetailsId);
+  console.log(passkeyCredential);
 
   /* TEST AUTH
 
@@ -400,6 +441,7 @@ function parseDomain() {
 }
 
 $('#finish-create-details-button').on('click', async function () {
+  $('#create-error-text').hide();
   const domain = parseDomain();
 
   const username = $('#create-new-details-username-input').val();
@@ -427,6 +469,11 @@ $('#finish-create-details-button').on('click', async function () {
     return;
   }
 
+  // Set up loading UI
+  $('#finish-create-details-button').addClass('disabled');
+  $('#finish-create-details-icon').hide();
+  $('#finish-create-details-spinner').show();
+
   // We need to create the LoginDetails first in order to link the extra authentication to it.
   const encryptedPassword = await encryptPassword(password);
   const domainRegisterRequestBody = {
@@ -437,6 +484,19 @@ $('#finish-create-details-button').on('click', async function () {
   };
 
   const createdDetails = await domainRegisterRequest(domainRegisterRequestBody);
+  if (createdDetails.id == null) {
+    if (createdDetails == 409) {
+      $('#create-error-text').text('You already have login details for this website and username.');
+    } else if (createdDetails != 200) {
+      $('#create-error-text').text('Something went wrong creating login details - please try again.');
+    }
+    $('#create-error-text').show();
+    $('#finish-create-details-button').removeClass('disabled');
+    $('#finish-create-details-icon').show();
+    $('#finish-create-details-spinner').hide();
+
+    return;
+  }
 
   // Process extra authentication on autofill
   const selectedExtraAuth = $('#creation-extra-auth-selection').val();
@@ -449,12 +509,21 @@ $('#finish-create-details-button').on('click', async function () {
 
         $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
         $('#create-error-text').show();
+        $('#finish-create-details-button').removeClass('disabled');
+        $('#finish-create-details-icon').show();
+        $('#finish-create-details-spinner').hide();
       }
+      // TODO: Store the PIN in the database
       break;
     case 'passkey-extra-auth':
       await setupPasskey(createdDetails.id, createdDetails.domain);
       break;
   }
+
+  await refreshLoginDetailsTable(currentPage);
+  $('#finish-create-details-button').removeClass('disabled');
+  $('#finish-create-details-icon').show();
+  $('#finish-create-details-spinner').hide();
 });
 
 $('#toggle-passphrase-visibility').on('click', function () {
