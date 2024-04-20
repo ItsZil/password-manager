@@ -354,9 +354,15 @@ async function setupPasskey(loginDetailsId, domain) {
     userVerifiation: 'required',
   };
 
-  const credential = await navigator.credentials.create({
-    publicKey: publicKeyCredentialCreationOptions,
-  });
+  let credential;
+  try {
+    credential = await navigator.credentials.create({
+      publicKey: publicKeyCredentialCreationOptions,
+    });
+  } catch (error) {
+    console.error('Error creating passkey credential:', error);
+    return false;
+  }
 
   const credentialPublicKey = credential.response.getPublicKey();
 
@@ -390,22 +396,22 @@ async function setupPasskey(loginDetailsId, domain) {
 
     return false;
   }
+  return true;
 
-  //return passkeySaved;
-
+  /* AUTH EXAMPLE:
   const passkeyCredential = await sendGetPasskeyCredentialRequest(sourceId, loginDetailsId);
-  console.log(passkeyCredential);
+  const challengeB64 = await decryptPassword(passkeyCredential.challenge);
 
-  /* TEST AUTH
-
+  const challenge = Uint8Array.from(atob(challengeB64), c => c.charCodeAt(0));
+  const credentialId = Uint8Array.from(atob(passkeyCredential.credentialId), c => c.charCodeAt(0));
 
   const publicKeyCredentialRequestOptions2 = {
     // Server generated challenge
-    challenge: randomChallenge,
+    challenge: challenge,
     userVerifiation: 'required',
     allowCredentials: [{
       type: 'public-key',
-      id: credential.rawId
+      id: credentialId
     }]
   };
 
@@ -413,10 +419,11 @@ async function setupPasskey(loginDetailsId, domain) {
     publicKey: publicKeyCredentialRequestOptions2
   });
 
-  console.log(btoa(String.fromCharCode.apply(null, new Uint8Array(credential2.response.getSignature()))));
-  console.log(credential2.id);*/
+  console.log(credential2);
+  console.log('Signature', btoa(credential2.response.signature));
+  console.log(credential2.id);
 
-  // Encode and send the credential to the server for verification.
+  // Encode and send the credential to the server for verification.*/
 }
 
 function parseDomain() {
@@ -500,6 +507,7 @@ $('#finish-create-details-button').on('click', async function () {
 
   // Process extra authentication on autofill
   const selectedExtraAuth = $('#creation-extra-auth-selection').val();
+  let extraAuthSetupResult = true;
   switch (selectedExtraAuth) {
     case 'pin-extra-auth':
       // Retrieve the PIN input value
@@ -516,14 +524,28 @@ $('#finish-create-details-button').on('click', async function () {
       // TODO: Store the PIN in the database
       break;
     case 'passkey-extra-auth':
-      await setupPasskey(createdDetails.id, createdDetails.domain);
+      extraAuthSetupResult = await setupPasskey(createdDetails.id, createdDetails.domain);
       break;
   }
 
-  await refreshLoginDetailsTable(currentPage);
+  if (createdDetails.id <= currentPage * 10) {
+    await refreshLoginDetailsTable(currentPage);
+  }
+
   $('#finish-create-details-button').removeClass('disabled');
   $('#finish-create-details-icon').show();
   $('#finish-create-details-spinner').hide();
+
+  // Reset all fields to default values and close the modal
+  $('#create-new-details-domain-input').val('');
+  $('#create-new-details-username-input').val('');
+  $('#create-new-details-password-input').val('');
+  $('#create-details-modal-close').click();
+
+  if (!extraAuthSetupResult) {
+    // Something went wrong setting up extra authentication, show an error modal
+    document.getElementById('show-extra-auth-failed-modal-button').click();
+  }
 });
 
 $('#toggle-passphrase-visibility').on('click', function () {
