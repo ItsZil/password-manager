@@ -121,11 +121,6 @@ export async function authenticatePasskey(passkeyCredential, challenge, loginDet
     publicKey: publicKeyCredentialRequestOptions
   });
 
-  console.log(credential);
-  // get algorithm
-  const algorithm = credential.response.algorithm;
-  console.log(algorithm);
-
   // Prepare the data to send to the server for verification
   const credentialIdBase64 = credential.id;
   const authenticatorDataBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.response.authenticatorData)));

@@ -4,21 +4,27 @@ namespace Server.Utilities
 {
     internal static class PasskeyUtil
     {
-        internal static bool VerifyPasskeySignature(byte[] publicKey, byte[] data, byte[] signature)
+        internal static bool VerifyPasskeySignature(byte[] publicKey, byte[] data, byte[] signature, int algorithmId)
         {
-            // Something is very weird here. If we use the IeeeP1363FixedFieldConcatenation signature format, the verification ocassionally fails.
-            // The Rfc3279DerSequence format seems to work consistently, but the signature must remain in DER format.
-            try
+            switch (algorithmId)
             {
-                using ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-                ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
-
-                return ecdsa.VerifyData(data, signature, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
-            }
-            catch (CryptographicException ex)
-            {
-                Console.WriteLine($"Error verifying signature: {ex.Message}");
-                return false;
+                case -7: // ES256 with NIST P-256 curve and SHA-256
+                    using (ECDsa ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256))
+                    {
+                        // Something is very weird here. If we use the IeeeP1363FixedFieldConcatenation signature format, the verification ocassionally fails.
+                        // The Rfc3279DerSequence format seems to work consistently, but the signature must remain in DER format.
+                        ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+                        return ecdsa.VerifyData(data, signature, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
+                    }
+                case -257: // RSA with SHA-256
+                    using (RSA rsa = RSA.Create())
+                    {
+                        rsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+                        return rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+                    }
+                default:
+                    Console.WriteLine("Unsupported algorithm.");
+                    return false;
             }
         }
 

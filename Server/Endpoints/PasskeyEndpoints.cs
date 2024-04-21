@@ -52,7 +52,8 @@ namespace Server.Endpoints
                 UserId = userId,
                 PublicKey = publicKey,
                 Challenge = challenge,
-                LoginDetailsId = loginDetailsId
+                LoginDetailsId = loginDetailsId,
+                AlgorithmId = request.AlgorithmId
             };
 
             await sqlContext.Passkeys.AddAsync(newPasskey);
@@ -138,7 +139,7 @@ namespace Server.Endpoints
 
             // Verify the signature
             byte[] signature = Convert.FromBase64String(request.SignatureB64);
-            bool signatureVerified = PasskeyUtil.VerifyPasskeySignature(publicKey, data, signature);
+            bool signatureVerified = PasskeyUtil.VerifyPasskeySignature(publicKey, data, signature, passkey.AlgorithmId);
 
             if (signatureVerified)
                 return Results.Ok();

@@ -30,5 +30,9 @@ namespace UtilitiesLibrary.Models
         [JsonInclude]
         [JsonPropertyName("loginDetailsId")]
         public int LoginDetailsId { get; set; }
+
+        [JsonInclude]
+        [JsonPropertyName("algorithmId")]
+        public int AlgorithmId { get; set; } // Expecting -7 (ES256) or -257 (RS256)
     }
 }

@@ -27,8 +27,6 @@ let currentPage = 1;
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
   await waitForHandshake();
-
-  await startPasskeyAuth(8);
 });
 
 function setPageUrlParam() {
@@ -350,7 +348,8 @@ async function setupPasskey(loginDetailsId, domain) {
       displayName: 'Vault Authentication: ' + domain
     },
     pubKeyCredParams: [
-      { alg: -7, type: 'public-key' } // TODO: add support for -257 (RS256)
+      { alg: -7, type: 'public-key' },
+      { alg: -257, type: 'public-key' }
     ],
     userVerifiation: 'required',
   };
@@ -365,12 +364,8 @@ async function setupPasskey(loginDetailsId, domain) {
     return false;
   }
 
-  // Get the credential algorithm
-  console.log(credential);
-  const algorithm = credential.response.getPublicKeyAlgorithm();
-  console.log(algorithm);
-
   const credentialPublicKey = credential.response.getPublicKey();
+  const algorithmId = credential.response.getPublicKeyAlgorithm();
 
   // Base64 encoded values to store in database
   const userIdBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(randomUserId)));
@@ -382,6 +377,7 @@ async function setupPasskey(loginDetailsId, domain) {
     String.fromCharCode.apply(null, new Uint8Array(credentialPublicKey))
   );
 
+
   const encryptedChallenge = await encryptPassword(randomChallengeBase64);
   const createPasskeyRequestBody = {
     sourceId: sourceId,
@@ -390,6 +386,7 @@ async function setupPasskey(loginDetailsId, domain) {
     publicKey: credentialPublicKeyBase64,
     challenge: encryptedChallenge,
     loginDetailsId: loginDetailsId,
+    algorithmId: algorithmId
   };
   const passkeySaved = await sendCreatePasskeyRequest(createPasskeyRequestBody);
   if (!passkeySaved) {
