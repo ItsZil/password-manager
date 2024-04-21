@@ -18,7 +18,7 @@ namespace Tests.TestUtilities
             byte[] defaultPasswordBytes = PasswordUtil.ByteArrayFromPlain(defaultPassword);
             byte[] encryptedPassword = PasswordUtil.EncryptMessage(sharedSecret, defaultPasswordBytes).Result;
 
-            UnlockVaultRequest request = new() { PassphraseBase64 = Convert.ToBase64String(encryptedPassword) };
+            UnlockVaultRequest request = new() { SourceId = 1, PassphraseBase64 = Convert.ToBase64String(encryptedPassword) };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
             var response = httpClient.PostAsync(apiEndpoint, requestContent).Result;

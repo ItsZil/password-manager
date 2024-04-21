@@ -29,7 +29,7 @@ namespace Tests.IntegrationTests.Server
             _client = _factory.CreateClient();
             _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client);
 
-            byte[] unlockSharedSecret = CompleteTestHandshake.GetSharedSecret(_client, 2);
+            byte[] unlockSharedSecret = CompleteTestHandshake.GetSharedSecret(_client, 1);
             _accessToken = CompleteTestAuth.GetAccessToken(_client, unlockSharedSecret);
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         }

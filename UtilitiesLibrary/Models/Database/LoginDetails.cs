@@ -10,10 +10,9 @@ namespace UtilitiesLibrary.Models
         public string Username { get; set; }
         public byte[] Password { get; set; }
         public byte[] Salt { get; set; }
-
         public DateTime LastUsedDate { get; set; } = DateTime.Now;
 
-        public int? PinExtraAuth { get; set; }
-        public bool PassphraseExtraAuth { get; set; } = false;
+        public int ExtraAuthId { get; set; } = 1;
+        public virtual ExtraAuth ExtraAuth { get; set; }
     }
 }

@@ -14,10 +14,14 @@ const {
   sendLoginDetailsViewRequest,
   sendLoginDetailsPasswordRequest,
   sendCreatePasskeyRequest,
-  sendGetPasskeyCredentialRequest
+  sendGetPasskeyCredentialRequest,
 } = require('./util/requestsUtil.js');
 
-const { isAuthenticated, setTokens, authenticatePasskey } = require('./util/authUtil.js');
+const {
+  isAuthenticated,
+  setTokens,
+  authenticatePasskey,
+} = require('./util/authUtil.js');
 
 const sourceId = 2;
 
@@ -257,13 +261,19 @@ function generatePagination(page, totalPages) {
   for (var i = 1; i <= totalPages; i++) {
     if (i === page) {
       paginationUl.append(
-        '<li class="page-item active"><a class="page-link" href="#" id="passwords-page-' + i + '">' +
+        '<li class="page-item active"><a class="page-link" href="#" id="passwords-page-' +
+          i +
+          '">' +
           i +
           '</a></li>'
       );
     } else {
       paginationUl.append(
-        '<li class="page-item"><a class="page-link" href="#" id="passwords-page-' + i + '">' + i + '</a></li>'
+        '<li class="page-item"><a class="page-link" href="#" id="passwords-page-' +
+          i +
+          '">' +
+          i +
+          '</a></li>'
       );
     }
   }
@@ -291,7 +301,9 @@ $('#generate-new-details-password').on('click', async function () {
   const generatedEncryptedPassword = await generatePassword(sourceId);
   const decryptedPassword = await decryptPassword(generatedEncryptedPassword);
 
-  $('#create-new-details-password-input').removeClass('is-invalid is-invalid-lite');
+  $('#create-new-details-password-input').removeClass(
+    'is-invalid is-invalid-lite'
+  );
   $('#create-new-details-password-input').val(decryptedPassword);
 });
 
@@ -345,11 +357,11 @@ async function setupPasskey(loginDetailsId, domain) {
     user: {
       id: randomUserId,
       name: 'Vault Authentication: ' + domain,
-      displayName: 'Vault Authentication: ' + domain
+      displayName: 'Vault Authentication: ' + domain,
     },
     pubKeyCredParams: [
       { alg: -7, type: 'public-key' },
-      { alg: -257, type: 'public-key' }
+      { alg: -257, type: 'public-key' },
     ],
     userVerifiation: 'required',
   };
@@ -368,7 +380,9 @@ async function setupPasskey(loginDetailsId, domain) {
   const algorithmId = credential.response.getPublicKeyAlgorithm();
 
   // Base64 encoded values to store in database
-  const userIdBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(randomUserId)));
+  const userIdBase64 = btoa(
+    String.fromCharCode.apply(null, new Uint8Array(randomUserId))
+  );
   const credentialIdBase64 = credential.id;
   const randomChallengeBase64 = btoa(
     String.fromCharCode.apply(null, new Uint8Array(randomChallenge))
@@ -377,7 +391,7 @@ async function setupPasskey(loginDetailsId, domain) {
     String.fromCharCode.apply(null, new Uint8Array(credentialPublicKey))
   );
 
-
+  // Create the PasskeyCreationRequest object
   const encryptedChallenge = await encryptPassword(randomChallengeBase64);
   const createPasskeyRequestBody = {
     sourceId: sourceId,
@@ -386,8 +400,10 @@ async function setupPasskey(loginDetailsId, domain) {
     publicKey: credentialPublicKeyBase64,
     challenge: encryptedChallenge,
     loginDetailsId: loginDetailsId,
-    algorithmId: algorithmId
+    algorithmId: algorithmId,
   };
+
+  // Send the passkey to the server for storage
   const passkeySaved = await sendCreatePasskeyRequest(createPasskeyRequestBody);
   if (!passkeySaved) {
     $('#create-error-text').text(
@@ -400,12 +416,16 @@ async function setupPasskey(loginDetailsId, domain) {
   return true;
 }
 
+// Function to start the passkey authentication process
 async function startPasskeyAuth(loginDetailsId) {
   // Retrieve the passkey credential from the server and decrypt the challenge
-  const passkeyCredential = await sendGetPasskeyCredentialRequest(sourceId, loginDetailsId);
-  if (!passkeyCredential)
-    return false;
+  const passkeyCredential = await sendGetPasskeyCredentialRequest(
+    sourceId,
+    loginDetailsId
+  );
+  if (!passkeyCredential) return false;
 
+  // Authenticate the passkey credential
   const challenge = await decryptPassword(passkeyCredential.challenge);
   await authenticatePasskey(passkeyCredential, challenge, loginDetailsId);
 }
@@ -477,9 +497,13 @@ $('#finish-create-details-button').on('click', async function () {
   const createdDetails = await domainRegisterRequest(domainRegisterRequestBody);
   if (createdDetails.id == null) {
     if (createdDetails == 409) {
-      $('#create-error-text').text('You already have login details for this website and username.');
+      $('#create-error-text').text(
+        'You already have login details for this website and username.'
+      );
     } else if (createdDetails != 200) {
-      $('#create-error-text').text('Something went wrong creating login details - please try again.');
+      $('#create-error-text').text(
+        'Something went wrong creating login details - please try again.'
+      );
     }
     $('#create-error-text').show();
     $('#finish-create-details-button').removeClass('disabled');
@@ -508,7 +532,10 @@ $('#finish-create-details-button').on('click', async function () {
       // TODO: Store the PIN in the database
       break;
     case 'passkey-extra-auth':
-      extraAuthSetupResult = await setupPasskey(createdDetails.id, createdDetails.domain);
+      extraAuthSetupResult = await setupPasskey(
+        createdDetails.id,
+        createdDetails.domain
+      );
       break;
   }
 

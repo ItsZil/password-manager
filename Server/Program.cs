@@ -109,14 +109,10 @@ namespace Server
             rootApi.MapConfigurationEndpoints();
             rootApi.MapPasskeyEndpoints();
 
-            if (app.Environment.IsEnvironment("TEST_INTEGRATION"))
-                rootApi.MapTestEndpoints();
-
             app.Run();
         }
     }
 
-    [JsonSerializable(typeof(Response))]
     [JsonSerializable(typeof(DomainLoginRequest))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {

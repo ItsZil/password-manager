@@ -427,7 +427,10 @@ export async function sendCreatePasskeyRequest(passkeyCreationRequestBody) {
 
 // Function to send a request to retrieve a passkey for a specific login detail ID
 // Returns: A PasskeyCredentialResponse object
-export async function sendGetPasskeyCredentialRequest(sourceId, loginDetailsId) {
+export async function sendGetPasskeyCredentialRequest(
+  sourceId,
+  loginDetailsId
+) {
   const apiEndpoint = `/api/passkey?sourceId=${sourceId}&loginDetailsId=${loginDetailsId}`;
   const accessToken = await getAccessToken();
 
@@ -436,8 +439,8 @@ export async function sendGetPasskeyCredentialRequest(sourceId, loginDetailsId) 
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      }
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
 
     if (response.status === 200) {
@@ -457,7 +460,9 @@ export async function sendGetPasskeyCredentialRequest(sourceId, loginDetailsId) 
 
 // Function to send a request to verfy a passkey credential
 // Returns: A boolean indicating if the passkey credential is valid
-export async function sendVerifyPasskeyCredentialRequest(passkeyVerificationRequestBody) {
+export async function sendVerifyPasskeyCredentialRequest(
+  passkeyVerificationRequestBody
+) {
   const apiEndpoint = '/api/passkeyverify';
   const accessToken = await getAccessToken();
 
@@ -466,7 +471,7 @@ export async function sendVerifyPasskeyCredentialRequest(passkeyVerificationRequ
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(passkeyVerificationRequestBody),
     });
@@ -483,4 +488,4 @@ export async function sendVerifyPasskeyCredentialRequest(passkeyVerificationRequ
     console.error('Error retrieving response: ', error);
     return false;
   }
-};
+}

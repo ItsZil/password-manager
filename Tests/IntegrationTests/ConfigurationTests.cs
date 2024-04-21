@@ -240,7 +240,7 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
-            byte[] encryptedPassphraseUnlock = await PasswordUtil.EncryptMessage(_sharedSecretKey2, passphraseBytes);
+            byte[] encryptedPassphraseUnlock = await PasswordUtil.EncryptMessage(_sharedSecretKey1, passphraseBytes);
             var unlockVaultResponse = await UnlockVaultAsync(Convert.ToBase64String(encryptedPassphraseUnlock));
 
             Assert.Equal(HttpStatusCode.Created, unlockVaultResponse.StatusCode);

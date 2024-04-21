@@ -9,11 +9,11 @@ namespace Server
 {
     internal class SqlContext : DbContext
     {
-        internal DbSet<TestModel> TestModels { get; set; }
         internal DbSet<LoginDetails> LoginDetails { get; set; }
         internal DbSet<Authenticator> Authenticators { get; set; }
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
         internal DbSet<Passkey> Passkeys { get; set; }
+        internal DbSet<ExtraAuth> ExtraAuths { get; set; }
 
         private KeyProvider _keyProvider;
 
@@ -60,6 +60,16 @@ namespace Server
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
             => options.UseSqlite(CreateConnectionString(dbPath, _defaultInitialPassword));
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ExtraAuth>().HasData(
+                new ExtraAuth { Id = 1, Type = "None" },
+                new ExtraAuth { Id = 2, Type = "PIN" },
+                new ExtraAuth { Id = 3,Type = "Passkey" },
+                new ExtraAuth { Id = 4, Type = "Passphrase" }
+            );
+        }
 
         /// <summary>
         /// Updates the database connection with a new path and master password and saves it to the configuration file for later retrieval.
