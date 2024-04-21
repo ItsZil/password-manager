@@ -13,7 +13,7 @@ namespace UtilitiesLibrary.Models
 
         [JsonInclude]
         [JsonPropertyName("userId")]
-        public string UserIdB64 { get; set; } // Base64 encoded
+        public string UserId { get; set; } // Base64 encoded
 
         [JsonInclude]
         [JsonPropertyName("publicKey")]

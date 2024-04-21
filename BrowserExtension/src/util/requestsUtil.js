@@ -454,3 +454,33 @@ export async function sendGetPasskeyCredentialRequest(sourceId, loginDetailsId) 
     return false;
   }
 }
+
+// Function to send a request to verfy a passkey credential
+// Returns: A boolean indicating if the passkey credential is valid
+export async function sendVerifyPasskeyCredentialRequest(passkeyVerificationRequestBody) {
+  const apiEndpoint = '/api/passkeyverify';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(passkeyVerificationRequestBody),
+    });
+
+    if (response.status === 200) {
+      return true;
+    } else {
+      console.error(
+        `Failed to verify passkey credential: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+};

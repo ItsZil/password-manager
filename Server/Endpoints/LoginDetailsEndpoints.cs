@@ -13,7 +13,7 @@ namespace Server.Endpoints
             group.MapPost("/domainregisterrequest", DomainRegisterRequest);
             group.MapPost("/domainloginrequest", DomainLoginRequest);
 
-            group.MapGet("/logindetails", LoginDetails);
+            group.MapGet("/logindetails", GetLoginDetailsView);
             group.MapGet("/logindetailscount", LoginDetailsCount);
             group.MapPost("/logindetailspassword", GetLoginDetailsPassword);
 
@@ -61,7 +61,7 @@ namespace Server.Endpoints
 
             // Encrypt password with shared secret and send it back to the client
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
-            DomainRegisterResponse response = new(newLoginDetails.DetailsId, domain, encryptedPasswordShared);
+            DomainRegisterResponse response = new(newLoginDetails.Id, domain, encryptedPasswordShared);
 
             return Results.Ok(response);
         }
@@ -103,7 +103,7 @@ namespace Server.Endpoints
         }
 
         [Authorize]
-        internal async static Task<IResult> LoginDetails(SqlContext dbContext, [FromQuery] int page = 1)
+        internal async static Task<IResult> GetLoginDetailsView(SqlContext dbContext, [FromQuery] int page = 1)
         {
             int pageSize = 10;
             int skip = (page - 1) * pageSize;
@@ -115,7 +115,7 @@ namespace Server.Endpoints
             {
                 results.Add(new LoginDetailsViewResponse
                 {
-                    DetailsId = loginDetails.DetailsId,
+                    DetailsId = loginDetails.Id,
                     Domain = loginDetails.RootDomain,
                     Username = loginDetails.Username,
                     LastUsedDate = loginDetails.LastUsedDate
@@ -128,7 +128,7 @@ namespace Server.Endpoints
         internal async static Task<IResult> GetLoginDetailsPassword([FromBody] DomainLoginPasswordRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             // Check if login details exist
-            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.DetailsId == request.LoginDetailsId);
+            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
             if (loginDetails == null)
                 return Results.NotFound();
 

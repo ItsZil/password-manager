@@ -17,7 +17,7 @@ const {
   sendGetPasskeyCredentialRequest
 } = require('./util/requestsUtil.js');
 
-const { isAuthenticated, setTokens } = require('./util/authUtil.js');
+const { isAuthenticated, setTokens, authenticatePasskey } = require('./util/authUtil.js');
 
 const sourceId = 2;
 
@@ -26,8 +26,9 @@ let currentPage = 1;
 
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
-
   await waitForHandshake();
+
+  await startPasskeyAuth(8);
 });
 
 function setPageUrlParam() {
@@ -292,6 +293,7 @@ $('#generate-new-details-password').on('click', async function () {
   const generatedEncryptedPassword = await generatePassword(sourceId);
   const decryptedPassword = await decryptPassword(generatedEncryptedPassword);
 
+  $('#create-new-details-password-input').removeClass('is-invalid is-invalid-lite');
   $('#create-new-details-password-input').val(decryptedPassword);
 });
 
@@ -345,11 +347,10 @@ async function setupPasskey(loginDetailsId, domain) {
     user: {
       id: randomUserId,
       name: 'Vault Authentication: ' + domain,
-      displayName: 'Vault Authentication: ' + domain,
+      displayName: 'Vault Authentication: ' + domain
     },
     pubKeyCredParams: [
-      { alg: -7, type: 'public-key' },
-      { alg: -257, type: 'public-key' },
+      { alg: -7, type: 'public-key' } // TODO: add support for -257 (RS256)
     ],
     userVerifiation: 'required',
   };
@@ -364,15 +365,18 @@ async function setupPasskey(loginDetailsId, domain) {
     return false;
   }
 
+  // Get the credential algorithm
+  console.log(credential);
+  const algorithm = credential.response.getPublicKeyAlgorithm();
+  console.log(algorithm);
+
   const credentialPublicKey = credential.response.getPublicKey();
 
   // Base64 encoded values to store in database
+  const userIdBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(randomUserId)));
   const credentialIdBase64 = credential.id;
   const randomChallengeBase64 = btoa(
     String.fromCharCode.apply(null, new Uint8Array(randomChallenge))
-  );
-  const userIdBase64 = btoa(
-    String.fromCharCode.apply(null, new Uint8Array(randomUserId))
   );
   const credentialPublicKeyBase64 = btoa(
     String.fromCharCode.apply(null, new Uint8Array(credentialPublicKey))
@@ -381,8 +385,8 @@ async function setupPasskey(loginDetailsId, domain) {
   const encryptedChallenge = await encryptPassword(randomChallengeBase64);
   const createPasskeyRequestBody = {
     sourceId: sourceId,
-    credentialId: credentialIdBase64,
     userId: userIdBase64,
+    credentialId: credentialIdBase64,
     publicKey: credentialPublicKeyBase64,
     challenge: encryptedChallenge,
     loginDetailsId: loginDetailsId,
@@ -397,33 +401,16 @@ async function setupPasskey(loginDetailsId, domain) {
     return false;
   }
   return true;
+}
 
-  /* AUTH EXAMPLE:
+async function startPasskeyAuth(loginDetailsId) {
+  // Retrieve the passkey credential from the server and decrypt the challenge
   const passkeyCredential = await sendGetPasskeyCredentialRequest(sourceId, loginDetailsId);
-  const challengeB64 = await decryptPassword(passkeyCredential.challenge);
+  if (!passkeyCredential)
+    return false;
 
-  const challenge = Uint8Array.from(atob(challengeB64), c => c.charCodeAt(0));
-  const credentialId = Uint8Array.from(atob(passkeyCredential.credentialId), c => c.charCodeAt(0));
-
-  const publicKeyCredentialRequestOptions2 = {
-    // Server generated challenge
-    challenge: challenge,
-    userVerifiation: 'required',
-    allowCredentials: [{
-      type: 'public-key',
-      id: credentialId
-    }]
-  };
-
-  const credential2 = await navigator.credentials.get({
-    publicKey: publicKeyCredentialRequestOptions2
-  });
-
-  console.log(credential2);
-  console.log('Signature', btoa(credential2.response.signature));
-  console.log(credential2.id);
-
-  // Encode and send the credential to the server for verification.*/
+  const challenge = await decryptPassword(passkeyCredential.challenge);
+  await authenticatePasskey(passkeyCredential, challenge, loginDetailsId);
 }
 
 function parseDomain() {

@@ -1,9 +1,16 @@
 'use strict';
 
 const {
+  str2ab
+} = require('./passwordUtil.js');
+
+const {
   sendRefreshTokenRequest,
   sendCheckAuthRequest,
+  sendGetPasskeyCredentialRequest,
+  sendVerifyPasskeyCredentialRequest
 } = require('./requestsUtil.js');
+
 const { jwtDecode } = require('jwt-decode');
 
 // Function to check if the user is authenticated
@@ -56,14 +63,6 @@ export async function isAuthenticated() {
   return false;
 }
 
-// Function to make a request to the server to confirm the user is authenticated
-// Needed in cases where the JWT secret key has been changed
-async function confirmAuth() {
-  console.log('attempting to confirm auth');
-  const isAuthed = await sendCheckAuthRequest(getCookie('accessToken'));
-  return isAuthed;
-}
-
 // Function to get the access token
 export async function getAccessToken() {
   const isAuthenticatedResult = await isAuthenticated();
@@ -101,4 +100,53 @@ export function setCookie(name, value) {
     httpOnly: true,
     secure: true,
   });
+}
+
+export async function authenticatePasskey(passkeyCredential, challenge, loginDetailsId) {
+  // Set up the public key credential request options
+  const credentialId = Uint8Array.from(atob(passkeyCredential.credentialId), c => c.charCodeAt(0));
+  const challengeArrayBuffer = str2ab(challenge);
+
+  const publicKeyCredentialRequestOptions = {
+    challenge: challengeArrayBuffer,
+    userVerifiation: 'required',
+    allowCredentials: [{
+      type: 'public-key',
+      id: credentialId
+    }]
+  };
+
+  // Get the credential from the authenticator
+  const credential = await navigator.credentials.get({
+    publicKey: publicKeyCredentialRequestOptions
+  });
+
+  console.log(credential);
+  // get algorithm
+  const algorithm = credential.response.algorithm;
+  console.log(algorithm);
+
+  // Prepare the data to send to the server for verification
+  const credentialIdBase64 = credential.id;
+  const authenticatorDataBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.response.authenticatorData)));
+  const signatureBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.response.signature)));
+  const clientDataJsonBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(credential.response.clientDataJSON)));
+
+  // Encode the client data hash
+  const clientDataHash = await window.crypto.subtle.digest('SHA-256', credential.response.clientDataJSON);
+  const clientDataHashBase64 = btoa(String.fromCharCode.apply(null, new Uint8Array(clientDataHash)));
+
+  // Send data to server for verification
+  const passkeyVerificationRequestBody = {
+    loginDetailsId: loginDetailsId,
+    credentialId: credentialIdBase64,
+    signature: signatureBase64,
+    authenticatorData: authenticatorDataBase64,
+    clientDataJson: clientDataJsonBase64,
+    clientDataHash: clientDataHashBase64
+  }
+
+  const verified = await sendVerifyPasskeyCredentialRequest(passkeyVerificationRequestBody);
+  console.log(verified);
+  return verified;
 }
