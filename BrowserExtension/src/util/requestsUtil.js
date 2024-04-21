@@ -463,7 +463,7 @@ export async function sendGetPasskeyCredentialRequest(
 export async function sendVerifyPasskeyCredentialRequest(
   passkeyVerificationRequestBody
 ) {
-  const apiEndpoint = '/api/passkeyverify';
+  const apiEndpoint = '/api/passkey/verify';
   const accessToken = await getAccessToken();
 
   try {

@@ -4,8 +4,6 @@ using Server.Utilities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using Geralt;
 using System.Text;
 using System.Text.Json;
@@ -18,7 +16,7 @@ namespace Server.Endpoints
         {
             group.MapPost("/passkey", CreatePasskey);
             group.MapGet("/passkey", GetPasskeyCredentials);
-            group.MapPost("/passkeyverify", VerifyPasskeyCredentials);
+            group.MapPost("/passkey/verify", VerifyPasskeyCredentials);
 
             return group;
         }
@@ -29,10 +27,17 @@ namespace Server.Endpoints
             byte[] credentialId = Base64UrlEncoder.DecodeBytes(request.CredentialIdB64);
             byte[] userId = Convert.FromBase64String(request.UserIdB64);
             byte[] publicKey = Convert.FromBase64String(request.PublicKeyB64);
-            byte[] challenge = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), Convert.FromBase64String(request.ChallengeB64));
+            byte[] challenge = Convert.FromBase64String(request.ChallengeB64);
             int loginDetailsId = request.LoginDetailsId;
 
-            if (credentialId.Length < 32 || publicKey.Length < 32 || challenge.Length < 16)
+            if (credentialId.Length < 32 || publicKey.Length < 32 || challenge.Length < 16 || (request.AlgorithmId != -7 && request.AlgorithmId != -257))
+                return Results.BadRequest();
+
+            // Decrypt the challenge
+            challenge = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), challenge);
+
+            // Check if challenge was decrypted successfully
+            if (challenge.Length < 16)
                 return Results.BadRequest();
 
             if (await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId) == null)

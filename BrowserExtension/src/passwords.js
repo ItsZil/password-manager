@@ -31,6 +31,8 @@ let currentPage = 1;
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
   await waitForHandshake();
+
+  await startPasskeyAuth(1);
 });
 
 function setPageUrlParam() {
@@ -41,7 +43,7 @@ function setPageUrlParam() {
     currentPage = parseInt(pageParam);
   }
 
-  if (currentPage * 10 > loginDetailsCount) {
+  if (currentPage * 10 > loginDetailsCount && loginDetailsCount > 0) {
     currentPage = Math.ceil(loginDetailsCount / 10);
   }
 
@@ -89,7 +91,11 @@ async function refreshLoginDetailsTable(page) {
 
   let loginDetails = await sendLoginDetailsViewRequest(page);
 
-  $('#details-current-min').text((page - 1) * 10 + 1);
+  if (loginDetailsCount > 0)
+    $('#details-current-min').text((page - 1) * 10 + 1);
+  else
+    $('#details-current-min').text(0);
+
   $('#details-current-max').text(Math.min(page * 10, loginDetailsCount));
   $('#details-max').text(loginDetailsCount);
 

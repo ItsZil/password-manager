@@ -11,4 +11,7 @@
 
     [CollectionDefinition(nameof(ConfigurationTests), DisableParallelization = true)]
     public class ConfigurationTests { }
+
+    [CollectionDefinition(nameof(PasskeyTests), DisableParallelization = true)]
+    public class PasskeyTests { }
 }
