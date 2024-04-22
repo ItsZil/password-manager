@@ -90,7 +90,7 @@ namespace Tests.IntegrationTests.Server
             return await _client.PostAsync(createPasskeyApiEndpoint, createPasskeyRequestContent);
         }
 
-        private async Task<HttpResponseMessage> SetPinCodeAsync(SetPinCodeRequest request)
+        private async Task<HttpResponseMessage> SetPinCodeAsync(CreatePinCodeRequest request)
         {
             // Encrypt the pin code
             byte[] pinCodeBytes = Encoding.UTF8.GetBytes(request.PinCode);
@@ -171,7 +171,7 @@ namespace Tests.IntegrationTests.Server
             // Create a domain
             _ = await RegisterDomainAsync("test.com");
 
-            SetPinCodeRequest setPinCodeRequest = new()
+            CreatePinCodeRequest setPinCodeRequest = new()
             {
                 LoginDetailsId = 1,
                 PinCode = "1234"

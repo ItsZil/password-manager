@@ -15,6 +15,9 @@ const {
   sendLoginDetailsPasswordRequest,
   sendCreatePasskeyRequest,
   sendGetPasskeyCredentialRequest,
+  sendGetExtraAuthTypeRequest,
+  sendSetExtraAuthTypeRequest,
+  sendCreatePinRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -23,7 +26,7 @@ const {
   authenticatePasskey,
 } = require('./util/authUtil.js');
 
-const sourceId = 2;
+const sourceId = 1;
 
 let loginDetailsCount = 0;
 let currentPage = 1;
@@ -31,8 +34,6 @@ let currentPage = 1;
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
   await waitForHandshake();
-
-  await startPasskeyAuth(1);
 });
 
 function setPageUrlParam() {
@@ -100,7 +101,7 @@ async function refreshLoginDetailsTable(page) {
   $('#details-max').text(loginDetailsCount);
 
   // Populate the login details table
-  populateLoginDetailsTable(page, loginDetails);
+  await populateLoginDetailsTable(page, loginDetails);
 
   $('#loading-passwords-table').hide();
   $('#passwords-table').show();
@@ -179,7 +180,7 @@ async function refreshLoginDetailsTable(page) {
   });
 }
 
-function populateLoginDetailsTable(page, loginDetails) {
+async function populateLoginDetailsTable(page, loginDetails) {
   // Set up pagination
   const totalPages = calculateTotalPages(loginDetailsCount);
   generatePagination(page, totalPages);
@@ -190,8 +191,22 @@ function populateLoginDetailsTable(page, loginDetails) {
   // Clear existing rows
   tbody.empty();
 
+  const extraAuthTypes = ['None', 'PIN', 'Passkey', 'Passphrase']
+
+  // Array to store promises for extraAuthType requests
+  const extraAuthPromises = [];
+
   // Loop through each login detail object
-  $.each(loginDetails, function (index, loginDetail) {
+  loginDetails.forEach(loginDetail => {
+    // Get the extra auth type and push the promise to the array
+    extraAuthPromises.push(sendGetExtraAuthTypeRequest(loginDetail.detailsId));
+  });
+
+  // Wait for all extraAuthType requests to complete
+  const extraAuthResults = await Promise.all(extraAuthPromises);
+
+  // Loop through each login detail object
+  $.each(loginDetails, async function (index, loginDetail) {
     // Create a new row
     var row = $('<tr>');
 
@@ -227,7 +242,15 @@ function populateLoginDetailsTable(page, loginDetails) {
         '</div>' +
         '</td>'
     ); // Password input field and eye icon
-    row.append('<td> ' + 'TODO' + '</td>'); // Extra auth
+    // Extra auth type
+    const selectId = 'extra-auth-select-' + loginDetail.detailsId;
+    const extraAuthValue = Array.isArray(extraAuthResults[index]) ? extraAuthResults[index] : [extraAuthResults[index]]; // Ensure extraAuthValue is an array
+    const selectOptions = extraAuthTypes.map(type => `<option ${extraAuthValue.includes(type) ? 'selected' : ''}>${type}</option>`).join('');
+    row.append(
+      '<td>' +
+      `<select id="${selectId}" class="form-select">${selectOptions}</select>` +
+      '</td>'
+    ); // Extra auth select dropdown
     row.append('<td>' + formatDate(loginDetail.lastUsedDate) + '</td>'); // Last Accessed
     row.append(
       '<td class="text-end">' +
@@ -485,6 +508,14 @@ $('#finish-create-details-button').on('click', async function () {
     $('#create-error-text').show();
     return;
   }
+  const pinInput = $('#extra-auth-pin-input').val();
+  if (pinInput.length !== 4) {
+    $('#extra-auth-pin-input').addClass('is-invalid is-invalid-lite');
+
+    $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
+    $('#create-error-text').show();
+    return;
+  }
 
   // Set up loading UI
   $('#finish-create-details-button').addClass('disabled');
@@ -526,22 +557,29 @@ $('#finish-create-details-button').on('click', async function () {
     case 'pin-extra-auth':
       // Retrieve the PIN input value
       const pinInput = $('#extra-auth-pin-input').val();
-      if (pinInput.length !== 4) {
-        $('#extra-auth-pin-input').addClass('is-invalid is-invalid-lite');
 
-        $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
-        $('#create-error-text').show();
-        $('#finish-create-details-button').removeClass('disabled');
-        $('#finish-create-details-icon').show();
-        $('#finish-create-details-spinner').hide();
-      }
-      // TODO: Store the PIN in the database
+      // Create the PIN code in the database
+      const encryptedPin = await encryptPassword(pinInput);
+      const createPinRequestBody = {
+        sourceId: sourceId,
+        loginDetailsId: createdDetails.id,
+        pinCode: encryptedPin,
+      };
+
+      const createdPin = await sendCreatePinRequest(createPinRequestBody);
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 2);
+
       break;
     case 'passkey-extra-auth':
-      extraAuthSetupResult = await setupPasskey(
+      const passkeySetupResult = await setupPasskey(
         createdDetails.id,
         createdDetails.domain
       );
+
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 3);
+      break;
+    case 'passphrase-extra-auth':
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 4);
       break;
   }
 

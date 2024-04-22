@@ -2,7 +2,7 @@
 
 namespace UtilitiesLibrary.Models
 {
-    internal class SetPinCodeRequest
+    internal class CreatePinCodeRequest
     {
         [JsonInclude]
         [JsonPropertyName("sourceId")]

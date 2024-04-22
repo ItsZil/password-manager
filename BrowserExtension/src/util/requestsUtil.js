@@ -489,3 +489,101 @@ export async function sendVerifyPasskeyCredentialRequest(
     return false;
   }
 }
+
+// Function to get a login details' ExtraAuth type
+// Returns: a string containing the ExtraAuth type
+export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
+  const apiEndpoint = `/api/extraauth?loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      // Response is a string of an int
+      const extraAuthType = await response.text();
+      if (extraAuthType == '2') {
+        return 'PIN';
+      } else if (extraAuthType == '3') {
+        return 'Passkey';
+      } else if (extraAuthType == '4') {
+        return 'Passphrase';
+      }
+      return 'None';
+    } else {
+      console.error(
+        `Failed to retrieve extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to set a login details' extra auth ID
+// Returns: a boolean indicating if the extra auth ID was successfully set
+export async function sendSetExtraAuthTypeRequest(loginDetailsId,extraAuthType) {
+  const apiEndpoint = '/api/extraauth';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ loginDetailsId: loginDetailsId, extraAuthId: extraAuthType }),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to create a login details' PIN code
+// Returns: a boolean indicating if the PIN code was successfully created
+export async function sendCreatePinRequest(request) {
+  const apiEndpoint = '/api/pincode';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set PIN: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}

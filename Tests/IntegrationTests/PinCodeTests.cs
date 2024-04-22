@@ -78,7 +78,7 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
-        private async Task<HttpResponseMessage> SetPinCodeAsync(SetPinCodeRequest request)
+        private async Task<HttpResponseMessage> SetPinCodeAsync(CreatePinCodeRequest request)
         {
             var setPinCodeApiEndpoint = "/api/pincode";
             var setPinCodeRequestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
@@ -105,7 +105,7 @@ namespace Tests.IntegrationTests.Server
             byte[] encryptedPinCodeBytes = await PasswordUtil.EncryptMessage(_sharedSecretKey, pinCodeBytes);
             string encryptedPinCode = Convert.ToBase64String(encryptedPinCodeBytes);
 
-            SetPinCodeRequest setPinCodeRequest = new()
+            CreatePinCodeRequest setPinCodeRequest = new()
             {
                 LoginDetailsId = 1,
                 PinCode = encryptedPinCode
@@ -122,7 +122,7 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestSetPinCodeNonExistingLoginDetailsReturnsNotFound()
         { 
-            SetPinCodeRequest setPinCodeRequest = new()
+            CreatePinCodeRequest setPinCodeRequest = new()
             {
                 LoginDetailsId = 1, // Does not exist
                 PinCode = "doesntmatter" // Check for this won't be reached
@@ -143,7 +143,7 @@ namespace Tests.IntegrationTests.Server
             byte[] encryptedPinCodeBytes = await PasswordUtil.EncryptMessage(_sharedSecretKey, pinCodeBytes);
             string encryptedPinCode = Convert.ToBase64String(encryptedPinCodeBytes);
 
-            SetPinCodeRequest setPinCodeRequest = new()
+            CreatePinCodeRequest setPinCodeRequest = new()
             {
                 LoginDetailsId = 1,
                 PinCode = encryptedPinCode

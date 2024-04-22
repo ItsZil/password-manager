@@ -39,8 +39,6 @@ namespace Server.Endpoints
             byte[] password = request.Password != null ? Convert.FromBase64String(request.Password) : PasswordUtil.GenerateSecurePassword();
             bool passwordIsEncrypted = request.Password != null;
 
-            // TODO: password meets user rule requirements
-
             // Decrypt password with shared secret
             byte[] decryptedPasswordPlain = passwordIsEncrypted ? await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), password) : password;
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);

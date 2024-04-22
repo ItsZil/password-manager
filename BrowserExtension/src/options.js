@@ -12,7 +12,7 @@ const {
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
-const sourceId = 2;
+const sourceId = 1;
 
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);

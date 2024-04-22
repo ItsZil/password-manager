@@ -33,7 +33,7 @@ namespace Server.Endpoints
         }
 
         [Authorize]
-        internal static async Task<IResult> CreatePinCode([FromBody] SetPinCodeRequest request, SqlContext sqlContext, KeyProvider keyProvider)
+        internal static async Task<IResult> CreatePinCode([FromBody] CreatePinCodeRequest request, SqlContext sqlContext, KeyProvider keyProvider)
         {
             // Check if the login details exist.
             if (!await sqlContext.LoginDetails.AnyAsync(x => x.Id == request.LoginDetailsId))
