@@ -70,6 +70,25 @@ namespace Server
                 new ExtraAuth { Id = 3, Type = "Passkey" },
                 new ExtraAuth { Id = 4, Type = "Passphrase" }
             );
+
+            // Configure cascade delete for LoginDetails related entities
+            modelBuilder.Entity<Authenticator>()
+              .HasOne(a => a.LoginDetails)
+              .WithMany()
+              .HasForeignKey(a => a.LoginDetailsId)
+              .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Passkey>()
+                .HasOne(p => p.LoginDetails)
+                .WithMany()
+                .HasForeignKey(p => p.LoginDetailsId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PinCode>()
+                .HasOne(pc => pc.LoginDetails)
+                .WithMany()
+                .HasForeignKey(pc => pc.LoginDetailsId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         /// <summary>

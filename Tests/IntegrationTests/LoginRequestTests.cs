@@ -47,7 +47,7 @@ namespace Tests.IntegrationTests.Server
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword");
             byte[] encryptedSharedKeyPassword = await PasswordUtil.EncryptMessage(_sharedSecretKey, plainPassword);
 
-            var registerApiEndpoint = "/api/domainregisterrequest";
+            var registerApiEndpoint = "/api/register";
             var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
@@ -55,10 +55,26 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> LoginDomainAsync(DomainLoginRequest request)
         {
-            var apiEndpoint = "/api/domainloginrequest";
+            var apiEndpoint = "/api/login";
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> EditDomainAsync(LoginDetailsEditRequest request)
+        {
+            var apiEndpoint = "/api/logindetails";
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            var response = await _client.PutAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> DeleteDomainAsync(int loginDetailsId)
+        {
+            var apiEndpoint = $"/api/logindetails?id={loginDetailsId}";
+            var response = await _client.DeleteAsync(apiEndpoint);
             return response;
         }
 
@@ -176,6 +192,87 @@ namespace Tests.IntegrationTests.Server
             string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
 
             Assert.NotEqual("loginrequesttestspassword123", decryptedPasswordString);
+        }
+
+        [Fact]
+        public async Task TestEditLoginDetailsReturnsNoContent()
+        {
+            // Create login details for the known domain
+            var registerResponse = await RegisterDomainAsync("knowndomain.ok");
+            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+            // Retrieve the login details
+            DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
+            var loginResponse = await LoginDomainAsync(request);
+            string loginResponseString = await loginResponse.Content.ReadAsStringAsync();
+            DomainLoginResponse? loginResponseObj = JsonSerializer.Deserialize<DomainLoginResponse>(loginResponseString);
+
+            Assert.NotNull(loginResponseObj);
+            Assert.IsType<DomainLoginResponse>(loginResponseObj);
+
+            // Edit the login details
+            byte[] encryptedNewPassword = await PasswordUtil.EncryptMessage(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("loginrequesttestspasswordedited"));
+            LoginDetailsEditRequest editRequest = new LoginDetailsEditRequest
+            {
+                SourceId = 0,
+                LoginDetailsId = 1,
+                Username = "loginrequesttestsusernameedited",
+                Password = Convert.ToBase64String(encryptedNewPassword)
+            };
+            var editResponse = await EditDomainAsync(editRequest);
+
+            Assert.Equal(HttpStatusCode.NoContent, editResponse.StatusCode);
+
+            // Verify that the login details have been edited
+            var loginResponseEdited = await LoginDomainAsync(request);
+            string loginResponseEditedString = await loginResponseEdited.Content.ReadAsStringAsync();
+            DomainLoginResponse? loginResponseEditedObj = JsonSerializer.Deserialize<DomainLoginResponse>(loginResponseEditedString);
+            Assert.NotNull(loginResponseEditedObj);
+            Assert.IsType<DomainLoginResponse>(loginResponseEditedObj);
+
+            byte[] decryptedPasword = await PasswordUtil.DecryptMessage(_sharedSecretKey, Convert.FromBase64String(loginResponseEditedObj.Password));
+            string decryptedPasswordString = PasswordUtil.PlainFromContainer(decryptedPasword);
+
+            Assert.Equal("loginrequesttestsusernameedited", loginResponseEditedObj.Username);
+            Assert.Equal("loginrequesttestspasswordedited", decryptedPasswordString);
+        }
+
+        [Fact]
+        public async Task TestEditNonExistingLoginDetailsReturnsNotFound()
+        {
+            LoginDetailsEditRequest editRequest = new LoginDetailsEditRequest
+            {
+                SourceId = 0,
+                LoginDetailsId = 1,
+                Username = "loginrequesttestsusernameedited",
+                Password = "loginrequesttestspasswordedited"
+            };
+            var editResponse = await EditDomainAsync(editRequest);
+
+            Assert.Equal(HttpStatusCode.NotFound, editResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestDeleteLoginDetailsReturnsNoContent()
+        {
+            // Create login details
+            var registerResponse = await RegisterDomainAsync("knowndomain.ok");
+            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+            // Delete the login details
+            var deleteResponse = await DeleteDomainAsync(1);
+            Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+            // Verify that the login details have been deleted
+            var loginResponseDeleted = await LoginDomainAsync(new DomainLoginRequest { SourceId = 0, Username = "loginrequesttestsusername", Domain = "knowndomain.ok" });
+            Assert.Equal(HttpStatusCode.NotFound, loginResponseDeleted.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestDeleteNonExistingLoginDetailsReturnsNotFound()
+        {
+            var deleteResponse = await DeleteDomainAsync(1);
+            Assert.Equal(HttpStatusCode.NotFound, deleteResponse.StatusCode);
         }
     }
 }

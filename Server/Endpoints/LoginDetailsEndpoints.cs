@@ -10,12 +10,15 @@ namespace Server.Endpoints
     {
         internal static RouteGroupBuilder MapLoginDetailsEndpoints(this RouteGroupBuilder group)
         {
-            group.MapPost("/domainregisterrequest", DomainRegisterRequest);
-            group.MapPost("/domainloginrequest", DomainLoginRequest);
+            group.MapPost("/register", DomainRegisterRequest);
+            group.MapPost("/login", DomainLoginRequest);
 
             group.MapGet("/logindetails", GetLoginDetailsView);
             group.MapGet("/logindetailscount", LoginDetailsCount);
             group.MapPost("/logindetailspassword", GetLoginDetailsPassword);
+
+            group.MapPut("/logindetails", EditLoginDetails);
+            group.MapDelete("/logindetails", DeleteLoginDetails);
 
             return group;
         }
@@ -116,7 +119,8 @@ namespace Server.Endpoints
                     DetailsId = loginDetails.Id,
                     Domain = loginDetails.RootDomain,
                     Username = loginDetails.Username,
-                    LastUsedDate = loginDetails.LastUsedDate
+                    LastUsedDate = loginDetails.LastUsedDate,
+                    ExtraAuthId = loginDetails.ExtraAuthId
                 });
             }
             return Results.Ok(results);
@@ -138,6 +142,43 @@ namespace Server.Endpoints
             string encryptedPasswordShared = Convert.ToBase64String(await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain));
 
             return Results.Ok(new { passwordB64 = encryptedPasswordShared } );
+        }
+
+        [Authorize]
+        internal async static Task<IResult> EditLoginDetails([FromBody] LoginDetailsEditRequest request, SqlContext dbContext, KeyProvider keyProvider)
+        {
+            // Check if login details exist
+            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+            if (loginDetails == null)
+                return Results.NotFound();
+
+            // If the password is null, do not change it.
+            if (request.Password != null)
+            {
+                byte[] newEncryptedPassword= Convert.FromBase64String(request.Password);
+                byte[] newDecryptedPasswordPlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), newEncryptedPassword);
+
+                (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(newDecryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
+                loginDetails.Password = encryptedPassword;
+                loginDetails.Salt = salt;
+            }
+            loginDetails.Username = request.Username ?? loginDetails.Username;
+            await dbContext.SaveChangesAsync();
+
+            return Results.NoContent();
+        }
+
+        [Authorize]
+        internal async static Task<IResult> DeleteLoginDetails([FromQuery] int id, SqlContext dbContext)
+        {
+            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == id);
+            if (loginDetails == null)
+                return Results.NotFound();
+
+            dbContext.LoginDetails.Remove(loginDetails);
+            await dbContext.SaveChangesAsync();
+
+            return Results.NoContent();
         }
     }
 }

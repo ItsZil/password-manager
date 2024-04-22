@@ -8,7 +8,7 @@ const ServerUrl = 'https://localhost:54782';
 // Function to handle input fields found in the page by sending a domain login details request
 // Return: A DomainLoginResponse JSON object
 export async function domainLoginRequest(domainLoginRequestBody) {
-  const apiEndpoint = '/api/domainloginrequest';
+  const apiEndpoint = '/api/login';
 
   try {
     const accessToken = await getAccessToken();
@@ -41,7 +41,7 @@ export async function domainLoginRequest(domainLoginRequestBody) {
 // Function to handle input fields found in the page by sending a domain register details request
 // Return: A DomainRegisterResponse JSON object
 export async function domainRegisterRequest(domainRegisterRequestBody) {
-  const apiEndpoint = '/api/domainregisterrequest';
+  const apiEndpoint = '/api/register';
 
   try {
     const accessToken = await getAccessToken();
@@ -579,6 +579,34 @@ export async function sendCreatePinRequest(request) {
     } else {
       console.error(
         `Failed to set PIN: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to delete a login detail by ID
+// Returns: a boolean indicating if the login detail was successfully deleted
+export async function sendDeleteLoginDetailRequest(loginDetailsId) {
+  const apiEndpoint = `/api/logindetails?id=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to delete login details: ${response.status} ${response.statusText}`
       );
       return false;
     }

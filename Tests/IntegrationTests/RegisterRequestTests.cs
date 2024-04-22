@@ -45,7 +45,7 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestNoDomainRegisterRequestReturns401()
         {
-            var apiEndpoint = "/api/domainregisterrequest";
+            var apiEndpoint = "/api/register";
 
             var response = await _client.PostAsync(apiEndpoint, null);
 
@@ -55,7 +55,7 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestEmptyDomainRegisterRequestReturns401()
         {
-            var apiEndpoint = "/api/domainregisterrequest";
+            var apiEndpoint = "/api/register";
             DomainRegisterRequest request = new();
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
 
@@ -68,7 +68,7 @@ namespace Tests.IntegrationTests.Server
         {
             byte[] encryptedPassword = await PasswordUtil.EncryptMessage(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("registerrequesttestspassword"));
 
-            var registerApiEndpoint = "/api/domainregisterrequest";
+            var registerApiEndpoint = "/api/register";
             var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "registerrequesttestsusername", Password = Convert.ToBase64String(encryptedPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);

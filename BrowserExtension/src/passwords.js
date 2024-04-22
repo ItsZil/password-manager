@@ -15,9 +15,9 @@ const {
   sendLoginDetailsPasswordRequest,
   sendCreatePasskeyRequest,
   sendGetPasskeyCredentialRequest,
-  sendGetExtraAuthTypeRequest,
   sendSetExtraAuthTypeRequest,
-  sendCreatePinRequest
+  sendCreatePinRequest,
+  sendDeleteLoginDetailRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -109,20 +109,60 @@ async function refreshLoginDetailsTable(page) {
   $('[id^="save-details-"]').on('click', async function () {
     const idText = $(this).attr('id');
     const id = parseInt(idText.split('-')[2]);
-    console.log('SAVE Clicked button ID:', id);
+
+    const username = $('#username-' + id + '-input').val();
+    const extraAuthType = $('#extra-auth-select-' + id).val();
+    let password = $('#password-input-' + id).val();
+
+    // Check if password only contains *, if so, we want it to be null so it's not saved.
+    if (password === '******************************') {
+      password = null;
+    } else {
+      // Encrypt the password
+      password = btoa(await encryptPassword(password));
+    }
+
+    // Check if the username is not empty
+    if (username.trim().length < 1) {
+      return;
+    }
+
+    const loginDetailsEditRequest = {
+      sourceId: sourceId,
+      loginDetailsId: id,
+      username: username,
+      password: password
+    }
+
+    console.log('Username', username);
+    console.log('Password', password);
+    console.log('Extra auth type', extraAuthType);
   });
 
   $('[id^="delete-details-"]').on('click', async function () {
     const idText = $(this).attr('id');
     const id = parseInt(idText.split('-')[2]);
-    console.log('DELETE Clicked button ID:', id);
+
+    const website = $('#website-' + id).text();
+    const username = $('#username-' + id + '-input').val();
+
+    $('#details-deletion-id').text(id);
+    $('#delete-confirm-domain-username').html(website + '<br>' + username);
+    document.getElementById('show-details-delete-confirm-modal-button').click();
   });
 
-  $('[id^="password-details-"]').on('click', async function () {
-    const idText = $(this).attr('id');
-    const id = parseInt(idText.split('-')[2]);
-    console.log('DELETE Clicked button ID:', id);
-  });
+  $('#confirm-details-deletion-button').on('click', async function () {
+    const loginDetailsIdText = $('#details-deletion-id').text();
+    const loginDetailsId = parseInt(loginDetailsIdText);
+
+    const deleted = await sendDeleteLoginDetailRequest(loginDetailsId);
+    if (deleted) {
+      document.getElementById('close-delete-confirm-modal-button').click();
+      await refreshLoginDetailsTable(currentPage);
+    } else {
+      $('#delete-confirm-error').text('Something went wrong. Please try again.');
+    }
+  })
 
   $('[id^="passwords-page-"]').on('click', async function () {
     const idText = $(this).attr('id');
@@ -191,19 +231,7 @@ async function populateLoginDetailsTable(page, loginDetails) {
   // Clear existing rows
   tbody.empty();
 
-  const extraAuthTypes = ['None', 'PIN', 'Passkey', 'Passphrase']
-
-  // Array to store promises for extraAuthType requests
-  const extraAuthPromises = [];
-
-  // Loop through each login detail object
-  loginDetails.forEach(loginDetail => {
-    // Get the extra auth type and push the promise to the array
-    extraAuthPromises.push(sendGetExtraAuthTypeRequest(loginDetail.detailsId));
-  });
-
-  // Wait for all extraAuthType requests to complete
-  const extraAuthResults = await Promise.all(extraAuthPromises);
+  const extraAuthTypes = { 1: 'None', 2: 'PIN', 3: 'Passkey', 4: 'Passphrase'}
 
   // Loop through each login detail object
   $.each(loginDetails, async function (index, loginDetail) {
@@ -213,7 +241,7 @@ async function populateLoginDetailsTable(page, loginDetails) {
     // Add columns to the row
     row.append('<td>' + loginDetail.detailsId + '</td>'); // ID
     row.append(
-      '<td><a href="http://' +
+      '<td><a id="website-' + loginDetail.detailsId + '" href="http://' +
         loginDetail.domain +
         '" target="_blank" class="text-reset">' +
         loginDetail.domain +
@@ -244,8 +272,10 @@ async function populateLoginDetailsTable(page, loginDetails) {
     ); // Password input field and eye icon
     // Extra auth type
     const selectId = 'extra-auth-select-' + loginDetail.detailsId;
-    const extraAuthValue = Array.isArray(extraAuthResults[index]) ? extraAuthResults[index] : [extraAuthResults[index]]; // Ensure extraAuthValue is an array
-    const selectOptions = extraAuthTypes.map(type => `<option ${extraAuthValue.includes(type) ? 'selected' : ''}>${type}</option>`).join('');
+    const selectOptions = Object.keys(extraAuthTypes).map(id => {
+      const type = extraAuthTypes[id];
+      return `<option value="${id}" ${loginDetail.ExtraAuthTypeId == id ? 'selected' : ''}>${type}</option>`;
+    }).join('');
     row.append(
       '<td>' +
       `<select id="${selectId}" class="form-select">${selectOptions}</select>` +

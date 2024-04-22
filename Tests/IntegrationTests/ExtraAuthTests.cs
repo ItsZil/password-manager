@@ -51,7 +51,7 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
         {
-            var registerApiEndpoint = "/api/domainregisterrequest";
+            var registerApiEndpoint = "/api/register";
             var registerRequest = new DomainRegisterRequest { SourceId = 1, Domain = domain, Username = "passkeytests" };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
 

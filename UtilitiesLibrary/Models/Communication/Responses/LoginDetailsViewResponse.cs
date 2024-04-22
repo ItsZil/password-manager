@@ -22,5 +22,9 @@ namespace UtilitiesLibrary.Models
         // The date when the login details were last used.
         [JsonInclude]
         public DateTime LastUsedDate { get; set; }
+
+        // The extra auth type ID.
+        [JsonInclude]
+        public int ExtraAuthId { get; set; }
     }
 }
