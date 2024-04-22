@@ -108,6 +108,7 @@ namespace Server
             rootApi.MapHandshakeEndpoints();
             rootApi.MapConfigurationEndpoints();
             rootApi.MapPasskeyEndpoints();
+            rootApi.MapExtraAuthEndpoints();
 
             app.Run();
         }

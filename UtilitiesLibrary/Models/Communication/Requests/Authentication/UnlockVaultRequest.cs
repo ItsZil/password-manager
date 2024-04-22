@@ -6,7 +6,7 @@ namespace UtilitiesLibrary.Models
     {
         [JsonInclude]
         [JsonPropertyName("sourceId")]
-        public int SourceId { get; set; } = 1; // Default: popup
+        public int SourceId { get; set; } = 1; // Default: public scripts
 
         [JsonInclude]
         [JsonPropertyName("passphraseBase64")]

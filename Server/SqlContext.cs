@@ -14,6 +14,7 @@ namespace Server
         internal DbSet<RefreshToken> RefreshTokens { get; set; }
         internal DbSet<Passkey> Passkeys { get; set; }
         internal DbSet<ExtraAuth> ExtraAuths { get; set; }
+        internal DbSet<PinCode> PinCodes { get; set; }
 
         private KeyProvider _keyProvider;
 
@@ -66,7 +67,7 @@ namespace Server
             modelBuilder.Entity<ExtraAuth>().HasData(
                 new ExtraAuth { Id = 1, Type = "None" },
                 new ExtraAuth { Id = 2, Type = "PIN" },
-                new ExtraAuth { Id = 3,Type = "Passkey" },
+                new ExtraAuth { Id = 3, Type = "Passkey" },
                 new ExtraAuth { Id = 4, Type = "Passphrase" }
             );
         }

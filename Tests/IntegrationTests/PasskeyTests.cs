@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Net.Http.Headers;
 using Geralt;
 using Microsoft.IdentityModel.Tokens;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Security.Cryptography;
 
 namespace Tests.IntegrationTests.Server
