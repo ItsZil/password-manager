@@ -109,6 +109,7 @@ namespace Server
             rootApi.MapConfigurationEndpoints();
             rootApi.MapPasskeyEndpoints();
             rootApi.MapExtraAuthEndpoints();
+            rootApi.MapPinCodeEndpoints();
 
             app.Run();
         }

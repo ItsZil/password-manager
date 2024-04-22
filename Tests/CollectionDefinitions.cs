@@ -17,4 +17,7 @@
 
     [CollectionDefinition(nameof(ExtraAuthTests), DisableParallelization = true)]
     public class ExtraAuthTests { }
+
+    [CollectionDefinition(nameof(PinCodeTests), DisableParallelization = true)]
+    public class PinCodeTests { }
 }

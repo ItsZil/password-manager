@@ -8,10 +8,6 @@ using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
 using Geralt;
-using Microsoft.IdentityModel.Tokens;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using System.Security.Cryptography;
-using Microsoft.VisualStudio.TestPlatform.CoreUtilities.Extensions;
 
 namespace Tests.IntegrationTests.Server
 {
@@ -65,17 +61,6 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
-        private async Task<int> GetLoginDetailsId(HttpResponseMessage registerDomainResponse)
-        {
-            var domainResponseContent = await registerDomainResponse.Content.ReadAsStringAsync();
-            Assert.NotNull(domainResponseContent);
-
-            var domainRegisterResponse = JsonSerializer.Deserialize<DomainRegisterResponse>(domainResponseContent);
-            Assert.NotNull(domainRegisterResponse);
-
-            return domainRegisterResponse.Id;
-        }
-
         private async Task<HttpResponseMessage> GetExtraAuthAsync(int loginDetailsId)
         {
             var getExtraAuthApiEndpoint = $"/api/extraauth?loginDetailsId={loginDetailsId}";
@@ -93,8 +78,8 @@ namespace Tests.IntegrationTests.Server
 
         private async Task<HttpResponseMessage> RemoveExtraAuthAsync(int loginDetailsId)
         {
-            var getExtraAuthApiEndpoint = $"/api/extraauth?loginDetailsId={loginDetailsId}";
-            var response = await _client.DeleteAsync(getExtraAuthApiEndpoint);
+            var deleteExtraAuthApiEndpoint = $"/api/extraauth?loginDetailsId={loginDetailsId}";
+            var response = await _client.DeleteAsync(deleteExtraAuthApiEndpoint);
             return response;
         }
 
@@ -105,16 +90,24 @@ namespace Tests.IntegrationTests.Server
             return await _client.PostAsync(createPasskeyApiEndpoint, createPasskeyRequestContent);
         }
 
+        private async Task<HttpResponseMessage> SetPinCodeAsync(SetPinCodeRequest request)
+        {
+            // Encrypt the pin code
+            byte[] pinCodeBytes = Encoding.UTF8.GetBytes(request.PinCode);
+            byte[] encryptedPinCodeBytes = await PasswordUtil.EncryptMessage(_sharedSecretKey, pinCodeBytes);
+            string encryptedPinCode = Convert.ToBase64String(encryptedPinCodeBytes);
+            request.PinCode = encryptedPinCode;
+
+            var setPinCodeApiEndpoint = "/api/pincode";
+            var setPinCodeRequestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+            var response = await _client.PostAsync(setPinCodeApiEndpoint, setPinCodeRequestContent);
+            return response;
+        }
+
         private async Task<PasskeyCreationRequest> CreatePasskeyCreationRequest()
         {
             // Create a domain
-            var domainResponse = await RegisterDomainAsync("extraauthtests.com");
-            Assert.Equal(HttpStatusCode.OK, domainResponse.StatusCode);
-
-            // Retrieve domain ID
-            var domainResponseContent = await domainResponse.Content.ReadAsStringAsync();
-            var domainRegisterResponse = JsonSerializer.Deserialize<DomainRegisterResponse>(domainResponseContent);
-            Assert.NotNull(domainRegisterResponse);
+            _ = await RegisterDomainAsync("extraauthtests.com");
 
             // Generate a random challenge
             byte[] randomChallenge = new byte[16];
@@ -125,7 +118,7 @@ namespace Tests.IntegrationTests.Server
             {
                 SourceId = 1,
                 AlgorithmId = -7,
-                LoginDetailsId = domainRegisterResponse.Id,
+                LoginDetailsId = 1,
                 PublicKeyB64 = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAER9VPZ8utqJ/jv7UW/9WVISlwVFpz9bZ2Ln0bfV/kManuAgr19LN+btGIVsCEuVEJ2MURJwhL7Ysh3L8MHysR8w==",
                 UserIdB64 = "6qzHUyNUwpqntsW/20xp/A==",
                 CredentialIdB64 = "AbnMIjb6LVvQ0Ph2JhXMIJO5iH7GddrJ6H07X9cdhx_9TSRolyT-ofMqcoCmRqjyOxCJxeRDLlgwGLPST7550EU",
@@ -143,20 +136,19 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestGetExtraAuthTypeReturnsOk()
         {
-            var domainResponse = await RegisterDomainAsync("test.com");
-            int loginDetailsId = await GetLoginDetailsId(domainResponse);
+            _ = await RegisterDomainAsync("test.com");
 
-            var extraAuthResponse = await GetExtraAuthAsync(loginDetailsId);
+            var extraAuthResponse = await GetExtraAuthAsync(1);
             Assert.Equal(HttpStatusCode.OK, extraAuthResponse.StatusCode);
         }
 
         [Fact]
         public async Task TestGetDefaultExtraAuthTypeReturnsNoneType()
         {
-            var domainResponse = await RegisterDomainAsync("test.com");
-            int loginDetailsId = await GetLoginDetailsId(domainResponse);
+            // Create a domain
+            _ = await RegisterDomainAsync("test.com");
 
-            var extraAuthResponse = await GetExtraAuthAsync(loginDetailsId);
+            var extraAuthResponse = await GetExtraAuthAsync(1);
             Assert.Equal(HttpStatusCode.OK, extraAuthResponse.StatusCode);
 
             var extraAuthContent = await extraAuthResponse.Content.ReadAsStringAsync();
@@ -176,18 +168,33 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestSetPinCodeExtraAuthReturnsNoContent()
         {
-            // TODO: when pin code endpoints are implemented
+            // Create a domain
+            _ = await RegisterDomainAsync("test.com");
+
+            SetPinCodeRequest setPinCodeRequest = new()
+            {
+                LoginDetailsId = 1,
+                PinCode = "1234"
+            };
+            await SetPinCodeAsync(setPinCodeRequest);
+
+            SetExtraAuthRequest setExtraAuthRequest = new()
+            {
+                LoginDetailsId = 1,
+                ExtraAuthId = 2 // Pin code
+            };
+            var response = await SetExtraAuthAsync(setExtraAuthRequest);
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         }
 
         [Fact]
         public async Task TestSetPassphraseExtraAuthReturnsNoContent()
         {
             var domainResponse = await RegisterDomainAsync("test.com");
-            int loginDetailsId = await GetLoginDetailsId(domainResponse);
 
             SetExtraAuthRequest setExtraAuthRequest = new()
             {
-                LoginDetailsId = loginDetailsId,
+                LoginDetailsId = 1,
                 ExtraAuthId = 4 // Passphrase
             };
 
@@ -195,7 +202,7 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.NoContent, setExtraAuthResponse.StatusCode);
 
             // Verify that the login details now has the correct extra auth method
-            var extraAuthResponse = await GetExtraAuthAsync(loginDetailsId);
+            var extraAuthResponse = await GetExtraAuthAsync(1);
             Assert.Equal(HttpStatusCode.OK, extraAuthResponse.StatusCode);
 
             var extraAuthContent = await extraAuthResponse.Content.ReadAsStringAsync();
@@ -238,17 +245,11 @@ namespace Tests.IntegrationTests.Server
         public async Task TestSetIncorrectExtraAuthReturnsBadRequest()
         {
             // Create a domain
-            var domainResponse = await RegisterDomainAsync("extraauthtests.com");
-            Assert.Equal(HttpStatusCode.OK, domainResponse.StatusCode);
-
-            // Retrieve domain ID
-            var domainResponseContent = await domainResponse.Content.ReadAsStringAsync();
-            var domainRegisterResponse = JsonSerializer.Deserialize<DomainRegisterResponse>(domainResponseContent);
-            Assert.NotNull(domainRegisterResponse);
+            _ = await RegisterDomainAsync("extraauthtests.com");
 
             SetExtraAuthRequest setExtraAuthRequest = new()
             {
-                LoginDetailsId = domainRegisterResponse.Id,
+                LoginDetailsId = 1,
                 ExtraAuthId = 5 // Non-existing extra auth type
             };
 
@@ -260,18 +261,11 @@ namespace Tests.IntegrationTests.Server
         public async Task TestDeleteNoneExtraAuthReturnsNoContent()
         {
             // Create a domain
-            var domainResponse = await RegisterDomainAsync("extraauthtests.com");
-            Assert.Equal(HttpStatusCode.OK, domainResponse.StatusCode);
-
-            // Retrieve domain ID
-            var domainResponseContent = await domainResponse.Content.ReadAsStringAsync();
-            var domainRegisterResponse = JsonSerializer.Deserialize<DomainRegisterResponse>(domainResponseContent);
-            Assert.NotNull(domainRegisterResponse);
-            int loginDetailsId = domainRegisterResponse.Id;
+            _ = await RegisterDomainAsync("extraauthtests.com");
 
             SetExtraAuthRequest setExtraAuthRequest = new()
             {
-                LoginDetailsId = loginDetailsId,
+                LoginDetailsId = 1,
                 ExtraAuthId = 1 // None
             };
 
@@ -279,11 +273,11 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.NoContent, setExtraAuthResponse.StatusCode);
 
             // Remove the extra auth method
-            var removeExtraAuthResponse = await RemoveExtraAuthAsync(loginDetailsId);
+            var removeExtraAuthResponse = await RemoveExtraAuthAsync(1);
             Assert.Equal(HttpStatusCode.NoContent, removeExtraAuthResponse.StatusCode);
 
             // Verify that the login details now has the correct extra auth method
-            var extraAuthResponse = await GetExtraAuthAsync(loginDetailsId);
+            var extraAuthResponse = await GetExtraAuthAsync(1);
             Assert.Equal(HttpStatusCode.OK, extraAuthResponse.StatusCode);
 
             var extraAuthContent = await extraAuthResponse.Content.ReadAsStringAsync();
