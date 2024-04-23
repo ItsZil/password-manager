@@ -22,7 +22,7 @@ namespace Server.Endpoints
             group.MapPost("/updatevaultpassphrase", UpdateVaultPassphrase);
 
             group.MapPost("/refreshtoken", RefreshToken);
-            group.MapGet("/lockvault", LockVault);
+            group.MapPost("/lockvault", LockVault);
             group.MapGet("/checkauth", CheckAuth);
 
             return group;
@@ -147,6 +147,13 @@ namespace Server.Endpoints
 
             byte[] newPassphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(updateRequest.SourceId), Convert.FromBase64String(newPassphraseEncrypted));
             string newPassphraseString = Encoding.UTF8.GetString(newPassphrasePlain);
+
+            // Checck if the new passphrase is between 4 and 10 space separated words
+            string[] words = newPassphraseString.Split(' ');
+            if (words.Length < 4 || words.Length > 10)
+            {
+                return Results.BadRequest();
+            }
 
             // Update the vault passphrase
             bool updated = await sqlContext.UpdateDatabasePragmaKey(newPassphraseString);

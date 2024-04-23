@@ -24,20 +24,16 @@
       </div>
     </div>
 
-    <div
-      class="page page-center"
-      id="waiting-for-handshake"
-      style="display: none"
-    >
+    <div class="page page-center"
+         id="waiting-for-handshake"
+         style="display: none">
       <div class="container container-slim py-4">
         <div class="text-center">
           <div class="mb-3">
-            <i
-              class="navbar-brand-image navbar-brand navbar-brand-autodark"
-              id="handshake-retry-icon"
-              style="font-size: xx-large"
-              alt="Password Manager"
-            ></i>
+            <i class="navbar-brand-image navbar-brand navbar-brand-autodark"
+               id="handshake-retry-icon"
+               style="font-size: xx-large"
+               alt="Password Manager"></i>
           </div>
           <div class="text-secondary">Connecting to vault service</div>
           <div class="text-secondary mb-3" id="handshake-retry-text">
@@ -102,7 +98,7 @@
                     </button>
                   </div>
                   <div>
-                    <a href="#" class="btn btn-primary w-100" id="initial-save-new-passphrase-button">
+                    <a href="#" class="btn btn-primary w-100" id="save-new-passphrase-button">
                       Save new passphrase
                     </a>
                   </div>
@@ -145,248 +141,192 @@
                     here.
                   </p>
 
-                  <div>
-                    <!-- Default JWT token settings -->
-                    <div class="mb-4">
-                      <label class="form-label"></label>
-                      <div class="mt-2">
-                        <div class="input-group-flat gap-2">
-                          <!-- Settings to control access and refresh token lifetimes -->
-                          <p class="page-subtitle">
-                            Access tokens grant access to the vault. On
-                            expiration, refresh tokens allow creation of new
-                            access tokens.
-                          </p>
-                          <div class="input-group w-100">
-                            <!--- Access token lifetime -->
-                            <button id="decreaseAccessTokenLifetime"
-                                    class="btn btn-outline-secondary"
-                                    type="button">
-                              -
-                            </button>
-                            <input id="wordCount"
-                                   type="text"
-                                   class="form-control"
-                                   value="Access token lifetime: 5 minutes"
-                                   readonly />
-                            <button id="increaseAccessTokenLifetime"
-                                    class="btn btn-outline-secondary me-4"
-                                    type="button">
-                              +
-                            </button>
-
-                            <!-- Refresh token lifetime -->
-                            <button id="decreaseAccessTokenLifetime"
-                                    class="btn btn-outline-secondary"
-                                    type="button">
-                              -
-                            </button>
-                            <input id="wordCount"
-                                   type="text"
-                                   class="form-control"
-                                   value="Refresh token lifetime: 24 hours"
-                                   readonly />
-                            <button id="increaseAccessTokenLifetime"
-                                    class="btn btn-outline-secondary"
-                                    type="button">
-                              +
-                            </button>
-                          </div>
-                        </div>
+                  <!-- Reset secret JWT key button -->
+                  <div class="mb-4">
+                    <label class="form-label"></label>
+                    <div class="mt-2">
+                      <div class="input-group-flat gap-2">
+                        <p class="page-subtitle">
+                          If you suspect unauthorized access to your vault,
+                          you can log out of all authenticated devices.
+                        </p>
+                        <a href="#"
+                           class="btn btn-danger"
+                           data-bs-toggle="modal"
+                           data-bs-target="#reset-jwt-secret-modal">
+                          Log out of all devices
+                        </a>
                       </div>
                     </div>
+                  </div>
+                </div>
+                <div class="card-footer bg-transparent mt-auto"></div>
+              </div>
 
-                    <!-- Reset secret JWT key button -->
-                    <div class="mb-4">
-                      <label class="form-label"></label>
-                      <div class="mt-2">
-                        <div class="input-group-flat gap-2">
-                          <p class="page-subtitle">
-                            If you suspect unauthorized access to your vault,
-                            you can log out of all authenticated devices.
-                          </p>
-                          <a href="#"
-                             class="btn btn-danger"
-                             id="reset-jwt-secret-button"
-                             data-bs-toggle="modal"
-                             data-bs-target="#modal-danger">
+              <div class="modal modal-blur fade"
+                   id="reset-jwt-secret-modal"
+                   tabindex="-1"
+                   role="dialog" />
+              <div class="modal-dialog modal-sm modal-dialog-centered"
+                   role="document">
+                <div class="modal-content">
+                  <button type="button"
+                          class="btn-close"
+                          data-bs-dismiss="modal"
+                          aria-label="Close"></button>
+                  <div class="modal-status bg-danger"></div>
+                  <div class="modal-body text-center py-4">
+                    <i class="bi bi-exclamation-triangle"
+                       style="font-size: 45px; color: red"></i>
+                    <h3>Are you sure?</h3>
+                    <div class="text-secondary">
+                      Do you really want to log out of all devices?<br />You
+                      will need to re-enter your passphrase.
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <div class="w-100">
+                      <div class="row">
+                        <div class="col">
+                          <a class="btn w-100" data-bs-dismiss="modal">
+                            Cancel
+                          </a>
+                        </div>
+                        <div class="col">
+                          <a class="btn btn-danger w-100"
+                             id="confirm-log-out-button">
                             Log out of all devices
                           </a>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="card-footer bg-transparent mt-auto"></div>
-                </div>
-
-                <div class="modal modal-blur fade"
-                     id="modal-danger"
-                     tabindex="-1"
-                     role="dialog">
-                  <div class="modal-dialog modal-sm modal-dialog-centered"
-                       role="document">
-                    <div class="modal-content">
-                      <button type="button"
-                              class="btn-close"
-                              data-bs-dismiss="modal"
-                              aria-label="Close"></button>
-                      <div class="modal-status bg-danger"></div>
-                      <div class="modal-body text-center py-4">
-                        <i class="bi bi-exclamation-triangle"
-                           style="font-size: 45px; color: red"></i>
-                        <h3>Are you sure?</h3>
-                        <div class="text-secondary">
-                          Do you really want to log out of all devices?<br />You
-                          will need to re-enter your passphrase.
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <div class="w-100">
-                          <div class="row">
-                            <div class="col">
-                              <a class="btn w-100" data-bs-dismiss="modal">
-                                Cancel
-                              </a>
-                            </div>
-                            <div class="col">
-                              <a class="btn btn-danger w-100"
-                                 data-bs-dismiss="modal"
-                                 id="confirm-log-out-button">
-                                Log out of all devices
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="modal modal-blur fade"
-           id="passphrase-update-progress-modal"
-           tabindex="-1"
-           role="dialog"
-           data-bs-backdrop="static"
-           data-bs-keyboard="false">
-        <div class="modal-dialog modal-sm modal-dialog-centered"
-             role="document">
-          <div class="modal-content">
-            <div class="modal-body">
-              <div class="modal-title">Updating passphrase</div>
-              <div class="progress progress-bar-striped mb-3">
-                <div class="progress-bar progress-bar-indeterminate"></div>
-              </div>
-              <div class="card-subtitle mb-0">
-                You will be prompted to login shortly.
-              </div>
+    <div class="modal modal-blur fade"
+         id="passphrase-update-progress-modal"
+         tabindex="-1"
+         role="dialog"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="modal-title">Updating passphrase</div>
+            <div class="progress progress-bar-striped mb-3">
+              <div class="progress-bar progress-bar-indeterminate"></div>
+            </div>
+            <div class="card-subtitle mb-0">
+              You will be prompted to login shortly.
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <a href="#"
+       id="show-passphrase-update-progresss-modal-button"
+       style="display: none"
+       data-bs-toggle="modal"
+       data-bs-target="#passphrase-update-progress-modal"></a>
+
+    <div class="modal modal-blur fade"
+         id="passphrase-update-failure-modal"
+         tabindex="-1"
+         role="dialog">
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+          <div class="modal-status bg-red"></div>
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-database-fill-x"
+               style="font-size: 45px; color: red"></i>
+            <div class="text-secondary-emphasis">
+              Something went wrong updating your passphrase. Restart
+              the vault service and try again.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="w-100">
+              <a href="#"
+                 class="btn btn-primary w-100"
+                 data-bs-dismiss="modal">
+                Close
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <a href="#"
-         id="show-passphrase-update-progresss-modal-button"
-         style="display: none"
-         data-bs-toggle="modal"
-         data-bs-target="#passphrase-update-progress-modal"></a>
+    <a href="#"
+       id="show-passphrase-update-failure-modal-button"
+       style="display: none"
+       data-bs-toggle="modal"
+       data-bs-target="#passphrase-update-failure-modal"></a>
 
+    <div id="vault-login-modal"
+         data-bs-target="#staticBackdrop"
+         style="display: none">
       <div class="modal modal-blur fade"
-           id="passphrase-update-failure-modal"
+           id="vault-login-modal-inner"
            tabindex="-1"
+           style="display: block"
+           aria-modal="true"
            role="dialog">
         <div class="modal-dialog modal-sm modal-dialog-centered"
              role="document">
           <div class="modal-content">
-            <button type="button"
-                    class="btn-close"
-                    data-bs-dismiss="modal"
-                    aria-label="Close"></button>
-            <div class="modal-status bg-red"></div>
-            <div class="modal-body text-center py-4">
-              <i class="bi bi-database-fill-x"
-                 style="font-size: 45px; color: red"></i>
-              <div class="text-secondary-emphasis">
-                Something went wrong updating your passphrase. Restart
-                the vault service and try again.
+            <div class="modal-body">
+              <div class="mb-4">
+                <div class="bi-database-fill-lock text-center"
+                     style="font-size: 45px"></div>
+                <h2 class="card-title text-center">Vault Locked</h2>
               </div>
-            </div>
-            <div class="modal-footer">
-              <div class="w-100">
-                <a href="#"
-                   class="btn btn-primary w-100"
-                   data-bs-dismiss="modal">
-                  Close
-                </a>
+
+              <div id="passphrase-input-fields">
+                <p class="text-secondary-emphasis mt-0">
+                  Please enter your passphrase
+                </p>
+                <div class="mb-3 input-group input-group-flat">
+                  <input type="password"
+                         class="form-control"
+                         id="passphrase-input"
+                         placeholder="Passphrase"
+                         autocomplete="off" />
+                  <span class="input-group-text">
+                    <a href="#"
+                       class="link-secondary bi-eye"
+                       id="toggle-passphrase-visibility"></a>
+                  </span>
+                </div>
+                <div>
+                  <a class="btn btn-primary w-100 mb-4"
+                     id="unlock-vault-button">
+                    <i class="bi-unlock-fill me-2"></i>
+                    Unlock
+                  </a>
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <a href="#"
-         id="show-passphrase-update-failure-modal-button"
-         style="display: none"
-         data-bs-toggle="modal"
-         data-bs-target="#passphrase-update-failure-modal"></a>
-
-      <div id="vault-login-modal"
-           data-bs-target="#staticBackdrop"
-           style="display: none">
-        <div class="modal modal-blur fade"
-             id="vault-login-modal-inner"
-             tabindex="-1"
-             style="display: block"
-             aria-modal="true"
-             role="dialog">
-          <div class="modal-dialog modal-sm modal-dialog-centered"
-               role="document">
-            <div class="modal-content">
-              <div class="modal-body">
-                <div class="mb-4">
-                  <div class="bi-database-fill-lock text-center"
-                       style="font-size: 45px"></div>
-                  <h2 class="card-title text-center">Vault Locked</h2>
-                </div>
-
-                <div id="passphrase-input-fields">
-                  <p class="text-secondary-emphasis mt-0">
-                    Please enter your passphrase
-                  </p>
-                  <div class="mb-3 input-group input-group-flat">
-                    <input type="password"
-                           class="form-control"
-                           id="passphrase-input"
-                           placeholder="Passphrase"
-                           autocomplete="off" />
-                    <span class="input-group-text">
-                      <a href="#"
-                         class="link-secondary bi-eye"
-                         id="toggle-passphrase-visibility"></a>
-                    </span>
-                  </div>
-                  <div>
-                    <a class="btn btn-primary w-100 mb-4"
-                       id="unlock-vault-button">
-                      <i class="bi-unlock-fill me-2"></i>
-                      Unlock
-                    </a>
-                  </div>
-                </div>
-
-                <div class="text-center"
-                     id="unlock-in-progress"
-                     style="display: none">
-                  <div class="modal-title mb-4">Unlocking vault</div>
-                  <div class="spinner-border mb-2"></div>
-                  <div class="text-secondary-emphasis mb-4">
-                    This won't take long.
-                  </div>
+              <div class="text-center"
+                   id="unlock-in-progress"
+                   style="display: none">
+                <div class="modal-title mb-4">Unlocking vault</div>
+                <div class="spinner-border mb-2"></div>
+                <div class="text-secondary-emphasis mb-4">
+                  This won't take long.
                 </div>
               </div>
             </div>

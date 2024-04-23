@@ -12,7 +12,7 @@ namespace Server
     internal class Program
     {
         public static void Main(string[] args)
-        {
+       {
             var builder = WebApplication.CreateSlimBuilder(args);
 
             builder.Services.ConfigureHttpJsonOptions(options =>

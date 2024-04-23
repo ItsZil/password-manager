@@ -6,6 +6,7 @@ using Server.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace Tests.IntegrationTests.Server
 {
@@ -16,8 +17,10 @@ namespace Tests.IntegrationTests.Server
         private WebApplicationFactory<Program> _factory;
 
         private readonly byte[] _sharedSecretKey;
+        private readonly string _accessToken;
 
         private readonly string _runningTestVaultLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"vault_{Guid.NewGuid()}");
+        private bool updatedPassphrase = false;
 
         public ConfigurationTests()
         {
@@ -35,14 +38,21 @@ namespace Tests.IntegrationTests.Server
             _client = _factory.CreateClient();
 
             _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client, 1);
+            _accessToken = CompleteTestAuth.GetAccessToken(_client, _sharedSecretKey);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         }
 
         public void Dispose()
         {
             // Ensure that the server's default database file is deleted after each test run.
-            var service = _factory.Services.GetService(typeof(SqlContext));
-            if (service is SqlContext context)
-                context.Database.EnsureDeleted();
+            if (!updatedPassphrase)
+            {
+                // We can only do this if the passphrase has not been updated.
+                // This is because the SqlContext constructor does not use the stored pragma key for test databases.
+                var service = _factory.Services.GetService(typeof(SqlContext));
+                if (service is SqlContext context)
+                    context.Database.EnsureDeleted();
+            }
 
             // Delete the generated config file
             if (File.Exists(ConfigUtil.GetFileLocation()))
@@ -92,8 +102,18 @@ namespace Tests.IntegrationTests.Server
         private async Task<HttpResponseMessage> UnlockVaultAsync(string encryptedPassphraseB64)
         {
             var apiEndpoint = "api/unlockvault";
-            var unlockVaultRequest = new UnlockVaultRequest { PassphraseBase64 = encryptedPassphraseB64 };
+            var unlockVaultRequest = new UnlockVaultRequest { SourceId = 1, PassphraseBase64 = encryptedPassphraseB64 };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(unlockVaultRequest), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+        
+        private async Task<HttpResponseMessage> UpdateVaultPassphraseAsync(string vaultRawKeyBase64)
+        {
+            var apiEndpoint = "api/updatevaultpassphrase";
+            var updateVaultPassphraseRequest = new UpdateVaultPassphraseRequest { SourceId = 1, VaultRawKeyBase64 = vaultRawKeyBase64 };
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(updateVaultPassphraseRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
             return response;
@@ -274,6 +294,30 @@ namespace Tests.IntegrationTests.Server
             var unlockVaultResponse = await UnlockVaultAsync(Convert.ToBase64String(encryptedPassphraseUnlock));
 
             Assert.Equal(HttpStatusCode.Forbidden, unlockVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestUpdateVaultPassphraseReturnsNoContent()
+        {
+            string newPassphrase = "just a new passphrase";
+            byte[] newPassphraseBytes = Encoding.UTF8.GetBytes(newPassphrase);
+            byte[] encryptedNewPassphrase = await PasswordUtil.EncryptMessage(_sharedSecretKey, newPassphraseBytes);
+
+            var updateVaultPassphraseResponse = await UpdateVaultPassphraseAsync(Convert.ToBase64String(encryptedNewPassphrase));
+
+            Assert.Equal(HttpStatusCode.NoContent, updateVaultPassphraseResponse.StatusCode);
+            updatedPassphrase = true;
+        }
+
+        [Fact]
+        public async Task TestUpdateVaultIncorrectPassphraseReturnsBadRequest()
+        {
+            string newPassphrase = "not 4 words";
+            byte[] newPassphraseBytes = Encoding.UTF8.GetBytes(newPassphrase);
+            byte[] encryptedNewPassphrase = await PasswordUtil.EncryptMessage(_sharedSecretKey, newPassphraseBytes);
+
+            var updateVaultPassphraseResponse = await UpdateVaultPassphraseAsync(Convert.ToBase64String(encryptedNewPassphrase));
+            Assert.Equal(HttpStatusCode.BadRequest, updateVaultPassphraseResponse.StatusCode);
         }
     }
 }

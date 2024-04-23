@@ -8,7 +8,8 @@ const {
 const {
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
-  sendUpdateVaultPassphraseRequest
+  sendUpdateVaultPassphraseRequest,
+  sendLockVaultRequest
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -35,7 +36,7 @@ async function setElements() {
   } else if (!hasExistingVault) {
     // Open setup
     window.location.replace('./setup.html');
-  } else {
+  } else if (isAuthenticatedResult && hasExistingVault) {
     // User is authenticated and has an existing vault
     $('#page-loader').show();
     $('#vault-login-modal').hide();
@@ -186,7 +187,7 @@ $('#passPhraseInput').on('input', function () {
   $('#passPhraseInput').removeClass('is-invalid').addClass('is-invalid-lite');
 });
 
-$('#initial-save-new-passphrase-button').on('click', async function () {
+$('#save-new-passphrase-button').on('click', async function () {
   const passPhrase = $('#passPhraseInput').val();
   const passPhraseIsEmpty = passPhrase.trim().length == 0;
   const passPhraseIsNotValid = passPhrase.split(' ').length < 4 || passPhrase.split(' ').length > 10;
@@ -217,4 +218,15 @@ $('#initial-save-new-passphrase-button').on('click', async function () {
     document.getElementById('show-passphrase-update-progresss-modal-button').click();
     document.getElementById('show-passphrase-update-failure-modal-button').click();
   }
+});
+
+$('#confirm-log-out-button').on('click', async function () {
+  // Remove tokens from secure HttpOnly cookie
+  setTokens(null, null);
+
+  // Make a request for the server to invalidate all tokens and close connection to database
+  await sendLockVaultRequest();
+
+  // Reload the page so they are prompted to login.
+  location.reload();
 });

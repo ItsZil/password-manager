@@ -151,15 +151,16 @@ namespace Server
                 command.CommandText = $"PRAGMA rekey = '{hashedPragmaKeyB64}'";
                 await command.ExecuteNonQueryAsync();
 
+                _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
+
                 // Re-open the connection with the new connection string
                 await connection.CloseAsync();
-                connection.ConnectionString = CreateConnectionString(dbPath, hashedPragmaKeyB64);
+                connection.ConnectionString = CreateConnectionString(dbPath, hashedPragmaKeyB64); // We need to specify the hashed pragma key because this is a test database.
                 await connection.OpenAsync();
 
                 bool opened = connection.State == ConnectionState.Open;
                 if (opened)
                 {
-                    _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
                     return true;
                 }
                 return false;
