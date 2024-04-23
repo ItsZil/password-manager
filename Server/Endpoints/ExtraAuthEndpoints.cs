@@ -36,6 +36,9 @@ namespace Server.Endpoints
             if (request.ExtraAuthId == loginDetails.ExtraAuthId)
                 return Results.NoContent();
 
+            // Remove the existing extra authentication.
+            await RemoveExistingExtraAuth(loginDetails, sqlContext);
+
             switch (request.ExtraAuthId)
             {
                 case 2:
@@ -69,11 +72,25 @@ namespace Server.Endpoints
             if (loginDetails == null || loginDetails.ExtraAuth == null)
                 return Results.NotFound();
 
+            bool removed = await RemoveExistingExtraAuth(loginDetails, sqlContext);
+            loginDetails.ExtraAuthId = 1;
+            await sqlContext.SaveChangesAsync();
+
+            if (removed)
+                return Results.NoContent();
+            else
+                return Results.StatusCode(500);
+        }
+
+
+        internal static async Task<bool> RemoveExistingExtraAuth(LoginDetails loginDetails, SqlContext sqlContext)
+        {
+            int loginDetailsId = loginDetails.Id;
             int currentExtraAuthMethod = loginDetails.ExtraAuthId;
             if (currentExtraAuthMethod == 1)
             {
                 // Extra auth is already set to None, nothing to do.
-                return Results.NoContent();
+                return true;
             }
             if (currentExtraAuthMethod == 2)
             {
@@ -89,10 +106,7 @@ namespace Server.Endpoints
                 if (passkeyToRemove != null)
                     sqlContext.Passkeys.Remove(passkeyToRemove);
             }
-
-            loginDetails.ExtraAuthId = 1;
-            await sqlContext.SaveChangesAsync();
-            return Results.NoContent();
+            return true;
         }
     }
 }

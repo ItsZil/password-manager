@@ -152,11 +152,22 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
+            // If the username is different, check if there is already a login details with the same new username for this domain.
+            if (request.Username != null && request.Username != loginDetails.Username)
+            {
+                var detailsExist = await dbContext.LoginDetails.AnyAsync(x => x.RootDomain == loginDetails.RootDomain && x.Username == request.Username);
+                if (detailsExist)
+                    return Results.Conflict();
+            }
+
             // If the password is null, do not change it.
             if (request.Password != null)
             {
-                byte[] newEncryptedPassword= Convert.FromBase64String(request.Password);
+                byte[] newEncryptedPassword = Convert.FromBase64String(request.Password);
                 byte[] newDecryptedPasswordPlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), newEncryptedPassword);
+
+                if (newDecryptedPasswordPlain.Length == 0)
+                    return Results.BadRequest(); // Decryption failed
 
                 (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(newDecryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
                 loginDetails.Password = encryptedPassword;

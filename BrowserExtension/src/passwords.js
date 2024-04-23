@@ -16,8 +16,10 @@ const {
   sendCreatePasskeyRequest,
   sendGetPasskeyCredentialRequest,
   sendSetExtraAuthTypeRequest,
+  sendRemoveExtraAuthTypeRequest,
   sendCreatePinRequest,
-  sendDeleteLoginDetailRequest
+  sendDeleteLoginDetailRequest,
+  sendEditLoginDetailRequest
 } = require('./util/requestsUtil.js');
 
 const {
@@ -114,17 +116,51 @@ async function refreshLoginDetailsTable(page) {
     const extraAuthType = $('#extra-auth-select-' + id).val();
     let password = $('#password-input-' + id).val();
 
-    // Check if password only contains *, if so, we want it to be null so it's not saved.
-    if (password === '******************************') {
-      password = null;
-    } else {
-      // Encrypt the password
-      password = btoa(await encryptPassword(password));
-    }
-
     // Check if the username is not empty
     if (username.trim().length < 1) {
       return;
+    }
+
+    // Parse extraAuthType
+    switch (extraAuthType) {
+      case '1':
+        await sendRemoveExtraAuthTypeRequest(id);
+        break;
+      case '2':
+        // Show the PIN setup modal.
+        $('#pin-setup-modal-details-id').text(id);
+        $('#pin-setup-error-text').hide();
+
+        document.getElementById('show-setup-pin-code-modal-button').click();
+        return; // The rest of the save process is completed once the PIN code is saved.
+        break;
+      case '3':
+        // Create a passkey.
+        const succeeded = await setupPasskey(id, $('#website-' + id).text());
+        if (succeeded) {
+          await sendSetExtraAuthTypeRequest(id, 3);
+        } else {
+          // A failure modal is triggered in setupPasskey.
+          return;
+        }
+        break;
+      case '4':
+        await sendSetExtraAuthTypeRequest(id, 4);
+        break;
+    }
+
+    // This is not reached for PIN code, it is triggered from the modal instead.
+    await saveLoginDetails(id, username, password);
+  });
+
+  async function saveLoginDetails(id, username, password) {
+
+    // Check if password only contains *, if so, we want it to be null so it's not saved.
+    if (password !== '******************************') {
+      // Encrypt the password
+      password = await encryptPassword(password);
+    } else {
+      password = null;
     }
 
     const loginDetailsEditRequest = {
@@ -134,9 +170,52 @@ async function refreshLoginDetailsTable(page) {
       password: password
     }
 
-    console.log('Username', username);
-    console.log('Password', password);
-    console.log('Extra auth type', extraAuthType);
+    const updated = await sendEditLoginDetailRequest(loginDetailsEditRequest);
+    if (updated) {
+      // Show a success modal
+      document.getElementById('show-details-save-success-modal-button').click();
+    } else {
+      // Show a failure modal
+      document.getElementById('show-details-save-failure-modal-button').click();
+    }
+    return updated;
+  }
+
+  $('#finish-pin-setup-button').on('click', async function () {
+    $('#setup-pin-code-spinner').show();
+    $('#finish-pin-setup-button').addClass('disabled');
+
+    const id = parseInt($('#pin-setup-modal-details-id').text());
+    const pinInput = $('#setup-pin-modal-input').val();
+
+    if (pinInput.length !== 4) {
+      $('#setup-pin-modal-input').addClass('is-invalid is-invalid-lite');
+      return;
+    }
+
+    const encryptedPin = await encryptPassword(pinInput);
+    const createPinRequestBody = {
+      sourceId: sourceId,
+      loginDetailsId: id,
+      pinCode: encryptedPin,
+    };
+
+    const success = await sendCreatePinRequest(createPinRequestBody);
+    if (!success) {
+      $('#pin-setup-error-text').show();
+      return;
+    }
+    sendSetExtraAuthTypeRequest(id, 2);
+
+    // Complete saving the login details
+    const username = $('#username-' + id + '-input').val();
+    const password = $('#password-input-' + id).val();
+
+    await saveLoginDetails(id, username, password);
+
+    $('#setup-pin-modal-input').val('');
+    $('#setup-pin-code-spinner').hide();
+    $('#finish-pin-setup-button').removeClass('disabled');
   });
 
   $('[id^="delete-details-"]').on('click', async function () {
@@ -203,6 +282,7 @@ async function refreshLoginDetailsTable(page) {
       // Replace the password with the decrypted password
       $('#password-input-' + id).val(decryptedPassword);
       $('#password-input-' + id).attr('type', 'text');
+      $('#password-input-' + id).removeAttr('readonly');
 
       // Replace the spinner with the eye icon
       $(this)
@@ -213,6 +293,7 @@ async function refreshLoginDetailsTable(page) {
       // Hide the password
       $('#password-input-' + id).attr('type', 'password');
       $('#password-input-' + id).val('******************************');
+      $('#password-input-' + id).attr('readonly');
 
       // Replace the eye-slash icon with the eye icon
       $(this).removeClass('bi-eye-slash').addClass('bi-eye');
@@ -274,7 +355,7 @@ async function populateLoginDetailsTable(page, loginDetails) {
     const selectId = 'extra-auth-select-' + loginDetail.detailsId;
     const selectOptions = Object.keys(extraAuthTypes).map(id => {
       const type = extraAuthTypes[id];
-      return `<option value="${id}" ${loginDetail.ExtraAuthTypeId == id ? 'selected' : ''}>${type}</option>`;
+      return `<option value="${id}" ${loginDetail.extraAuthId == id ? 'selected' : ''}>${type}</option>`;
     }).join('');
     row.append(
       '<td>' +
@@ -380,13 +461,13 @@ $('#creation-extra-auth-selection').on('change', function () {
   $('#create-error-text').hide();
 });
 
-$('#extra-auth-pin-input').on('input', function () {
+$('.extra-auth-pin-input').on('input', function () {
   // Remove non-digit characters from input
   var inputValue = $(this).val().replace(/\D/g, '');
 
   // Update input value with only digits
   $(this).val(inputValue);
-  $('#extra-auth-pin-input').removeClass('is-invalid is-invalid-lite');
+  $('.extra-auth-pin-input').removeClass('is-invalid is-invalid-lite');
   $('#create-error-text').hide();
 });
 
@@ -538,9 +619,9 @@ $('#finish-create-details-button').on('click', async function () {
     $('#create-error-text').show();
     return;
   }
-  const pinInput = $('#extra-auth-pin-input').val();
+  const pinInput = $('#create-details-pin-input').val();
   if (pinInput.length !== 4) {
-    $('#extra-auth-pin-input').addClass('is-invalid is-invalid-lite');
+    $('#create-details-pin-input').addClass('is-invalid is-invalid-lite');
 
     $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
     $('#create-error-text').show();
@@ -586,7 +667,7 @@ $('#finish-create-details-button').on('click', async function () {
   switch (selectedExtraAuth) {
     case 'pin-extra-auth':
       // Retrieve the PIN input value
-      const pinInput = $('#extra-auth-pin-input').val();
+      const pinInput = $('#create-details-pin-input').val();
 
       // Create the PIN code in the database
       const encryptedPin = await encryptPassword(pinInput);

@@ -42,13 +42,13 @@ namespace Tests.IntegrationTests.Server
                 context.Database.EnsureDeleted();
         }
 
-        private async Task<HttpResponseMessage> RegisterDomainAsync(string domain)
+        private async Task<HttpResponseMessage> RegisterDomainAsync(string domain, string username = "loginrequesttestsusername")
         {
             byte[] plainPassword = PasswordUtil.ByteArrayFromPlain("loginrequesttestspassword");
             byte[] encryptedSharedKeyPassword = await PasswordUtil.EncryptMessage(_sharedSecretKey, plainPassword);
 
             var registerApiEndpoint = "/api/register";
-            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = "loginrequesttestsusername", Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
+            var registerRequest = new DomainRegisterRequest { Domain = domain, Username = username, Password = Convert.ToBase64String(encryptedSharedKeyPassword) };
             var registerRequestContent = new StringContent(JsonSerializer.Serialize(registerRequest), Encoding.UTF8, "application/json");
             return await _client.PostAsync(registerApiEndpoint, registerRequestContent);
         }
@@ -197,18 +197,9 @@ namespace Tests.IntegrationTests.Server
         [Fact]
         public async Task TestEditLoginDetailsReturnsNoContent()
         {
-            // Create login details for the known domain
+            // Create login details for the domain
             var registerResponse = await RegisterDomainAsync("knowndomain.ok");
             Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
-
-            // Retrieve the login details
-            DomainLoginRequest request = new DomainLoginRequest { Domain = "knowndomain.ok" };
-            var loginResponse = await LoginDomainAsync(request);
-            string loginResponseString = await loginResponse.Content.ReadAsStringAsync();
-            DomainLoginResponse? loginResponseObj = JsonSerializer.Deserialize<DomainLoginResponse>(loginResponseString);
-
-            Assert.NotNull(loginResponseObj);
-            Assert.IsType<DomainLoginResponse>(loginResponseObj);
 
             // Edit the login details
             byte[] encryptedNewPassword = await PasswordUtil.EncryptMessage(_sharedSecretKey, PasswordUtil.ByteArrayFromPlain("loginrequesttestspasswordedited"));
@@ -224,7 +215,7 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.NoContent, editResponse.StatusCode);
 
             // Verify that the login details have been edited
-            var loginResponseEdited = await LoginDomainAsync(request);
+            var loginResponseEdited = await LoginDomainAsync(new DomainLoginRequest { Domain = "knowndomain.ok", Username = "loginrequesttestsusernameedited" });
             string loginResponseEditedString = await loginResponseEdited.Content.ReadAsStringAsync();
             DomainLoginResponse? loginResponseEditedObj = JsonSerializer.Deserialize<DomainLoginResponse>(loginResponseEditedString);
             Assert.NotNull(loginResponseEditedObj);
@@ -235,6 +226,28 @@ namespace Tests.IntegrationTests.Server
 
             Assert.Equal("loginrequesttestsusernameedited", loginResponseEditedObj.Username);
             Assert.Equal("loginrequesttestspasswordedited", decryptedPasswordString);
+        }
+
+        [Fact]
+        public async Task TestEditLoginDetailsExistingUsernameReturnsConflict()
+        {
+            // Create the first login details
+            var registerResponse = await RegisterDomainAsync("knowndomain.ok", "one");
+            Assert.Equal(HttpStatusCode.OK, registerResponse.StatusCode);
+
+            // Create the second login details
+            var registerResponse2 = await RegisterDomainAsync("knowndomain.ok", "two");
+            Assert.Equal(HttpStatusCode.OK, registerResponse2.StatusCode);
+
+            // Edit the login details
+            LoginDetailsEditRequest editRequest = new LoginDetailsEditRequest
+            {
+                SourceId = 0,
+                LoginDetailsId = 1,
+                Username = "two" // Already exists for this domain
+            };
+            var editResponse = await EditDomainAsync(editRequest);
+            Assert.Equal(HttpStatusCode.Conflict, editResponse.StatusCode);
         }
 
         [Fact]

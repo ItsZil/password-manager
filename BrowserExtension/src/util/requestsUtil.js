@@ -299,7 +299,6 @@ export async function sendCheckAuthRequest(accessToken) {
       return false;
     }
   } catch (error) {
-    console.error('Error retrieving response: ', error);
     return false;
   }
 }
@@ -530,7 +529,7 @@ export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
 
 // Function to set a login details' extra auth ID
 // Returns: a boolean indicating if the extra auth ID was successfully set
-export async function sendSetExtraAuthTypeRequest(loginDetailsId,extraAuthType) {
+export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType) {
   const apiEndpoint = '/api/extraauth';
   const accessToken = await getAccessToken();
 
@@ -549,6 +548,34 @@ export async function sendSetExtraAuthTypeRequest(loginDetailsId,extraAuthType) 
     } else {
       console.error(
         `Failed to set extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to remove an extra auth ID from a login details
+// Returns: a boolean indicating if the extra auth ID was successfully removed
+export async function sendRemoveExtraAuthTypeRequest(loginDetailsId) {
+  const apiEndpoint = `/api/extraauth?loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to remove extra auth type: ${response.status} ${response.statusText}`
       );
       return false;
     }
@@ -607,6 +634,36 @@ export async function sendDeleteLoginDetailRequest(loginDetailsId) {
     } else {
       console.error(
         `Failed to delete login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to edit login details
+// Returns: a boolean indicating if the login detail was successfully edited
+export async function sendEditLoginDetailRequest(loginDetailsRequestBody) {
+  const apiEndpoint = '/api/logindetails';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(loginDetailsRequestBody),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to edit login details: ${response.status} ${response.statusText}`
       );
       return false;
     }
