@@ -9,7 +9,9 @@ const {
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
   sendUpdateVaultPassphraseRequest,
-  sendLockVaultRequest
+  sendLockVaultRequest,
+  sendExportVaultRequest,
+  isAbsolutePathValid
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -38,14 +40,9 @@ async function setElements() {
     window.location.replace('./setup.html');
   } else if (isAuthenticatedResult && hasExistingVault) {
     // User is authenticated and has an existing vault
-    $('#page-loader').show();
     $('#vault-login-modal').hide();
     $('#vault-login-modal-inner').removeClass('show');
-
-    // Do something
-
     $('#page-loader').hide();
-    $('#passwords-options').show();
   }
 }
 
@@ -230,3 +227,60 @@ $('#confirm-log-out-button').on('click', async function () {
   // Reload the page so they are prompted to login.
   location.reload();
 });
+
+$('#vaultPathInput').on('input', function () {
+  $('#vaultPathError').hide();
+  $('#vaultPathInput').removeClass('is-invalid').removeClass('is-invalid-lite');
+});
+
+$('#export-vault-button').on('click', async function () {
+  const path = $('#vaultPathInput').val();
+  const isPathValid = await validatePath(path);
+  if (!isPathValid) {
+    $('#vaultPathInput').addClass('is-invalid').addClass('is-invalid-lite');
+    return;
+  }
+
+  document.getElementById('show-export-vault-progresss-modal-button').click();
+
+  const exportVaultFolder = encodeURIComponent(path);
+  const exportVaultRequest = {
+    absolutePathUri: exportVaultFolder
+  };
+
+  const exportVaultResponse = await sendExportVaultRequest(exportVaultRequest);
+  document.getElementById('show-export-vault-progresss-modal-button').click();
+
+  if (exportVaultResponse) {
+    // Success, show a modal with the path to the exported vault
+    const pathToExportedVault = decodeURIComponent(exportVaultResponse.absolutePathUri);
+    $('#exported-vault-success-path').text(pathToExportedVault);
+    document.getElementById('show-vault-export-success-modal-button').click();
+  } else {
+    // Show a failure modal
+    document.getElementById('show-vault-export-failure-modal-button').click();
+  }
+});
+
+// Function to validate path
+async function validatePath(path) {
+  if (!path || typeof path !== 'string') {
+    $('#vaultPathError').hide();
+    return false; // Path is empty or not a string
+  }
+
+  path = path.trim();
+
+  if (!path.match(/^[a-zA-Z]:\\/)) {
+    $('#vaultPathError').hide();
+    return false; // Path is not absolute
+  }
+
+  // Check if path exists
+  const absolutePathUri = encodeURIComponent(path);
+  const isPathValid = await isAbsolutePathValid(absolutePathUri);
+  if (!isPathValid) {
+    $('#vaultPathError').show();
+  }
+  return isPathValid;
+}

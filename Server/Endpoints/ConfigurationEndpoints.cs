@@ -25,6 +25,8 @@ namespace Server.Endpoints
             group.MapPost("/lockvault", LockVault);
             group.MapGet("/checkauth", CheckAuth);
 
+            group.MapPost("/exportvault", ExportBackupVault);
+
             return group;
         }
 
@@ -218,6 +220,30 @@ namespace Server.Endpoints
                 return Results.Ok();
             }
             return Results.Forbid();
+        }
+
+        [Authorize]
+        internal async static Task<IResult> ExportBackupVault(PathCheckRequest request, SqlContext dbContext)
+        {
+            string absolutePath = Uri.UnescapeDataString(request.AbsolutePathUri);
+            string normalizedPath = Path.GetFullPath(absolutePath);
+            if (!Directory.Exists(normalizedPath))
+                return Results.BadRequest();
+
+            // Get the current date & time in a format that can be used in a file name
+            string currentDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string backupFileName = $"backupvault_{currentDate}.db";
+            string backupPath = Path.Join(normalizedPath, backupFileName);
+
+            // Close the existing database connection and make a backup of the vault file
+            await dbContext.Database.CloseConnectionAsync();
+            File.Copy(ConfigUtil.GetVaultLocation(), backupPath, true);
+
+            // Check if the backup was successful
+            if (!File.Exists(backupPath))
+                return Results.BadRequest();
+
+            return Results.Ok(new ExportVaultResponse { AbsolutePathUri = Uri.EscapeDataString(backupPath) });
         }
     }
 }

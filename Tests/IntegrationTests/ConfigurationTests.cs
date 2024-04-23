@@ -119,6 +119,15 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
+        private async Task<HttpResponseMessage> ExportVaultAsync(PathCheckRequest request)
+        {
+            var apiEndpoint = "api/exportvault";
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
         [Fact]
         public async Task TestGenerateFourWordPassphraseReturnsOkAndPassphrase()
         {
@@ -318,6 +327,47 @@ namespace Tests.IntegrationTests.Server
 
             var updateVaultPassphraseResponse = await UpdateVaultPassphraseAsync(Convert.ToBase64String(encryptedNewPassphrase));
             Assert.Equal(HttpStatusCode.BadRequest, updateVaultPassphraseResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestExportVaultCorrectPathReturnsOk()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphraseSetup = await PasswordUtil.EncryptMessage(_sharedSecretKey, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
+
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            string exportDirectory = Path.GetDirectoryName(_runningTestVaultLocation) ?? Environment.SpecialFolder.MyDocuments.ToString();
+            var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
+            Assert.Equal(HttpStatusCode.OK, exportVaultResponse.StatusCode);
+
+            // Check if the exported vault exists and is not 0kb
+            string response= await exportVaultResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(response);
+
+            ExportVaultResponse? responseObj = JsonSerializer.Deserialize<ExportVaultResponse>(response);
+            Assert.NotNull(responseObj);
+
+            string exportedVaultPath = Uri.UnescapeDataString(responseObj?.AbsolutePathUri ?? string.Empty);
+            Assert.True(File.Exists(exportedVaultPath));
+
+            FileInfo exportedVault = new FileInfo(exportedVaultPath);
+            Assert.True(exportedVault.Length > 0);
+
+            // Clean up
+            File.Delete(exportedVaultPath);
+        }
+
+        [Fact]
+        public async Task TestExportVaultIncorrectPathReturnsBadRequest()
+        {
+            string exportDirectory = "not an absolute path";
+            var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
+            Assert.Equal(HttpStatusCode.BadRequest, exportVaultResponse.StatusCode);
         }
     }
 }

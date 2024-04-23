@@ -702,3 +702,33 @@ export async function sendEditLoginDetailRequest(loginDetailsRequestBody) {
     return false;
   }
 }
+
+// Function to send a request to export a vault for backup
+// Returns: a ExportVaultResponse JSON object
+export async function sendExportVaultRequest(exportVaultRequestBody) {
+  const apiEndpoint = '/api/exportvault';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(exportVaultRequestBody),
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to export vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}

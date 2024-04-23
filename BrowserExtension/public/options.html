@@ -15,7 +15,7 @@
             <div class="bi-database-fill" style="font-size: 45px"></div>
           </div>
           <div class="text-secondary mb-3">
-            Tip: avoid writing down your passphrase
+            Tip: make frequent backups of your vault to prevent data loss.
           </div>
           <div class="progress progress-sm">
             <div class="progress-bar progress-bar-indeterminate"></div>
@@ -117,9 +117,9 @@
                         <div class="input-group gap-2">
                           <input type="text"
                                  id="vaultPathInput"
-                                 class="form-control is-invalid is-invalid-lite"
+                                 class="form-control"
                                  placeholder="Enter absolute path" />
-                          <a href="#" class="btn btn-primary"> Export </a>
+                          <a href="#" class="btn btn-primary" id="export-vault-button"> Export </a>
                         </div>
                         <div class="mt-2 input-group">
                           <small id="vaultPathError"
@@ -271,10 +271,115 @@
     </div>
 
     <a href="#"
+       id="show-export-vault-progresss-modal-button"
+       style="display: none"
+       data-bs-toggle="modal"
+       data-bs-target="#vault-export-progress-modal"></a>
+
+    <div class="modal modal-blur fade"
+         id="vault-export-progress-modal"
+         tabindex="-1"
+         role="dialog"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <div class="modal-body">
+            <div class="modal-title">Exporting vault</div>
+            <div class="progress progress-bar-striped mb-3">
+              <div class="progress-bar progress-bar-indeterminate"></div>
+            </div>
+            <div class="card-subtitle mb-0">
+              This won't take long.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="#"
        id="show-passphrase-update-failure-modal-button"
        style="display: none"
        data-bs-toggle="modal"
        data-bs-target="#passphrase-update-failure-modal"></a>
+
+    <div class="modal modal-blur fade"
+         id="vault-export-success-modal"
+         tabindex="-1"
+         role="dialog">
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+          <div class="modal-status bg-success"></div>
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-check-circle"
+               style="font-size: 45px; color: green"></i>
+            <h3>Vault Exported Successfully</h3>
+            <div class="text-secondary-emphasis">
+              Your vault has been successfully backed up.
+              <div class="text-secondary" id="exported-vault-success-path"></div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="w-100">
+              <a href="#" class="btn w-100" data-bs-dismiss="modal">
+                Close
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="#"
+       id="show-vault-export-success-modal-button"
+       style="display: none"
+       data-bs-toggle="modal"
+       data-bs-target="#vault-export-success-modal"></a>
+
+    <div class="modal modal-blur fade"
+         id="vault-export-failure-modal"
+         tabindex="-1"
+         role="dialog">
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+          <div class="modal-status bg-red"></div>
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-database-fill-x"
+               style="font-size: 45px; color: red"></i>
+            <div class="text-secondary-emphasis">
+              Something went wrong exporting your vault. Restart the vault
+              the vault service and try again.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="w-100">
+              <a href="#"
+                 class="btn btn-primary w-100"
+                 data-bs-dismiss="modal">
+                Close
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="#"
+       id="show-vault-export-failure-modal-button"
+       style="display: none"
+       data-bs-toggle="modal"
+       data-bs-target="#vault-export-failure-modal"></a>
 
     <div id="vault-login-modal"
          data-bs-target="#staticBackdrop"
