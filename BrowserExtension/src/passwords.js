@@ -757,6 +757,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     const accessToken = response.accessToken;

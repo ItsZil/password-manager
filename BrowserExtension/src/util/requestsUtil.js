@@ -154,6 +154,36 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
   }
 }
 
+// Function to update a vault's pragma key
+// Returns: A boolean indicating if the vault pragma key was successfully updated
+export async function sendUpdateVaultPassphraseRequest(updateVaultPassphraseRequest) {
+  const apiEndpoint = '/api/updatevaultpassphrase';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(updateVaultPassphraseRequest),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to update vault passphrase: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
 // Function to check if a user has an existing vault
 // Returns: A boolean indicating if the user has an existing vault
 export async function sendHasExistingVaultRequest() {

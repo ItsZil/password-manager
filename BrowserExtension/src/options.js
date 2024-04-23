@@ -2,12 +2,13 @@ const {
   initPublic,
   isHandshakeComplete,
   encryptPassword,
+  fetchPassphrase
 } = require('./util/passwordUtil.js');
 
 const {
-  domainRegisterRequest,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
+  sendUpdateVaultPassphraseRequest
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -90,6 +91,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     const accessToken = response.accessToken;
@@ -100,18 +102,6 @@ $('#unlock-vault-button').on('click', async function () {
 
     await setElements();
   }
-});
-
-$('#create-test-details').on('click', async function () {
-  let password = 'Password123';
-  const encryptedPassword = await encryptPassword(password);
-  const domainRegisterRequestBody = {
-    sourceId: sourceId,
-    domain: 'practicetestautomation.com',
-    username: 'student',
-    password: encryptedPassword,
-  };
-  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 // Function to wait for handshake to complete and show the appropriate UI
@@ -148,3 +138,83 @@ async function waitForHandshake(secondsRemaining = 3) {
     await setElements();
   }
 }
+
+// Passphrase word count
+var wordCount = 4;
+
+// Update word count input value
+function updateWordCount() {
+  $('#wordCount').val('Word count: ' + wordCount);
+}
+
+// Decrease word count
+$('#decreaseWordCount').click(function () {
+  if (wordCount > 4) {
+    wordCount--;
+    updateWordCount();
+  }
+});
+
+// Increase word count
+$('#increaseWordCount').click(function () {
+  if (wordCount < 10) {
+    wordCount++;
+    updateWordCount();
+  }
+});
+
+$('#generatePassphrase').on('click', async function () {
+  try {
+    // Get the value of the wordCount input field
+    let wordCount = $('#wordCount').val();
+    wordCount = parseInt(wordCount.match(/\d+/)[0]);
+
+    // Generate a secure passphrase
+    const passphrase = await fetchPassphrase(sourceId, wordCount);
+
+    // Set the generated passphrase to the input field
+    $('#passPhraseInput').val(passphrase);
+    $('#passPhraseInput').removeClass('is-invalid').addClass('is-invalid-lite');
+  } catch (error) {
+    $('#passPhraseInput').val(
+      'Something went wrong: is the vault service running?'
+    );
+  }
+});
+
+$('#passPhraseInput').on('input', function () {
+  $('#passPhraseInput').removeClass('is-invalid').addClass('is-invalid-lite');
+});
+
+$('#initial-save-new-passphrase-button').on('click', async function () {
+  const passPhrase = $('#passPhraseInput').val();
+  const passPhraseIsEmpty = passPhrase.trim().length == 0;
+  const passPhraseIsNotValid = passPhrase.split(' ').length < 4 || passPhrase.split(' ').length > 10;
+  if (passPhraseIsEmpty || passPhraseIsNotValid) {
+    $('#passPhraseInput').addClass('is-invalid').addClass('is-invalid-lite');
+    return;
+  }
+
+  const vaultKey = await encryptPassword(passPhrase);
+  const updateVaultPassphraseRequest = {
+    sourceId: sourceId,
+    vaultRawKeyBase64: vaultKey
+  };
+
+  document.getElementById('show-passphrase-update-progresss-modal-button').click();
+
+  const updated = await sendUpdateVaultPassphraseRequest(updateVaultPassphraseRequest);
+  if (updated) {
+    document.getElementById('show-passphrase-update-progresss-modal-button').click();
+
+    // Log out the user.
+    setTokens(null, null);
+
+    // Reload the page so they are prompted to login.
+    location.reload();
+  } else {
+    // Show failure UI
+    document.getElementById('show-passphrase-update-progresss-modal-button').click();
+    document.getElementById('show-passphrase-update-failure-modal-button').click();
+  }
+});

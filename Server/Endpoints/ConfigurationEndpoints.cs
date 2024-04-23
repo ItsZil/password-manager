@@ -16,8 +16,11 @@ namespace Server.Endpoints
             group.MapPost("/generatepassphrase", GeneratePassPhrase);
             group.MapGet("/generatepassword", GeneratePassword);
             group.MapPost("/isabsolutepathvalid", IsAbsolutePathValid);
+
             group.MapPost("/setupvault", SetupVault);
             group.MapPost("/unlockvault", UnlockVault);
+            group.MapPost("/updatevaultpassphrase", UpdateVaultPassphrase);
+
             group.MapPost("/refreshtoken", RefreshToken);
             group.MapGet("/lockvault", LockVault);
             group.MapGet("/checkauth", CheckAuth);
@@ -131,6 +134,28 @@ namespace Server.Endpoints
             var refreshToken = await AuthUtil.GenerateRefreshToken(sqlContext);
 
             return Results.Created(string.Empty, new TokenResponse { AccessToken = jwtToken, RefreshToken = refreshToken });
+        }
+
+        [Authorize]
+        internal async static Task<IResult> UpdateVaultPassphrase([FromBody] UpdateVaultPassphraseRequest updateRequest, SqlContext sqlContext, KeyProvider keyProvider)
+        {
+            string newPassphraseEncrypted = updateRequest.VaultRawKeyBase64;
+            if (newPassphraseEncrypted == null)
+            {
+                return Results.BadRequest();
+            }
+
+            byte[] newPassphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(updateRequest.SourceId), Convert.FromBase64String(newPassphraseEncrypted));
+            string newPassphraseString = Encoding.UTF8.GetString(newPassphrasePlain);
+
+            // Update the vault passphrase
+            bool updated = await sqlContext.UpdateDatabasePragmaKey(newPassphraseString);
+            if (!updated)
+            {
+                return Results.BadRequest("Failed to update vault passphrase.");
+            }
+
+            return Results.NoContent();
         }
 
         internal static async Task<IResult> RefreshToken([FromBody] RefreshTokenRequest request, SqlContext sqlContext, KeyProvider keyProvider)

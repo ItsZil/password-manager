@@ -138,6 +138,39 @@ namespace Server
             return false;
         }
 
+        internal async Task<bool> UpdateDatabasePragmaKey(string plainMasterPassword)
+        {
+            string hashedPragmaKeyB64 = PasswordUtil.HashPragmaKey(plainMasterPassword);
+            await using var connection = Database.GetDbConnection();
+
+            try
+            {
+                // Complete a PRAGMA rekey operation
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = $"PRAGMA rekey = '{hashedPragmaKeyB64}'";
+                await command.ExecuteNonQueryAsync();
+
+                // Re-open the connection with the new connection string
+                await connection.CloseAsync();
+                connection.ConnectionString = CreateConnectionString(dbPath, hashedPragmaKeyB64);
+                await connection.OpenAsync();
+
+                bool opened = connection.State == ConnectionState.Open;
+                if (opened)
+                {
+                    _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return false;
+            }
+        }
+
         /// <summary>
         /// Creates a connection string for the SQLite database
         /// </summary>

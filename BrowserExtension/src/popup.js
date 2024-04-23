@@ -79,6 +79,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     isUserAuthenticated = true;
@@ -149,6 +150,7 @@ async function setElements() {
 
       $('#passphrase-input-fields').hide();
       $('#unlock-in-progress').hide();
+      $('#passphrase-input').removeClass('is-invalid').removeClass('is-invalid-lite');
 
       footerElement.show();
       $('#connection-ok-icon')
