@@ -171,6 +171,21 @@ async function setElements() {
   }
 }
 
+$('#passwords-button').on('click', function () {
+  // Open the passwords page in a new tab.
+  open('passwords.html');
+});
+
+$('#authenticators-button').on('click', function () {
+  // Open the authenticators page in a new tab.
+  open('authenticators.html');
+});
+
+$('#options-button').on('click', function () {
+  // Open the options page in a new tab.
+  open('options.html');
+});
+
 $('#lock-vault-button').on('click', async function () {
   // Remove tokens from secure HttpOnly cookie
   setTokens(null, null);
