@@ -2,23 +2,22 @@ const {
   initPublic,
   isHandshakeComplete,
   fetchPassphrase,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 
 const {
   isAbsolutePathValid,
   sendSetupVaultRequest,
   domainRegisterRequest,
-  sendHasExistingVaultRequest
+  sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
+
+const sourceId = 2;
 
 $(document).ready(async function () {
-  initPublic(1, window.crypto);
+  initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();
@@ -104,12 +103,12 @@ $(document).ready(async function () {
     // Use the pass phrase or random password as the pragma key
     const passPhrase = $('#passPhraseInput').val();
     const passPhraseIsEmpty = passPhrase.trim().length == 0;
-    if (passPhraseIsEmpty)
-      return;
+    if (passPhraseIsEmpty) return;
 
     const vaultKey = await encryptPassword(passPhrase);
 
     const setupVaultRequestBody = {
+      sourceId: sourceId,
       absolutePathUri: vaultLocation,
       vaultRawKeyBase64: vaultKey,
     };
@@ -146,7 +145,7 @@ $('#create-test-details').on('click', async function () {
   let password = 'Password123';
   const encryptedPassword = await encryptPassword(password);
   const domainRegisterRequestBody = {
-    sourceId: 1,
+    sourceId: sourceId,
     domain: 'practicetestautomation.com',
     username: 'student',
     password: encryptedPassword,
@@ -161,7 +160,7 @@ $('#generatePassphrase').on('click', async function () {
     wordCount = parseInt(wordCount.match(/\d+/)[0]);
 
     // Generate a secure passphrase
-    const passphrase = await fetchPassphrase(wordCount);
+    const passphrase = await fetchPassphrase(sourceId, wordCount);
 
     // Set the generated passphrase to the input field
     $('#passPhraseInput').val(passphrase);

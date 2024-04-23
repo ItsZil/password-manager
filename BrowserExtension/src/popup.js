@@ -4,19 +4,18 @@ const {
   checkIfServerReachable,
   sendHasExistingVaultRequest,
   sendUnlockVaultRequest,
-  sendLockVaultRequest
+  sendLockVaultRequest,
 } = require('./util/requestsUtil.js');
 
 const {
   initPublic,
   isHandshakeComplete,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
+
+const sourceId = 1;
 
 let serverIsUp = false;
 let isUserAuthenticated = false;
@@ -32,12 +31,13 @@ $('#importVaultBtn').on('click', function () {
 });
 
 $('#passphrase-input').on('input', function () {
-  $('#passphrase-input').removeClass('is-invalid').removeClass('is-invalid-lite');
+  $('#passphrase-input')
+    .removeClass('is-invalid')
+    .removeClass('is-invalid-lite');
 });
 
 $('#toggle-passphrase-visibility').on('click', function () {
   const input = $('#passphrase-input');
-  const icon = $('#toggle-passphrase-visibility-icon');
 
   if (input.attr('type') === 'password') {
     input.attr('type', 'text');
@@ -53,7 +53,10 @@ $('#unlock-vault-button').on('click', async function () {
   const passphrase = $('#passphrase-input').val();
 
   const words = passphrase.split(' ');
-  const isValid = words.length >= 4 && words.length <= 10 && words.every((word) => word === word.toLowerCase());
+  const isValid =
+    words.length >= 4 &&
+    words.length <= 10 &&
+    words.every((word) => word === word.toLowerCase());
 
   if (!isValid) {
     $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
@@ -62,8 +65,9 @@ $('#unlock-vault-button').on('click', async function () {
 
   const encryptedPassphrase = await encryptPassword(passphrase);
   const unlockVaultRequestBody = {
-    passphraseBase64: encryptedPassphrase
-  }
+    sourceId: sourceId,
+    passphraseBase64: encryptedPassphrase,
+  };
 
   // Set UI elements to indicate that we are loading
   $('#passphrase-input-fields').hide();
@@ -79,7 +83,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock succeeded.
     isUserAuthenticated = true;
 
-    const accessToken = response.token;
+    const accessToken = response.accessToken;
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
@@ -90,7 +94,7 @@ $('#unlock-vault-button').on('click', async function () {
 });
 
 $(async () => {
-  initPublic(2, window.crypto);
+  initPublic(sourceId, window.crypto);
 
   serverIsUp = await checkIfServerReachable();
   isUserAuthenticated = await isAuthenticated();
@@ -119,8 +123,7 @@ async function setElements() {
   if (serverIsUp) {
     $('#connection-status-ok').show();
     $('#connection-status-fail').hide();
-  }
-  else {
+  } else {
     $('#connection-status-ok').hide();
     $('#connection-status-error').show();
 
@@ -130,40 +133,42 @@ async function setElements() {
   if (hasExistingVault == null)
     hasExistingVault = await sendHasExistingVaultRequest();
 
-  chrome.storage.local.get(['setup_complete'], function (result) {
-    const initialSetupElement = $('#initial-setup');
-    const authenticatedReadyElement = $('#authenticated-ready');
-    const notAuthenticatedElement = $('#not-authenticated');
-    const footerElement = $('#footer');
+  const initialSetupElement = $('#initial-setup');
+  const authenticatedReadyElement = $('#authenticated-ready');
+  const notAuthenticatedElement = $('#not-authenticated');
+  const footerElement = $('#footer');
 
-    if (serverIsUp && hasExistingVault) {
-      // Display the default popup.
-      initialSetupElement.hide();
+  if (serverIsUp && hasExistingVault) {
+    // Display the default popup.
+    initialSetupElement.hide();
 
-      if (isUserAuthenticated) {
-        // User is authenticated, display all elements.
-        authenticatedReadyElement.show();
-        notAuthenticatedElement.hide();
+    if (isUserAuthenticated) {
+      // User is authenticated, display all elements.
+      authenticatedReadyElement.show();
+      notAuthenticatedElement.hide();
 
-        $('#passphrase-input-fields').hide();
-        $('#unlock-in-progress').hide();
+      $('#passphrase-input-fields').hide();
+      $('#unlock-in-progress').hide();
 
-        footerElement.show();
-        $('#connection-ok-icon').removeClass('bi-database-fill-lock').addClass('bi-database-fill-check');
-      } else {
-        // User is not authenticated, display only login element.
-        notAuthenticatedElement.show();
-        authenticatedReadyElement.hide();
-        footerElement.hide();
-
-        $('#connection-ok-icon').removeClass('bi-database-fill-check').addClass('bi-database-fill-lock');
-      }
-    } else if (serverIsUp && !hasExistingVault) {
-      // Display setup options.
-      initialSetupElement.show();
+      footerElement.show();
+      $('#connection-ok-icon')
+        .removeClass('bi-database-fill-lock')
+        .addClass('bi-database-fill-check');
+    } else {
+      // User is not authenticated, display only login element.
+      notAuthenticatedElement.show();
       authenticatedReadyElement.hide();
+      footerElement.hide();
+
+      $('#connection-ok-icon')
+        .removeClass('bi-database-fill-check')
+        .addClass('bi-database-fill-lock');
     }
-  });
+  } else if (serverIsUp && !hasExistingVault) {
+    // Display setup options.
+    initialSetupElement.show();
+    authenticatedReadyElement.hide();
+  }
 }
 
 $('#lock-vault-button').on('click', async function () {

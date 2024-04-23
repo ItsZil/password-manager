@@ -191,20 +191,20 @@ namespace Server.Utilities
                         {
                             using (MemoryStream decryptedData = new MemoryStream())
                             {
-                                    int bytesRead;
-                                    byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                byte[] buffer = new byte[1024];
 
-                                    while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
-                                    {
-                                        await decryptedData.WriteAsync(buffer, 0, bytesRead);
-                                    }
-
-                                    return decryptedData.ToArray();
+                                while ((bytesRead = csDecrypt.Read(buffer, 0, buffer.Length)) > 0)
+                                {
+                                    await decryptedData.WriteAsync(buffer, 0, bytesRead);
                                 }
 
+                                return decryptedData.ToArray();
                             }
+
                         }
                     }
+                }
                 catch (CryptographicException e)
                 {
                     Console.WriteLine(e);

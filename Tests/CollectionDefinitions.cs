@@ -11,4 +11,13 @@
 
     [CollectionDefinition(nameof(ConfigurationTests), DisableParallelization = true)]
     public class ConfigurationTests { }
+
+    [CollectionDefinition(nameof(PasskeyTests), DisableParallelization = true)]
+    public class PasskeyTests { }
+
+    [CollectionDefinition(nameof(ExtraAuthTests), DisableParallelization = true)]
+    public class ExtraAuthTests { }
+
+    [CollectionDefinition(nameof(PinCodeTests), DisableParallelization = true)]
+    public class PinCodeTests { }
 }

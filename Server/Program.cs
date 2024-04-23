@@ -107,15 +107,14 @@ namespace Server
             rootApi.MapLoginDetailsEndpoints();
             rootApi.MapHandshakeEndpoints();
             rootApi.MapConfigurationEndpoints();
-
-            if (app.Environment.IsEnvironment("TEST_INTEGRATION"))
-                rootApi.MapTestEndpoints();
+            rootApi.MapPasskeyEndpoints();
+            rootApi.MapExtraAuthEndpoints();
+            rootApi.MapPinCodeEndpoints();
 
             app.Run();
         }
     }
 
-    [JsonSerializable(typeof(Response))]
     [JsonSerializable(typeof(DomainLoginRequest))]
     internal partial class AppJsonSerializerContext : JsonSerializerContext
     {

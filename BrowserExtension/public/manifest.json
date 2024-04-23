@@ -10,7 +10,7 @@
     "48": "icons/icon_48.png",
     "128": "icons/icon_128.png"
   },
-  "permissions": [ "storage", "clipboardWrite", "cookies" ],
+  "permissions": ["storage", "clipboardWrite", "cookies"],
   "background": {
     "service_worker": "background.js"
   },
@@ -20,17 +20,14 @@
   },
   "content_scripts": [
     {
-      "matches": [ "<all_urls>" ],
+      "matches": ["<all_urls>"],
       "run_at": "document_idle",
-      "js": [ "contentScript.js" ]
+      "js": ["contentScript.js"]
     }
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-  "host_permissions": [
-    "https://*/*",
-    "http://*/*"
-  ],
+  "host_permissions": ["https://*/*", "http://*/*"],
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAkua/0jcyV3RLbA1nEsLaXP6f1N5G15aG7pbtRGZadAtGrVv06hk/dFx1kj+YQJU5WoqIbY08DIyeQFfv+JMc295yQtCKyPQWxJFxoTTG6BTM5qzHzk9jlURsmlkEgMLCuf/jk5wjNxg3EtFsgZGhSAgNA/eWLb39zJGMzlQzUVm6dQ7Ocbc/kbbPuQoV5J3mBdT9x4jmpy4DbG+XnxMS3K0dbdEJaYQEmMh+5d76FdSD0tYu9Keu3Ce+sGy6YyqPt9SZf/v8vdBPOXSFBCxFbcrTksLcXmlZpOYQwb4KS5fO1TjEAnASrULNQAXdekw5Z3aoqlRPtxj1lp77+ZtPzwIDAQAB"
 }

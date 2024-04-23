@@ -1,21 +1,20 @@
 const {
   initPublic,
   isHandshakeComplete,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 const {
   isAbsolutePathValid,
   sendSetupVaultRequest,
-  sendHasExistingVaultRequest
+  sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
+
+const sourceId = 2;
 
 $(document).ready(async function () {
-  initPublic(1, window.crypto);
+  initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();
@@ -53,12 +52,19 @@ $(document).ready(async function () {
     const passphrase = $(this).val();
     const isValid = validatePassphrase(passphrase);
     if (isValid) {
-      $('#passPhraseInput').removeClass('is-invalid').removeClass('is-invalid-lite').addClass('is-valid').addClass('is-valid-lite');
+      $('#passPhraseInput')
+        .removeClass('is-invalid')
+        .removeClass('is-invalid-lite')
+        .addClass('is-valid')
+        .addClass('is-valid-lite');
     } else {
-      $('#passPhraseInput').removeClass('is-valid').removeClass('is-valid-lite').addClass('is-invalid').addClass('is-invalid-lite');
+      $('#passPhraseInput')
+        .removeClass('is-valid')
+        .removeClass('is-valid-lite')
+        .addClass('is-invalid')
+        .addClass('is-invalid-lite');
     }
   });
-
 
   // Import button
   $('#import-vault').on('click', async function () {
@@ -168,7 +174,10 @@ async function validatePath(path) {
 
 function validatePassphrase(passphrase) {
   const words = passphrase.split(' ');
-  const isValid = words.length >= 4 && words.length <= 10 && words.every((word) => word === word.toLowerCase());
+  const isValid =
+    words.length >= 4 &&
+    words.length <= 10 &&
+    words.every((word) => word === word.toLowerCase());
   return isValid;
 }
 

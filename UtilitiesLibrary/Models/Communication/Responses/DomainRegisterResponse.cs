@@ -7,6 +7,10 @@ namespace UtilitiesLibrary.Models
     /// </summary>
     internal class DomainRegisterResponse
     {
+        [JsonInclude]
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
         // The user's username for the requested domain.
         [JsonInclude]
         [JsonPropertyName("username")]
@@ -23,8 +27,9 @@ namespace UtilitiesLibrary.Models
         /// <param name="username">The user's username (email, phone number, etc.)</param>
         /// <param name="password">The user's password</param>
         [JsonConstructor]
-        internal DomainRegisterResponse(string username, byte[] password)
+        internal DomainRegisterResponse(int id, string username, byte[] password)
         {
+            Id = id;
             Username = username;
             Password = password;
         }

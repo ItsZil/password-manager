@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="stylesheet" href="./main.css" />
 
-    <title>Password Manager Setup</title>
+    <title>Password Manager</title>
   </head>
 
   <body class="d-flex flex-column" data-bs-theme="dark">
@@ -18,7 +18,11 @@
 
         <div id="connection-status-ok" style="display: none">
           <div class="col-md-4">
-            <div class="bi-database-fill-check" id="connection-ok-icon" style="font-size: 45px"></div>
+            <div
+              class="bi-database-fill-check"
+              id="connection-ok-icon"
+              style="font-size: 45px"
+            ></div>
             <h3 class="mb-2">Connection status: OK</h3>
           </div>
 
@@ -44,15 +48,30 @@
               </div>
 
               <div id="passphrase-input-fields">
-                <p class="text-secondary-emphasis mt-0">Please enter your passphrase</p>
+                <p class="text-secondary-emphasis mt-0">
+                  Please enter your passphrase
+                </p>
                 <div class="mb-3 input-group input-group-flat">
-                  <input type="password" class="form-control" id="passphrase-input" placeholder="Passphrase" autocomplete="off">
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="passphrase-input"
+                    placeholder="Passphrase"
+                    autocomplete="off"
+                  />
                   <span class="input-group-text">
-                    <a href="#" class="link-secondary bi-eye" id="toggle-passphrase-visibility"></a>
+                    <a
+                      href="#"
+                      class="link-secondary bi-eye"
+                      id="toggle-passphrase-visibility"
+                    ></a>
                   </span>
                 </div>
                 <div>
-                  <a class="btn btn-primary w-100 mb-4" id="unlock-vault-button">
+                  <a
+                    class="btn btn-primary w-100 mb-4"
+                    id="unlock-vault-button"
+                  >
                     <i class="bi-unlock-fill me-2"></i>
                     Unlock
                   </a>
@@ -71,12 +90,12 @@
 
           <!-- User has completed setup and is authenticated setup -->
           <div id="authenticated-ready" style="display: none">
-            <div class="container text-center mt-4">
+            <div class="container text-center mt-2">
               <div class="row">
                 <!-- Divider -->
                 <hr class="my-3" />
 
-                <div class="col-md-4">
+                <div class="col-md-4 mt-0">
                   <h2>Vault statistics</h2>
                   <p class="mb-0">Number of passwords: 10</p>
                   <p>Number of authenticators: 5</p>
@@ -87,9 +106,12 @@
         </div>
       </div>
 
-
       <!-- Footer -->
-      <footer class="footer py-3 bg-body-secondary text-center" id="footer" style="display: none">
+      <footer
+        class="footer py-3 bg-body-secondary text-center"
+        id="footer"
+        style="display: none"
+      >
         <ul class="nav justify-content-center border-bottom">
           <li class="nav-item">
             <a href="#" class="nav-link px-4">

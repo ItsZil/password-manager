@@ -8,11 +8,13 @@ import * as requests from './util/requestsUtil';
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onInstalled.addListener(init);
 
+const sourceId = 0;
+
 async function init() {
   console.log('Password Manager extension started.');
 
   // We need to pass the crypto object to the passwordUtil file and start handshake process
-  passwordUtil.init(0, crypto);
+  passwordUtil.init(sourceId, crypto);
 
   /*
   let password = 'Password123';
@@ -45,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Function to fetch login details from server and send them to the content script
 async function retrieveLoginInfo(domain) {
-  passwordUtil.init(0, crypto); // Ensure we are initialized and have completed handshake. TODO: alternatives?
+  passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake. TODO: alternatives?
   const domainLoginRequestBody = {
     domain: domain,
   };

@@ -20,6 +20,7 @@ namespace Server.Endpoints
             group.MapPost("/unlockvault", UnlockVault);
             group.MapPost("/refreshtoken", RefreshToken);
             group.MapGet("/lockvault", LockVault);
+            group.MapGet("/checkauth", CheckAuth);
 
             return group;
         }
@@ -51,15 +52,15 @@ namespace Server.Endpoints
             }
 
             byte[] passphrasePlain = PasswordUtil.GeneratePassphrase(wordCount);
-            byte[] passphraseEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), passphrasePlain);
+            byte[] passphraseEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(passphraseRequest.SourceId), passphrasePlain);
 
             return Results.Ok(new PassphraseResponse { PassphraseBase64 = Convert.ToBase64String(passphraseEncrypted) });
         }
 
-        internal async static Task<IResult> GeneratePassword(KeyProvider keyProvider)
+        internal async static Task<IResult> GeneratePassword(KeyProvider keyProvider, [FromQuery] int sourceId = 1)
         {
-            byte[] plainPassword = PasswordUtil.GenerateSecurePassword();
-            byte[] passwordEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(1), plainPassword);
+            byte[] plainPassword = PasswordUtil.GenerateSecurePassword(32);
+            byte[] passwordEncrypted = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(sourceId), plainPassword);
 
             return Results.Ok(new GeneratedPasswordResponse { PasswordBase64 = Convert.ToBase64String(passwordEncrypted) });
         }
@@ -85,7 +86,7 @@ namespace Server.Endpoints
             }
 
             byte[] encryptedPragmaKey = Convert.FromBase64String(setupRequest.VaultRawKeyBase64);
-            byte[] plainPragmaKey = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(1), encryptedPragmaKey);
+            byte[] plainPragmaKey = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(setupRequest.SourceId), encryptedPragmaKey);
 
             if (string.IsNullOrWhiteSpace(dbPath) || plainPragmaKey.Length == 0)
             {
@@ -115,7 +116,7 @@ namespace Server.Endpoints
                 return Results.BadRequest("Passphrase is empty.");
             }
 
-            byte[] passphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(2), Convert.FromBase64String(passphraseEncrypted));
+            byte[] passphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(unlockRequest.SourceId), Convert.FromBase64String(passphraseEncrypted));
             string passphraseString = Encoding.UTF8.GetString(passphrasePlain);
 
             // Attempt to unlock the vault
@@ -175,6 +176,16 @@ namespace Server.Endpoints
             keyProvider.ClearPragmaKey();
 
             return Results.NoContent();
+        }
+
+        [Authorize]
+        internal static IResult CheckAuth(KeyProvider keyProvider)
+        {
+            if (keyProvider.HasVaultPragmaKey())
+            {
+                return Results.Ok();
+            }
+            return Results.Forbid();
         }
     }
 }

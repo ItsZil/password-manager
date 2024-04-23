@@ -8,16 +8,16 @@ const ServerUrl = 'https://localhost:54782';
 // Function to handle input fields found in the page by sending a domain login details request
 // Return: A DomainLoginResponse JSON object
 export async function domainLoginRequest(domainLoginRequestBody) {
-  const apiEndpoint = '/api/domainloginrequest';
+  const apiEndpoint = '/api/login';
 
   try {
     const accessToken = await getAccessToken();
-    
+
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainLoginRequestBody),
     });
@@ -41,7 +41,7 @@ export async function domainLoginRequest(domainLoginRequestBody) {
 // Function to handle input fields found in the page by sending a domain register details request
 // Return: A DomainRegisterResponse JSON object
 export async function domainRegisterRequest(domainRegisterRequestBody) {
-  const apiEndpoint = '/api/domainregisterrequest';
+  const apiEndpoint = '/api/register';
 
   try {
     const accessToken = await getAccessToken();
@@ -50,7 +50,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(domainRegisterRequestBody),
     });
@@ -63,6 +63,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
       console.error(
         `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
       );
+      return response.status;
     }
   } catch (error) {
     console.error('Error retrieving response: ', error);
@@ -101,8 +102,8 @@ export async function isAbsolutePathValid(absolutePathUri) {
 
 // Function to generate a new secure password
 // Returns: A string containing the base64 encoded, encrypted password. False if unsuccessful
-export async function generatePassword() {
-  const apiEndpoint = '/api/generatepassword';
+export async function generatePassword(sourceId) {
+  const apiEndpoint = `/api/generatepassword?sourceId=${sourceId}`;
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
@@ -111,7 +112,7 @@ export async function generatePassword() {
 
     if (response.status === 200) {
       const json = await response.json();
-      return json.key;
+      return json.password;
     } else {
       console.error(
         `Failed to retrieve generated password: ${response.status} ${response.statusText}`
@@ -160,7 +161,7 @@ export async function sendHasExistingVaultRequest() {
 
   try {
     const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
-      method: 'GET'
+      method: 'GET',
     });
 
     if (response.status === 200) {
@@ -183,18 +184,17 @@ export async function sendHasExistingVaultRequest() {
 export async function checkIfServerReachable() {
   try {
     return await fetch(ServerUrl, { method: 'HEAD' })
-      .then(response => {
+      .then((response) => {
         if (response.ok) {
           return true;
         } else {
           return false;
         }
       })
-      .catch(error => {
+      .catch((error) => {
         return false;
       });
-  }
-  catch (error) {
+  } catch (error) {
     return false;
   }
 }
@@ -271,6 +271,399 @@ export async function sendLockVaultRequest() {
     } else {
       console.error(
         `Failed to lock vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to see if the user is authenticated
+// Returns a boolean indicating if the user is authenticated
+export async function sendCheckAuthRequest(accessToken) {
+  const apiEndpoint = '/api/checkauth';
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return false;
+  }
+}
+
+// Function to send a request to retrieve the count of login details
+// Returns: The count of login details
+export async function sendLoginDetailsCountRequest() {
+  const apiEndpoint = '/api/logindetailscount';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const count = await response.json();
+      return count;
+    } else {
+      console.error(
+        `Failed to retrieve login details count: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a batch of login details for view
+// Returns: List<LoginDetailsResponse>
+export async function sendLoginDetailsViewRequest(page) {
+  const apiEndpoint = `/api/logindetails?page=${page}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to retrieve login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a login details' password by ID
+// Returns: A base64 encoded, shared key encrypted password
+export async function sendLoginDetailsPasswordRequest(
+  domainLoginPasswordRequestBody
+) {
+  const apiEndpoint = `/api/logindetailspassword`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(domainLoginPasswordRequestBody),
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json.passwordB64;
+    } else {
+      console.error(
+        `Failed to retrieve login details password: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to store a new passkey for a specific login detail ID
+// Returns: A boolean indicating if the passkey was successfully stored
+export async function sendCreatePasskeyRequest(passkeyCreationRequestBody) {
+  const apiEndpoint = '/api/passkey';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(passkeyCreationRequestBody),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(
+        `Failed to create passkey: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to retrieve a passkey for a specific login detail ID
+// Returns: A PasskeyCredentialResponse object
+export async function sendGetPasskeyCredentialRequest(
+  sourceId,
+  loginDetailsId
+) {
+  const apiEndpoint = `/api/passkey?sourceId=${sourceId}&loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to retrieve passkey credential: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to verfy a passkey credential
+// Returns: A boolean indicating if the passkey credential is valid
+export async function sendVerifyPasskeyCredentialRequest(
+  passkeyVerificationRequestBody
+) {
+  const apiEndpoint = '/api/passkey/verify';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(passkeyVerificationRequestBody),
+    });
+
+    if (response.status === 200) {
+      return true;
+    } else {
+      console.error(
+        `Failed to verify passkey credential: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to get a login details' ExtraAuth type
+// Returns: a string containing the ExtraAuth type
+export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
+  const apiEndpoint = `/api/extraauth?loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      // Response is a string of an int
+      const extraAuthType = await response.text();
+      if (extraAuthType == '2') {
+        return 'PIN';
+      } else if (extraAuthType == '3') {
+        return 'Passkey';
+      } else if (extraAuthType == '4') {
+        return 'Passphrase';
+      }
+      return 'None';
+    } else {
+      console.error(
+        `Failed to retrieve extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to set a login details' extra auth ID
+// Returns: a boolean indicating if the extra auth ID was successfully set
+export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType) {
+  const apiEndpoint = '/api/extraauth';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ loginDetailsId: loginDetailsId, extraAuthId: extraAuthType }),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to remove an extra auth ID from a login details
+// Returns: a boolean indicating if the extra auth ID was successfully removed
+export async function sendRemoveExtraAuthTypeRequest(loginDetailsId) {
+  const apiEndpoint = `/api/extraauth?loginDetailsId=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to remove extra auth type: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to create a login details' PIN code
+// Returns: a boolean indicating if the PIN code was successfully created
+export async function sendCreatePinRequest(request) {
+  const apiEndpoint = '/api/pincode';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (response.status === 201) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set PIN: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to delete a login detail by ID
+// Returns: a boolean indicating if the login detail was successfully deleted
+export async function sendDeleteLoginDetailRequest(loginDetailsId) {
+  const apiEndpoint = `/api/logindetails?id=${loginDetailsId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to delete login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to edit login details
+// Returns: a boolean indicating if the login detail was successfully edited
+export async function sendEditLoginDetailRequest(loginDetailsRequestBody) {
+  const apiEndpoint = '/api/logindetails';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(loginDetailsRequestBody),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to edit login details: ${response.status} ${response.statusText}`
       );
       return false;
     }

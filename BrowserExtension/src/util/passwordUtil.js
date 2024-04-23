@@ -197,8 +197,9 @@ export async function decryptPassword(rawResponsePassword) {
 }
 
 // Function to fetch a generated passphrase from the server
-export async function fetchPassphrase(wordCount) {
+export async function fetchPassphrase(sourceId, wordCount) {
   const requestBody = JSON.stringify({
+    sourceId: sourceId,
     wordCount: wordCount,
   });
 
