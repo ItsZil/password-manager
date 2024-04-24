@@ -2,12 +2,18 @@ const {
   initPublic,
   isHandshakeComplete,
   encryptPassword,
+  fetchPassphrase,
 } = require('./util/passwordUtil.js');
 
 const {
-  domainRegisterRequest,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
+  sendUpdateVaultPassphraseRequest,
+  sendLockVaultRequest,
+  sendExportVaultRequest,
+  isAbsolutePathValid,
+  sendGetVaultInternetAccessRequest,
+  sendSetVaultInternetAccessRequest,
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -34,16 +40,15 @@ async function setElements() {
   } else if (!hasExistingVault) {
     // Open setup
     window.location.replace('./setup.html');
-  } else {
+  } else if (isAuthenticatedResult && hasExistingVault) {
     // User is authenticated and has an existing vault
-    $('#page-loader').show();
+    // Set the vault internet access switch
+    const vaultInternetAccess = await sendGetVaultInternetAccessRequest();
+    $('#vault-internet-access-checkbox').prop('checked', vaultInternetAccess);
+
     $('#vault-login-modal').hide();
     $('#vault-login-modal-inner').removeClass('show');
-
-    // Do something
-
     $('#page-loader').hide();
-    $('#passwords-options').show();
   }
 }
 
@@ -90,6 +95,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     const accessToken = response.accessToken;
@@ -100,18 +106,6 @@ $('#unlock-vault-button').on('click', async function () {
 
     await setElements();
   }
-});
-
-$('#create-test-details').on('click', async function () {
-  let password = 'Password123';
-  const encryptedPassword = await encryptPassword(password);
-  const domainRegisterRequestBody = {
-    sourceId: sourceId,
-    domain: 'practicetestautomation.com',
-    username: 'student',
-    password: encryptedPassword,
-  };
-  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 // Function to wait for handshake to complete and show the appropriate UI
@@ -148,3 +142,181 @@ async function waitForHandshake(secondsRemaining = 3) {
     await setElements();
   }
 }
+
+// Passphrase word count
+var wordCount = 4;
+
+// Update word count input value
+function updateWordCount() {
+  $('#wordCount').val('Word count: ' + wordCount);
+}
+
+// Decrease word count
+$('#decreaseWordCount').click(function () {
+  if (wordCount > 4) {
+    wordCount--;
+    updateWordCount();
+  }
+});
+
+// Increase word count
+$('#increaseWordCount').click(function () {
+  if (wordCount < 10) {
+    wordCount++;
+    updateWordCount();
+  }
+});
+
+$('#generatePassphrase').on('click', async function () {
+  try {
+    // Get the value of the wordCount input field
+    let wordCount = $('#wordCount').val();
+    wordCount = parseInt(wordCount.match(/\d+/)[0]);
+
+    // Generate a secure passphrase
+    const passphrase = await fetchPassphrase(sourceId, wordCount);
+
+    // Set the generated passphrase to the input field
+    $('#passPhraseInput').val(passphrase);
+    $('#passPhraseInput').removeClass('is-invalid').addClass('is-invalid-lite');
+  } catch (error) {
+    $('#passPhraseInput').val(
+      'Something went wrong: is the vault service running?'
+    );
+  }
+});
+
+$('#passPhraseInput').on('input', function () {
+  $('#passPhraseInput').removeClass('is-invalid').addClass('is-invalid-lite');
+});
+
+$('#save-new-passphrase-button').on('click', async function () {
+  const passPhrase = $('#passPhraseInput').val();
+  const passPhraseIsEmpty = passPhrase.trim().length == 0;
+  const passPhraseIsNotValid =
+    passPhrase.split(' ').length < 4 || passPhrase.split(' ').length > 10;
+  if (passPhraseIsEmpty || passPhraseIsNotValid) {
+    $('#passPhraseInput').addClass('is-invalid').addClass('is-invalid-lite');
+    return;
+  }
+
+  const vaultKey = await encryptPassword(passPhrase);
+  const updateVaultPassphraseRequest = {
+    sourceId: sourceId,
+    vaultRawKeyBase64: vaultKey,
+  };
+
+  document
+    .getElementById('show-passphrase-update-progresss-modal-button')
+    .click();
+
+  const updated = await sendUpdateVaultPassphraseRequest(
+    updateVaultPassphraseRequest
+  );
+  if (updated) {
+    document
+      .getElementById('show-passphrase-update-progresss-modal-button')
+      .click();
+
+    // Log out the user.
+    setTokens(null, null);
+
+    // Reload the page so they are prompted to login.
+    location.reload();
+  } else {
+    // Show failure UI
+    document
+      .getElementById('show-passphrase-update-progresss-modal-button')
+      .click();
+    document
+      .getElementById('show-passphrase-update-failure-modal-button')
+      .click();
+  }
+});
+
+$('#confirm-log-out-button').on('click', async function () {
+  // Remove tokens from secure HttpOnly cookie
+  setTokens(null, null);
+
+  // Make a request for the server to invalidate all tokens and close connection to database
+  await sendLockVaultRequest();
+
+  // Reload the page so they are prompted to login.
+  location.reload();
+});
+
+$('#vaultPathInput').on('input', function () {
+  $('#vaultPathError').hide();
+  $('#vaultPathInput').removeClass('is-invalid').removeClass('is-invalid-lite');
+});
+
+$('#export-vault-button').on('click', async function () {
+  const path = $('#vaultPathInput').val();
+  const isPathValid = await validatePath(path);
+  if (!isPathValid) {
+    $('#vaultPathInput').addClass('is-invalid').addClass('is-invalid-lite');
+    return;
+  }
+
+  document.getElementById('show-export-vault-progresss-modal-button').click();
+
+  const exportVaultFolder = encodeURIComponent(path);
+  const exportVaultRequest = {
+    absolutePathUri: exportVaultFolder,
+  };
+
+  const exportVaultResponse = await sendExportVaultRequest(exportVaultRequest);
+  document.getElementById('show-export-vault-progresss-modal-button').click();
+
+  if (exportVaultResponse) {
+    // Success, show a modal with the path to the exported vault
+    const pathToExportedVault = decodeURIComponent(
+      exportVaultResponse.absolutePathUri
+    );
+    $('#exported-vault-success-path').text(pathToExportedVault);
+    document.getElementById('show-vault-export-success-modal-button').click();
+  } else {
+    // Show a failure modal
+    document.getElementById('show-vault-export-failure-modal-button').click();
+  }
+});
+
+// Function to validate path
+async function validatePath(path) {
+  if (!path || typeof path !== 'string') {
+    $('#vaultPathError').hide();
+    return false; // Path is empty or not a string
+  }
+
+  path = path.trim();
+
+  if (!path.match(/^[a-zA-Z]:\\/)) {
+    $('#vaultPathError').hide();
+    return false; // Path is not absolute
+  }
+
+  // Check if path exists
+  const absolutePathUri = encodeURIComponent(path);
+  const isPathValid = await isAbsolutePathValid(absolutePathUri);
+  if (!isPathValid) {
+    $('#vaultPathError').show();
+  }
+  return isPathValid;
+}
+
+$('#vault-internet-access-checkbox').on('change', async function () {
+  if ($(this).is(':checked')) {
+    // Checked, enable internet access
+    document.getElementById('show-enable-internet-access-modal-button').click();
+  } else {
+    // Not checked, disable internet access
+    const disabledSuccessfully = await sendSetVaultInternetAccessRequest(false);
+    $('#vault-internet-access-checkbox').prop('checked', !disabledSuccessfully);
+  }
+});
+
+$('#confirm-enable-internet-access-button').on('click', async function () {
+  const enabledSuccessfully = await sendSetVaultInternetAccessRequest(true);
+  $('#vault-internet-access-checkbox').prop('checked', enabledSuccessfully);
+  document.getElementById('show-enable-internet-access-modal-button').click();
+});

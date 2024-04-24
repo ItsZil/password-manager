@@ -16,11 +16,18 @@ namespace Server.Endpoints
             group.MapPost("/generatepassphrase", GeneratePassPhrase);
             group.MapGet("/generatepassword", GeneratePassword);
             group.MapPost("/isabsolutepathvalid", IsAbsolutePathValid);
+
             group.MapPost("/setupvault", SetupVault);
             group.MapPost("/unlockvault", UnlockVault);
+            group.MapPost("/updatevaultpassphrase", UpdateVaultPassphrase);
+
             group.MapPost("/refreshtoken", RefreshToken);
-            group.MapGet("/lockvault", LockVault);
+            group.MapPost("/lockvault", LockVault);
             group.MapGet("/checkauth", CheckAuth);
+
+            group.MapPost("/exportvault", ExportBackupVault);
+            group.MapGet("/vaultinternetaccess", GetVaultInternetAccessSetting);
+            group.MapPut("/vaultinternetaccess", SetVaultInternetAccessSetting);
 
             return group;
         }
@@ -133,6 +140,35 @@ namespace Server.Endpoints
             return Results.Created(string.Empty, new TokenResponse { AccessToken = jwtToken, RefreshToken = refreshToken });
         }
 
+        [Authorize]
+        internal async static Task<IResult> UpdateVaultPassphrase([FromBody] UpdateVaultPassphraseRequest updateRequest, SqlContext sqlContext, KeyProvider keyProvider)
+        {
+            string newPassphraseEncrypted = updateRequest.VaultRawKeyBase64;
+            if (newPassphraseEncrypted == null)
+            {
+                return Results.BadRequest();
+            }
+
+            byte[] newPassphrasePlain = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(updateRequest.SourceId), Convert.FromBase64String(newPassphraseEncrypted));
+            string newPassphraseString = Encoding.UTF8.GetString(newPassphrasePlain);
+
+            // Checck if the new passphrase is between 4 and 10 space separated words
+            string[] words = newPassphraseString.Split(' ');
+            if (words.Length < 4 || words.Length > 10)
+            {
+                return Results.BadRequest();
+            }
+
+            // Update the vault passphrase
+            bool updated = await sqlContext.UpdateDatabasePragmaKey(newPassphraseString);
+            if (!updated)
+            {
+                return Results.BadRequest("Failed to update vault passphrase.");
+            }
+
+            return Results.NoContent();
+        }
+
         internal static async Task<IResult> RefreshToken([FromBody] RefreshTokenRequest request, SqlContext sqlContext, KeyProvider keyProvider)
         {
             if (!keyProvider.HasVaultPragmaKey())
@@ -186,6 +222,47 @@ namespace Server.Endpoints
                 return Results.Ok();
             }
             return Results.Forbid();
+        }
+
+        [Authorize]
+        internal async static Task<IResult> ExportBackupVault(PathCheckRequest request, SqlContext dbContext)
+        {
+            string absolutePath = Uri.UnescapeDataString(request.AbsolutePathUri) ?? Environment.CurrentDirectory;
+            string normalizedPath = Path.GetFullPath(absolutePath);
+            if (!Directory.Exists(normalizedPath))
+                return Results.BadRequest();
+
+            // Get the current date & time in a format that can be used in a file name
+            string currentDate = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string backupFileName = $"backupvault_{currentDate}.db";
+            string backupPath = Path.Join(normalizedPath, backupFileName);
+
+            // Close the existing database connection and make a backup of the vault file
+            await dbContext.Database.CloseConnectionAsync();
+            File.Copy(ConfigUtil.GetVaultLocation(), backupPath, true);
+
+            // Check if the backup was successful
+            if (!File.Exists(backupPath))
+                return Results.BadRequest();
+
+            return Results.Ok(new ExportVaultResponse { AbsolutePathUri = Uri.EscapeDataString(backupPath) });
+        }
+
+        [Authorize]
+        internal static IResult GetVaultInternetAccessSetting()
+        {
+            bool setting = ConfigUtil.GetVaultInternetAccess();
+            return Results.Ok(setting);
+        }
+
+        [Authorize]
+        internal static IResult SetVaultInternetAccessSetting([FromQuery] bool? setting)
+        {
+            if (setting == null)
+                return Results.BadRequest();
+
+            ConfigUtil.SetVaultInternetAccess(setting ?? false);
+            return Results.NoContent();
         }
     }
 }

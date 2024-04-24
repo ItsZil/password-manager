@@ -154,6 +154,38 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
   }
 }
 
+// Function to update a vault's pragma key
+// Returns: A boolean indicating if the vault pragma key was successfully updated
+export async function sendUpdateVaultPassphraseRequest(
+  updateVaultPassphraseRequest
+) {
+  const apiEndpoint = '/api/updatevaultpassphrase';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(updateVaultPassphraseRequest),
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to update vault passphrase: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
 // Function to check if a user has an existing vault
 // Returns: A boolean indicating if the user has an existing vault
 export async function sendHasExistingVaultRequest() {
@@ -529,7 +561,10 @@ export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
 
 // Function to set a login details' extra auth ID
 // Returns: a boolean indicating if the extra auth ID was successfully set
-export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType) {
+export async function sendSetExtraAuthTypeRequest(
+  loginDetailsId,
+  extraAuthType
+) {
   const apiEndpoint = '/api/extraauth';
   const accessToken = await getAccessToken();
 
@@ -540,7 +575,10 @@ export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType)
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ loginDetailsId: loginDetailsId, extraAuthId: extraAuthType }),
+      body: JSON.stringify({
+        loginDetailsId: loginDetailsId,
+        extraAuthId: extraAuthType,
+      }),
     });
 
     if (response.status === 204) {
@@ -664,6 +702,93 @@ export async function sendEditLoginDetailRequest(loginDetailsRequestBody) {
     } else {
       console.error(
         `Failed to edit login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to export a vault for backup
+// Returns: a ExportVaultResponse JSON object
+export async function sendExportVaultRequest(exportVaultRequestBody) {
+  const apiEndpoint = '/api/exportvault';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(exportVaultRequestBody),
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to export vault: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to get the vault internet access setting
+// Returns: a boolean indicating if the vault has internet access
+export async function sendGetVaultInternetAccessRequest() {
+  const apiEndpoint = '/api/vaultinternetaccess';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to get vault internet access setting: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to set the vault internet access setting
+// Returns: a boolean indicating if the vault internet access setting was successfully set
+export async function sendSetVaultInternetAccessRequest(setting) {
+  const apiEndpoint = `/api/vaultinternetaccess?setting=${setting}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set vault internet access setting: ${response.status} ${response.statusText}`
       );
       return false;
     }

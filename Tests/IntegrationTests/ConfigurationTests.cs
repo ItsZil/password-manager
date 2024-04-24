@@ -6,6 +6,8 @@ using Server.Utilities;
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
+using System.Reflection;
 
 namespace Tests.IntegrationTests.Server
 {
@@ -16,8 +18,10 @@ namespace Tests.IntegrationTests.Server
         private WebApplicationFactory<Program> _factory;
 
         private readonly byte[] _sharedSecretKey;
+        private readonly string _accessToken;
 
         private readonly string _runningTestVaultLocation = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), $"vault_{Guid.NewGuid()}");
+        private bool updatedPassphrase = false;
 
         public ConfigurationTests()
         {
@@ -35,14 +39,21 @@ namespace Tests.IntegrationTests.Server
             _client = _factory.CreateClient();
 
             _sharedSecretKey = CompleteTestHandshake.GetSharedSecret(_client, 1);
+            _accessToken = CompleteTestAuth.GetAccessToken(_client, _sharedSecretKey);
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
         }
 
         public void Dispose()
         {
             // Ensure that the server's default database file is deleted after each test run.
-            var service = _factory.Services.GetService(typeof(SqlContext));
-            if (service is SqlContext context)
-                context.Database.EnsureDeleted();
+            if (!updatedPassphrase)
+            {
+                // We can only do this if the passphrase has not been updated.
+                // This is because the SqlContext constructor does not use the stored pragma key for test databases.
+                var service = _factory.Services.GetService(typeof(SqlContext));
+                if (service is SqlContext context)
+                    context.Database.EnsureDeleted();
+            }
 
             // Delete the generated config file
             if (File.Exists(ConfigUtil.GetFileLocation()))
@@ -92,10 +103,43 @@ namespace Tests.IntegrationTests.Server
         private async Task<HttpResponseMessage> UnlockVaultAsync(string encryptedPassphraseB64)
         {
             var apiEndpoint = "api/unlockvault";
-            var unlockVaultRequest = new UnlockVaultRequest { PassphraseBase64 = encryptedPassphraseB64 };
+            var unlockVaultRequest = new UnlockVaultRequest { SourceId = 1, PassphraseBase64 = encryptedPassphraseB64 };
             HttpContent requestContent = new StringContent(JsonSerializer.Serialize(unlockVaultRequest), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+        
+        private async Task<HttpResponseMessage> UpdateVaultPassphraseAsync(string vaultRawKeyBase64)
+        {
+            var apiEndpoint = "api/updatevaultpassphrase";
+            var updateVaultPassphraseRequest = new UpdateVaultPassphraseRequest { SourceId = 1, VaultRawKeyBase64 = vaultRawKeyBase64 };
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(updateVaultPassphraseRequest), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> ExportVaultAsync(PathCheckRequest request)
+        {
+            var apiEndpoint = "api/exportvault";
+            HttpContent requestContent = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            var response = await _client.PostAsync(apiEndpoint, requestContent);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> GetVaultInternetAccessAsync()
+        {
+            var apiEndpoint = "api/vaultinternetaccess";
+            var response = await _client.GetAsync(apiEndpoint);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> SetVaultInternetAccessAsync(bool? internetAccess)
+        {
+            var apiEndpoint = $"api/vaultinternetaccess?setting={internetAccess}";
+            var response = await _client.PutAsync(apiEndpoint, null);
             return response;
         }
 
@@ -274,6 +318,110 @@ namespace Tests.IntegrationTests.Server
             var unlockVaultResponse = await UnlockVaultAsync(Convert.ToBase64String(encryptedPassphraseUnlock));
 
             Assert.Equal(HttpStatusCode.Forbidden, unlockVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestUpdateVaultPassphraseReturnsNoContent()
+        {
+            string newPassphrase = "just a new passphrase";
+            byte[] newPassphraseBytes = Encoding.UTF8.GetBytes(newPassphrase);
+            byte[] encryptedNewPassphrase = await PasswordUtil.EncryptMessage(_sharedSecretKey, newPassphraseBytes);
+
+            var updateVaultPassphraseResponse = await UpdateVaultPassphraseAsync(Convert.ToBase64String(encryptedNewPassphrase));
+
+            Assert.Equal(HttpStatusCode.NoContent, updateVaultPassphraseResponse.StatusCode);
+            updatedPassphrase = true;
+        }
+
+        [Fact]
+        public async Task TestUpdateVaultIncorrectPassphraseReturnsBadRequest()
+        {
+            string newPassphrase = "not 4 words";
+            byte[] newPassphraseBytes = Encoding.UTF8.GetBytes(newPassphrase);
+            byte[] encryptedNewPassphrase = await PasswordUtil.EncryptMessage(_sharedSecretKey, newPassphraseBytes);
+
+            var updateVaultPassphraseResponse = await UpdateVaultPassphraseAsync(Convert.ToBase64String(encryptedNewPassphrase));
+            Assert.Equal(HttpStatusCode.BadRequest, updateVaultPassphraseResponse.StatusCode);
+        }
+
+#if !CI // This fails on CI when resolving export directory.
+        [Fact]
+        public async Task TestExportVaultCorrectPathReturnsOk()
+        {
+            string passphrase = "just a test passphrase";
+            byte[] passphraseBytes = Encoding.UTF8.GetBytes(passphrase);
+            byte[] encryptedPassphraseSetup = await PasswordUtil.EncryptMessage(_sharedSecretKey, passphraseBytes);
+
+            var setupVaultResponse = await SetupVaultAsync(_runningTestVaultLocation, Convert.ToBase64String(encryptedPassphraseSetup));
+
+            Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
+            Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
+
+            string exportDirectory = Path.GetDirectoryName(_runningTestVaultLocation) ?? Environment.CurrentDirectory;
+            var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
+            Assert.Equal(HttpStatusCode.OK, exportVaultResponse.StatusCode);
+
+            // Check if the exported vault exists and is not 0kb
+            string response= await exportVaultResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(response);
+
+            ExportVaultResponse? responseObj = JsonSerializer.Deserialize<ExportVaultResponse>(response);
+            Assert.NotNull(responseObj);
+
+            string exportedVaultPath = Uri.UnescapeDataString(responseObj?.AbsolutePathUri ?? string.Empty);
+            Assert.True(File.Exists(exportedVaultPath));
+
+            FileInfo exportedVault = new FileInfo(exportedVaultPath);
+            Assert.True(exportedVault.Length > 0);
+
+            // Clean up
+            File.Delete(exportedVaultPath);
+        }
+#endif
+
+        [Fact]
+        public async Task TestExportVaultIncorrectPathReturnsBadRequest()
+        {
+            string exportDirectory = "not an absolute path";
+            var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
+            Assert.Equal(HttpStatusCode.BadRequest, exportVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestGetVaultInternetAccessSettingReturnsOk()
+        {
+            var getVaultInternetAccessResponse = await GetVaultInternetAccessAsync();
+            Assert.Equal(HttpStatusCode.OK, getVaultInternetAccessResponse.StatusCode);
+
+            string responseString = await getVaultInternetAccessResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            bool responseObj = JsonSerializer.Deserialize<bool>(responseString);
+            Assert.IsType<bool>(responseObj);
+        }
+
+        [Fact]
+        public async Task TestSetVaultInternetAccessSettingReturnsOk()
+        {
+            var setVaultInternetAccessResponse = await SetVaultInternetAccessAsync(true);
+            Assert.Equal(HttpStatusCode.NoContent, setVaultInternetAccessResponse.StatusCode);
+
+            var getVaultInternetAccessResponse = await GetVaultInternetAccessAsync();
+            Assert.Equal(HttpStatusCode.OK, getVaultInternetAccessResponse.StatusCode);
+
+            string responseString = await getVaultInternetAccessResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            bool responseObj = JsonSerializer.Deserialize<bool>(responseString);
+            Assert.IsType<bool>(responseObj);
+            Assert.True(responseObj);
+        }
+
+        [Fact]
+        public async Task TestSetVaultInternetAccessNoSettingReturnsBadRequest()
+        {
+            var setVaultInternetAccessResponse = await SetVaultInternetAccessAsync(null);
+            Assert.Equal(HttpStatusCode.BadRequest, setVaultInternetAccessResponse.StatusCode);
         }
     }
 }

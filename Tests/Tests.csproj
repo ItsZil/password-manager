@@ -28,7 +28,6 @@
   <ItemGroup>
     <Folder Include="EndToEndTests\" />
     <Folder Include="PerformanceTests\" />
-    <Folder Include="UnitTests\BrowserExtension\" />
   </ItemGroup>
 
   <ItemGroup>

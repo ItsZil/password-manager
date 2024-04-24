@@ -19,7 +19,7 @@ const {
   sendRemoveExtraAuthTypeRequest,
   sendCreatePinRequest,
   sendDeleteLoginDetailRequest,
-  sendEditLoginDetailRequest
+  sendEditLoginDetailRequest,
 } = require('./util/requestsUtil.js');
 
 const {
@@ -96,8 +96,7 @@ async function refreshLoginDetailsTable(page) {
 
   if (loginDetailsCount > 0)
     $('#details-current-min').text((page - 1) * 10 + 1);
-  else
-    $('#details-current-min').text(0);
+  else $('#details-current-min').text(0);
 
   $('#details-current-max').text(Math.min(page * 10, loginDetailsCount));
   $('#details-max').text(loginDetailsCount);
@@ -154,7 +153,6 @@ async function refreshLoginDetailsTable(page) {
   });
 
   async function saveLoginDetails(id, username, password) {
-
     // Check if password only contains *, if so, we want it to be null so it's not saved.
     if (password !== '******************************') {
       // Encrypt the password
@@ -167,8 +165,8 @@ async function refreshLoginDetailsTable(page) {
       sourceId: sourceId,
       loginDetailsId: id,
       username: username,
-      password: password
-    }
+      password: password,
+    };
 
     const updated = await sendEditLoginDetailRequest(loginDetailsEditRequest);
     if (updated) {
@@ -239,9 +237,11 @@ async function refreshLoginDetailsTable(page) {
       document.getElementById('close-delete-confirm-modal-button').click();
       await refreshLoginDetailsTable(currentPage);
     } else {
-      $('#delete-confirm-error').text('Something went wrong. Please try again.');
+      $('#delete-confirm-error').text(
+        'Something went wrong. Please try again.'
+      );
     }
-  })
+  });
 
   $('[id^="passwords-page-"]').on('click', async function () {
     const idText = $(this).attr('id');
@@ -312,7 +312,7 @@ async function populateLoginDetailsTable(page, loginDetails) {
   // Clear existing rows
   tbody.empty();
 
-  const extraAuthTypes = { 1: 'None', 2: 'PIN', 3: 'Passkey', 4: 'Passphrase'}
+  const extraAuthTypes = { 1: 'None', 2: 'PIN', 3: 'Passkey', 4: 'Passphrase' };
 
   // Loop through each login detail object
   $.each(loginDetails, async function (index, loginDetail) {
@@ -322,7 +322,9 @@ async function populateLoginDetailsTable(page, loginDetails) {
     // Add columns to the row
     row.append('<td>' + loginDetail.detailsId + '</td>'); // ID
     row.append(
-      '<td><a id="website-' + loginDetail.detailsId + '" href="http://' +
+      '<td><a id="website-' +
+        loginDetail.detailsId +
+        '" href="http://' +
         loginDetail.domain +
         '" target="_blank" class="text-reset">' +
         loginDetail.domain +
@@ -353,14 +355,18 @@ async function populateLoginDetailsTable(page, loginDetails) {
     ); // Password input field and eye icon
     // Extra auth type
     const selectId = 'extra-auth-select-' + loginDetail.detailsId;
-    const selectOptions = Object.keys(extraAuthTypes).map(id => {
-      const type = extraAuthTypes[id];
-      return `<option value="${id}" ${loginDetail.extraAuthId == id ? 'selected' : ''}>${type}</option>`;
-    }).join('');
+    const selectOptions = Object.keys(extraAuthTypes)
+      .map((id) => {
+        const type = extraAuthTypes[id];
+        return `<option value="${id}" ${
+          loginDetail.extraAuthId == id ? 'selected' : ''
+        }>${type}</option>`;
+      })
+      .join('');
     row.append(
       '<td>' +
-      `<select id="${selectId}" class="form-select">${selectOptions}</select>` +
-      '</td>'
+        `<select id="${selectId}" class="form-select">${selectOptions}</select>` +
+        '</td>'
     ); // Extra auth select dropdown
     row.append('<td>' + formatDate(loginDetail.lastUsedDate) + '</td>'); // Last Accessed
     row.append(
@@ -678,7 +684,10 @@ $('#finish-create-details-button').on('click', async function () {
       };
 
       const createdPin = await sendCreatePinRequest(createPinRequestBody);
-      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 2);
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(
+        createdDetails.id,
+        2
+      );
 
       break;
     case 'passkey-extra-auth':
@@ -687,10 +696,16 @@ $('#finish-create-details-button').on('click', async function () {
         createdDetails.domain
       );
 
-      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 3);
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(
+        createdDetails.id,
+        3
+      );
       break;
     case 'passphrase-extra-auth':
-      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(createdDetails.id, 4);
+      extraAuthSetupResult = await sendSetExtraAuthTypeRequest(
+        createdDetails.id,
+        4
+      );
       break;
   }
 
@@ -757,6 +772,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     const accessToken = response.accessToken;

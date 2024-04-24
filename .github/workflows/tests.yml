@@ -23,6 +23,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore Tests/Tests.csproj
     - name: Build
-      run: dotnet build Tests/Tests.csproj --no-restore
+      run: dotnet build Tests/Tests.csproj --no-restore /p:DefineConstants=CI
     - name: Test
       run: dotnet test --no-build --verbosity normal  --blame-hang-timeout 3min 

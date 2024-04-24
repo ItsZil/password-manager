@@ -79,6 +79,7 @@ $('#unlock-vault-button').on('click', async function () {
     // Unlock failed.
     $('#passphrase-input-fields').show();
     $('#unlock-in-progress').hide();
+    $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
   } else {
     // Unlock succeeded.
     isUserAuthenticated = true;
@@ -149,6 +150,9 @@ async function setElements() {
 
       $('#passphrase-input-fields').hide();
       $('#unlock-in-progress').hide();
+      $('#passphrase-input')
+        .removeClass('is-invalid')
+        .removeClass('is-invalid-lite');
 
       footerElement.show();
       $('#connection-ok-icon')
@@ -170,6 +174,21 @@ async function setElements() {
     authenticatedReadyElement.hide();
   }
 }
+
+$('#passwords-button').on('click', function () {
+  // Open the passwords page in a new tab.
+  open('passwords.html');
+});
+
+$('#authenticators-button').on('click', function () {
+  // Open the authenticators page in a new tab.
+  open('authenticators.html');
+});
+
+$('#options-button').on('click', function () {
+  // Open the options page in a new tab.
+  open('options.html');
+});
 
 $('#lock-vault-button').on('click', async function () {
   // Remove tokens from secure HttpOnly cookie
