@@ -156,7 +156,9 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
 
 // Function to update a vault's pragma key
 // Returns: A boolean indicating if the vault pragma key was successfully updated
-export async function sendUpdateVaultPassphraseRequest(updateVaultPassphraseRequest) {
+export async function sendUpdateVaultPassphraseRequest(
+  updateVaultPassphraseRequest
+) {
   const apiEndpoint = '/api/updatevaultpassphrase';
   const accessToken = await getAccessToken();
 
@@ -165,7 +167,7 @@ export async function sendUpdateVaultPassphraseRequest(updateVaultPassphraseRequ
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       body: JSON.stringify(updateVaultPassphraseRequest),
     });
@@ -559,7 +561,10 @@ export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
 
 // Function to set a login details' extra auth ID
 // Returns: a boolean indicating if the extra auth ID was successfully set
-export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType) {
+export async function sendSetExtraAuthTypeRequest(
+  loginDetailsId,
+  extraAuthType
+) {
   const apiEndpoint = '/api/extraauth';
   const accessToken = await getAccessToken();
 
@@ -570,7 +575,10 @@ export async function sendSetExtraAuthTypeRequest(loginDetailsId, extraAuthType)
         'Content-Type': 'application/json',
         Authorization: `Bearer ${accessToken}`,
       },
-      body: JSON.stringify({ loginDetailsId: loginDetailsId, extraAuthId: extraAuthType }),
+      body: JSON.stringify({
+        loginDetailsId: loginDetailsId,
+        extraAuthId: extraAuthType,
+      }),
     });
 
     if (response.status === 204) {

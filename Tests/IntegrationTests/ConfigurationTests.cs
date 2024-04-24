@@ -355,7 +355,7 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.Created, setupVaultResponse.StatusCode);
             Assert.True(File.Exists(Path.Combine(_runningTestVaultLocation, "vault.db")));
 
-            string exportDirectory = Path.GetDirectoryName(_runningTestVaultLocation) ?? Environment.SpecialFolder.MyDocuments.ToString();
+            string exportDirectory = Path.GetDirectoryName(_runningTestVaultLocation) ?? Environment.CurrentDirectory;
             var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
             Assert.Equal(HttpStatusCode.OK, exportVaultResponse.StatusCode);
 

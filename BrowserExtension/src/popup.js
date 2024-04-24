@@ -150,7 +150,9 @@ async function setElements() {
 
       $('#passphrase-input-fields').hide();
       $('#unlock-in-progress').hide();
-      $('#passphrase-input').removeClass('is-invalid').removeClass('is-invalid-lite');
+      $('#passphrase-input')
+        .removeClass('is-invalid')
+        .removeClass('is-invalid-lite');
 
       footerElement.show();
       $('#connection-ok-icon')

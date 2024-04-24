@@ -2,7 +2,7 @@ const {
   initPublic,
   isHandshakeComplete,
   encryptPassword,
-  fetchPassphrase
+  fetchPassphrase,
 } = require('./util/passwordUtil.js');
 
 const {
@@ -13,7 +13,7 @@ const {
   sendExportVaultRequest,
   isAbsolutePathValid,
   sendGetVaultInternetAccessRequest,
-  sendSetVaultInternetAccessRequest
+  sendSetVaultInternetAccessRequest,
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -193,7 +193,8 @@ $('#passPhraseInput').on('input', function () {
 $('#save-new-passphrase-button').on('click', async function () {
   const passPhrase = $('#passPhraseInput').val();
   const passPhraseIsEmpty = passPhrase.trim().length == 0;
-  const passPhraseIsNotValid = passPhrase.split(' ').length < 4 || passPhrase.split(' ').length > 10;
+  const passPhraseIsNotValid =
+    passPhrase.split(' ').length < 4 || passPhrase.split(' ').length > 10;
   if (passPhraseIsEmpty || passPhraseIsNotValid) {
     $('#passPhraseInput').addClass('is-invalid').addClass('is-invalid-lite');
     return;
@@ -202,14 +203,20 @@ $('#save-new-passphrase-button').on('click', async function () {
   const vaultKey = await encryptPassword(passPhrase);
   const updateVaultPassphraseRequest = {
     sourceId: sourceId,
-    vaultRawKeyBase64: vaultKey
+    vaultRawKeyBase64: vaultKey,
   };
 
-  document.getElementById('show-passphrase-update-progresss-modal-button').click();
+  document
+    .getElementById('show-passphrase-update-progresss-modal-button')
+    .click();
 
-  const updated = await sendUpdateVaultPassphraseRequest(updateVaultPassphraseRequest);
+  const updated = await sendUpdateVaultPassphraseRequest(
+    updateVaultPassphraseRequest
+  );
   if (updated) {
-    document.getElementById('show-passphrase-update-progresss-modal-button').click();
+    document
+      .getElementById('show-passphrase-update-progresss-modal-button')
+      .click();
 
     // Log out the user.
     setTokens(null, null);
@@ -218,8 +225,12 @@ $('#save-new-passphrase-button').on('click', async function () {
     location.reload();
   } else {
     // Show failure UI
-    document.getElementById('show-passphrase-update-progresss-modal-button').click();
-    document.getElementById('show-passphrase-update-failure-modal-button').click();
+    document
+      .getElementById('show-passphrase-update-progresss-modal-button')
+      .click();
+    document
+      .getElementById('show-passphrase-update-failure-modal-button')
+      .click();
   }
 });
 
@@ -251,7 +262,7 @@ $('#export-vault-button').on('click', async function () {
 
   const exportVaultFolder = encodeURIComponent(path);
   const exportVaultRequest = {
-    absolutePathUri: exportVaultFolder
+    absolutePathUri: exportVaultFolder,
   };
 
   const exportVaultResponse = await sendExportVaultRequest(exportVaultRequest);
@@ -259,7 +270,9 @@ $('#export-vault-button').on('click', async function () {
 
   if (exportVaultResponse) {
     // Success, show a modal with the path to the exported vault
-    const pathToExportedVault = decodeURIComponent(exportVaultResponse.absolutePathUri);
+    const pathToExportedVault = decodeURIComponent(
+      exportVaultResponse.absolutePathUri
+    );
     $('#exported-vault-success-path').text(pathToExportedVault);
     document.getElementById('show-vault-export-success-modal-button').click();
   } else {
