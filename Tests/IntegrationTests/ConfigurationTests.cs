@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Net.Http.Headers;
+using System.Reflection;
 
 namespace Tests.IntegrationTests.Server
 {

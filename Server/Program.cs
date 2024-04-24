@@ -86,7 +86,8 @@ namespace Server
             //app.UseMiddleware<KeyMiddleware>();
 
             // Middleware to limit access to the local network
-            if (!app.Environment.IsEnvironment("TEST_INTEGRATION"))
+            bool internetAccessEnabled = ConfigUtil.GetVaultInternetAccess();
+            if (!app.Environment.IsEnvironment("TEST_INTEGRATION") && !internetAccessEnabled)
             {
                 app.Use(async (context, next) =>
                 {

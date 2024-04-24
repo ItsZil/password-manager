@@ -227,7 +227,7 @@ namespace Server.Endpoints
         [Authorize]
         internal async static Task<IResult> ExportBackupVault(PathCheckRequest request, SqlContext dbContext)
         {
-            string absolutePath = Uri.UnescapeDataString(request.AbsolutePathUri);
+            string absolutePath = Uri.UnescapeDataString(request.AbsolutePathUri) ?? Environment.CurrentDirectory;
             string normalizedPath = Path.GetFullPath(absolutePath);
             if (!Directory.Exists(normalizedPath))
                 return Results.BadRequest();
