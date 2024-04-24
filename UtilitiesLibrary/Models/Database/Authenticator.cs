@@ -7,8 +7,8 @@ namespace UtilitiesLibrary.Models
         [Key]
         public int AuthenticatorId { get; set; }
         public int LoginDetailsId { get; set; }
-        public string Type { get; set; } // TOTP, HOTP, etc.
-        public string Secret { get; set; }
+        public byte[] Secret { get; set; }
+        public byte[] Salt { get; set; }
 
         public DateTime LastUsedDate = DateTime.Now;
 

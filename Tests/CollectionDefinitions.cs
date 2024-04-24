@@ -20,4 +20,7 @@
 
     [CollectionDefinition(nameof(PinCodeTests), DisableParallelization = true)]
     public class PinCodeTests { }
+
+    [CollectionDefinition(nameof(AuthenticatorTests), DisableParallelization = true)]
+    public class AuthenticatorTests { }
 }
