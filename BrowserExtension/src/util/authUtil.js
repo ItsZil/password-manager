@@ -14,7 +14,6 @@ const { jwtDecode } = require('jwt-decode');
 // Function to check if the user is authenticated
 export async function isAuthenticated() {
   const accessTokenCookie = await getCookie('accessToken');
-
   // Check if the access token cookie exists
   if (accessTokenCookie) {
     const accessToken = accessTokenCookie.value;
@@ -54,7 +53,13 @@ export async function isAuthenticated() {
     } else {
       // Access token is valid, confirm that the vault is unlocked
       const authConfirmed = await sendCheckAuthRequest(accessToken);
-      return authConfirmed;
+
+      // If the vault is not unlocked, then the users' tokens are invalid.
+      if (!authConfirmed) {
+        setTokens(null, null);
+        return false;
+      }
+      return true;
     }
   }
   // No valid access or refresh tokens found

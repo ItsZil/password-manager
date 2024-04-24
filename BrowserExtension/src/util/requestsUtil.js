@@ -732,3 +732,60 @@ export async function sendExportVaultRequest(exportVaultRequestBody) {
     return false;
   }
 }
+
+// Function to send a request to get the vault internet access setting
+// Returns: a boolean indicating if the vault has internet access
+export async function sendGetVaultInternetAccessRequest() {
+  const apiEndpoint = '/api/vaultinternetaccess';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to get vault internet access setting: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to set the vault internet access setting
+// Returns: a boolean indicating if the vault internet access setting was successfully set
+export async function sendSetVaultInternetAccessRequest(setting) {
+  const apiEndpoint = `/api/vaultinternetaccess?setting=${setting}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to set vault internet access setting: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}

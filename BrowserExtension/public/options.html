@@ -158,45 +158,62 @@
                         </a>
                       </div>
                     </div>
-                  </div>
-                </div>
-                <div class="card-footer bg-transparent mt-auto"></div>
-              </div>
 
-              <div class="modal modal-blur fade"
-                   id="reset-jwt-secret-modal"
-                   tabindex="-1"
-                   role="dialog" />
-              <div class="modal-dialog modal-sm modal-dialog-centered"
-                   role="document">
-                <div class="modal-content">
-                  <button type="button"
-                          class="btn-close"
-                          data-bs-dismiss="modal"
-                          aria-label="Close"></button>
-                  <div class="modal-status bg-danger"></div>
-                  <div class="modal-body text-center py-4">
-                    <i class="bi bi-exclamation-triangle"
-                       style="font-size: 45px; color: red"></i>
-                    <h3>Are you sure?</h3>
-                    <div class="text-secondary">
-                      Do you really want to log out of all devices?<br />You
-                      will need to re-enter your passphrase.
+                    <!-- Internet access switch -->
+                    <div class="mb-4">
+                      <label class="form-label"></label>
+                      <div class="mt-4">
+                        <div class="input-group-flat gap-2">
+                          <p class="page-subtitle">
+                            If you wish to access your vault from outside your local network,
+                            you can enable internet access.
+                          </p>
+                          <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="vault-internet-access-checkbox">
+                            <span class="form-check-label">Vault Internet Access</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div class="modal-footer">
-                    <div class="w-100">
-                      <div class="row">
-                        <div class="col">
-                          <a class="btn w-100" data-bs-dismiss="modal">
-                            Cancel
-                          </a>
-                        </div>
-                        <div class="col">
-                          <a class="btn btn-danger w-100"
-                             id="confirm-log-out-button">
-                            Log out of all devices
-                          </a>
+                  <div class="card-footer bg-transparent mt-auto"></div>
+                </div>
+
+                <div class="modal modal-blur fade"
+                     id="reset-jwt-secret-modal"
+                     tabindex="-1"
+                     role="dialog" />
+                <div class="modal-dialog modal-sm modal-dialog-centered"
+                     role="document">
+                  <div class="modal-content">
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                    <div class="modal-status bg-danger"></div>
+                    <div class="modal-body text-center py-4">
+                      <i class="bi bi-exclamation-triangle"
+                         style="font-size: 45px; color: red"></i>
+                      <h3>Are you sure?</h3>
+                      <div class="text-secondary">
+                        Do you really want to log out of all devices?<br />You
+                        will need to re-enter your passphrase.
+                      </div>
+                    </div>
+                    <div class="modal-footer">
+                      <div class="w-100">
+                        <div class="row">
+                          <div class="col">
+                            <a class="btn w-100" data-bs-dismiss="modal">
+                              Cancel
+                            </a>
+                          </div>
+                          <div class="col">
+                            <a class="btn btn-danger w-100"
+                               id="confirm-log-out-button">
+                              Log out of all devices
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -207,240 +224,287 @@
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="modal modal-blur fade"
-         id="passphrase-update-progress-modal"
-         tabindex="-1"
-         role="dialog"
-         data-bs-backdrop="static"
-         data-bs-keyboard="false">
-      <div class="modal-dialog modal-sm modal-dialog-centered"
-           role="document">
-        <div class="modal-content">
-          <div class="modal-body">
-            <div class="modal-title">Updating passphrase</div>
-            <div class="progress progress-bar-striped mb-3">
-              <div class="progress-bar progress-bar-indeterminate"></div>
-            </div>
-            <div class="card-subtitle mb-0">
-              You will be prompted to login shortly.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#"
-       id="show-passphrase-update-progresss-modal-button"
-       style="display: none"
-       data-bs-toggle="modal"
-       data-bs-target="#passphrase-update-progress-modal"></a>
-
-    <div class="modal modal-blur fade"
-         id="passphrase-update-failure-modal"
-         tabindex="-1"
-         role="dialog">
-      <div class="modal-dialog modal-sm modal-dialog-centered"
-           role="document">
-        <div class="modal-content">
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"></button>
-          <div class="modal-status bg-red"></div>
-          <div class="modal-body text-center py-4">
-            <i class="bi bi-database-fill-x"
-               style="font-size: 45px; color: red"></i>
-            <div class="text-secondary-emphasis">
-              Something went wrong updating your passphrase. Restart
-              the vault service and try again.
-            </div>
-          </div>
-          <div class="modal-footer">
-            <div class="w-100">
-              <a href="#"
-                 class="btn btn-primary w-100"
-                 data-bs-dismiss="modal">
-                Close
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#"
-       id="show-export-vault-progresss-modal-button"
-       style="display: none"
-       data-bs-toggle="modal"
-       data-bs-target="#vault-export-progress-modal"></a>
-
-    <div class="modal modal-blur fade"
-         id="vault-export-progress-modal"
-         tabindex="-1"
-         role="dialog"
-         data-bs-backdrop="static"
-         data-bs-keyboard="false">
-      <div class="modal-dialog modal-sm modal-dialog-centered"
-           role="document">
-        <div class="modal-content">
-          <div class="modal-body">
-            <div class="modal-title">Exporting vault</div>
-            <div class="progress progress-bar-striped mb-3">
-              <div class="progress-bar progress-bar-indeterminate"></div>
-            </div>
-            <div class="card-subtitle mb-0">
-              This won't take long.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#"
-       id="show-passphrase-update-failure-modal-button"
-       style="display: none"
-       data-bs-toggle="modal"
-       data-bs-target="#passphrase-update-failure-modal"></a>
-
-    <div class="modal modal-blur fade"
-         id="vault-export-success-modal"
-         tabindex="-1"
-         role="dialog">
-      <div class="modal-dialog modal-sm modal-dialog-centered"
-           role="document">
-        <div class="modal-content">
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"></button>
-          <div class="modal-status bg-success"></div>
-          <div class="modal-body text-center py-4">
-            <i class="bi bi-check-circle"
-               style="font-size: 45px; color: green"></i>
-            <h3>Vault Exported Successfully</h3>
-            <div class="text-secondary-emphasis">
-              Your vault has been successfully backed up.
-              <div class="text-secondary" id="exported-vault-success-path"></div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <div class="w-100">
-              <a href="#" class="btn w-100" data-bs-dismiss="modal">
-                Close
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#"
-       id="show-vault-export-success-modal-button"
-       style="display: none"
-       data-bs-toggle="modal"
-       data-bs-target="#vault-export-success-modal"></a>
-
-    <div class="modal modal-blur fade"
-         id="vault-export-failure-modal"
-         tabindex="-1"
-         role="dialog">
-      <div class="modal-dialog modal-sm modal-dialog-centered"
-           role="document">
-        <div class="modal-content">
-          <button type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"></button>
-          <div class="modal-status bg-red"></div>
-          <div class="modal-body text-center py-4">
-            <i class="bi bi-database-fill-x"
-               style="font-size: 45px; color: red"></i>
-            <div class="text-secondary-emphasis">
-              Something went wrong exporting your vault. Restart the vault
-              the vault service and try again.
-            </div>
-          </div>
-          <div class="modal-footer">
-            <div class="w-100">
-              <a href="#"
-                 class="btn btn-primary w-100"
-                 data-bs-dismiss="modal">
-                Close
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <a href="#"
-       id="show-vault-export-failure-modal-button"
-       style="display: none"
-       data-bs-toggle="modal"
-       data-bs-target="#vault-export-failure-modal"></a>
-
-    <div id="vault-login-modal"
-         data-bs-target="#staticBackdrop"
-         style="display: none">
       <div class="modal modal-blur fade"
-           id="vault-login-modal-inner"
+           id="enable-internet-access-modal"
            tabindex="-1"
-           style="display: block"
-           aria-modal="true"
-           role="dialog">
+           role="dialog" />
+      <div class="modal-dialog modal-sm modal-dialog-centered"
+           role="document">
+        <div class="modal-content">
+          <button type="button"
+                  class="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"></button>
+          <div class="modal-status bg-danger"></div>
+          <div class="modal-body text-center py-4">
+            <i class="bi bi-exclamation-triangle"
+               style="font-size: 45px; color: red"></i>
+            <h3>Are you sure?</h3>
+            <div class="text-secondary">
+              Do you really want to enable internet access?<br />Anyone
+              with the passphrase will be able to connect.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="w-100">
+              <div class="row">
+                <div class="col">
+                  <a class="btn w-100" data-bs-dismiss="modal">
+                    Cancel
+                  </a>
+                </div>
+                <div class="col">
+                  <a class="btn btn-danger w-100"
+                     id="confirm-enable-internet-access-button">
+                    Enable
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <a href="#"
+         id="show-enable-internet-access-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#enable-internet-access-modal"></a>
+
+      <div class="modal modal-blur fade"
+           id="passphrase-update-progress-modal"
+           tabindex="-1"
+           role="dialog"
+           data-bs-backdrop="static"
+           data-bs-keyboard="false">
         <div class="modal-dialog modal-sm modal-dialog-centered"
              role="document">
           <div class="modal-content">
             <div class="modal-body">
-              <div class="mb-4">
-                <div class="bi-database-fill-lock text-center"
-                     style="font-size: 45px"></div>
-                <h2 class="card-title text-center">Vault Locked</h2>
+              <div class="modal-title">Updating passphrase</div>
+              <div class="progress progress-bar-striped mb-3">
+                <div class="progress-bar progress-bar-indeterminate"></div>
               </div>
-
-              <div id="passphrase-input-fields">
-                <p class="text-secondary-emphasis mt-0">
-                  Please enter your passphrase
-                </p>
-                <div class="mb-3 input-group input-group-flat">
-                  <input type="password"
-                         class="form-control"
-                         id="passphrase-input"
-                         placeholder="Passphrase"
-                         autocomplete="off" />
-                  <span class="input-group-text">
-                    <a href="#"
-                       class="link-secondary bi-eye"
-                       id="toggle-passphrase-visibility"></a>
-                  </span>
-                </div>
-                <div>
-                  <a class="btn btn-primary w-100 mb-4"
-                     id="unlock-vault-button">
-                    <i class="bi-unlock-fill me-2"></i>
-                    Unlock
-                  </a>
-                </div>
+              <div class="card-subtitle mb-0">
+                You will be prompted to login shortly.
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div class="text-center"
-                   id="unlock-in-progress"
-                   style="display: none">
-                <div class="modal-title mb-4">Unlocking vault</div>
-                <div class="spinner-border mb-2"></div>
-                <div class="text-secondary-emphasis mb-4">
-                  This won't take long.
+      <a href="#"
+         id="show-passphrase-update-progresss-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#passphrase-update-progress-modal"></a>
+
+      <div class="modal modal-blur fade"
+           id="passphrase-update-failure-modal"
+           tabindex="-1"
+           role="dialog">
+        <div class="modal-dialog modal-sm modal-dialog-centered"
+             role="document">
+          <div class="modal-content">
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            <div class="modal-status bg-red"></div>
+            <div class="modal-body text-center py-4">
+              <i class="bi bi-database-fill-x"
+                 style="font-size: 45px; color: red"></i>
+              <div class="text-secondary-emphasis">
+                Something went wrong updating your passphrase. Restart
+                the vault service and try again.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <div class="w-100">
+                <a href="#"
+                   class="btn btn-primary w-100"
+                   data-bs-dismiss="modal">
+                  Close
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="#"
+         id="show-export-vault-progresss-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#vault-export-progress-modal"></a>
+
+      <div class="modal modal-blur fade"
+           id="vault-export-progress-modal"
+           tabindex="-1"
+           role="dialog"
+           data-bs-backdrop="static"
+           data-bs-keyboard="false">
+        <div class="modal-dialog modal-sm modal-dialog-centered"
+             role="document">
+          <div class="modal-content">
+            <div class="modal-body">
+              <div class="modal-title">Exporting vault</div>
+              <div class="progress progress-bar-striped mb-3">
+                <div class="progress-bar progress-bar-indeterminate"></div>
+              </div>
+              <div class="card-subtitle mb-0">
+                This won't take long.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="#"
+         id="show-passphrase-update-failure-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#passphrase-update-failure-modal"></a>
+
+      <div class="modal modal-blur fade"
+           id="vault-export-success-modal"
+           tabindex="-1"
+           role="dialog">
+        <div class="modal-dialog modal-sm modal-dialog-centered"
+             role="document">
+          <div class="modal-content">
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            <div class="modal-status bg-success"></div>
+            <div class="modal-body text-center py-4">
+              <i class="bi bi-check-circle"
+                 style="font-size: 45px; color: green"></i>
+              <h3>Vault Exported Successfully</h3>
+              <div class="text-secondary-emphasis">
+                Your vault has been successfully backed up.
+                <div class="text-secondary" id="exported-vault-success-path"></div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <div class="w-100">
+                <a href="#" class="btn w-100" data-bs-dismiss="modal">
+                  Close
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="#"
+         id="show-vault-export-success-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#vault-export-success-modal"></a>
+
+      <div class="modal modal-blur fade"
+           id="vault-export-failure-modal"
+           tabindex="-1"
+           role="dialog">
+        <div class="modal-dialog modal-sm modal-dialog-centered"
+             role="document">
+          <div class="modal-content">
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            <div class="modal-status bg-red"></div>
+            <div class="modal-body text-center py-4">
+              <i class="bi bi-database-fill-x"
+                 style="font-size: 45px; color: red"></i>
+              <div class="text-secondary-emphasis">
+                Something went wrong exporting your vault. Restart the vault
+                the vault service and try again.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <div class="w-100">
+                <a href="#"
+                   class="btn btn-primary w-100"
+                   data-bs-dismiss="modal">
+                  Close
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <a href="#"
+         id="show-vault-export-failure-modal-button"
+         style="display: none"
+         data-bs-toggle="modal"
+         data-bs-target="#vault-export-failure-modal"></a>
+
+      <div id="vault-login-modal"
+           data-bs-target="#staticBackdrop"
+           style="display: none">
+        <div class="modal modal-blur fade"
+             id="vault-login-modal-inner"
+             tabindex="-1"
+             style="display: block"
+             aria-modal="true"
+             role="dialog">
+          <div class="modal-dialog modal-sm modal-dialog-centered"
+               role="document">
+            <div class="modal-content">
+              <div class="modal-body">
+                <div class="mb-4">
+                  <div class="bi-database-fill-lock text-center"
+                       style="font-size: 45px"></div>
+                  <h2 class="card-title text-center">Vault Locked</h2>
+                </div>
+
+                <div id="passphrase-input-fields">
+                  <p class="text-secondary-emphasis mt-0">
+                    Please enter your passphrase
+                  </p>
+                  <div class="mb-3 input-group input-group-flat">
+                    <input type="password"
+                           class="form-control"
+                           id="passphrase-input"
+                           placeholder="Passphrase"
+                           autocomplete="off" />
+                    <span class="input-group-text">
+                      <a href="#"
+                         class="link-secondary bi-eye"
+                         id="toggle-passphrase-visibility"></a>
+                    </span>
+                  </div>
+                  <div>
+                    <a class="btn btn-primary w-100 mb-4"
+                       id="unlock-vault-button">
+                      <i class="bi-unlock-fill me-2"></i>
+                      Unlock
+                    </a>
+                  </div>
+                </div>
+
+                <div class="text-center"
+                     id="unlock-in-progress"
+                     style="display: none">
+                  <div class="modal-title mb-4">Unlocking vault</div>
+                  <div class="spinner-border mb-2"></div>
+                  <div class="text-secondary-emphasis mb-4">
+                    This won't take long.
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <script src="./main.js"></script>
-    <script src="./options.js"></script>
-  </body>
+      <script src="./main.js"></script>
+      <script src="./options.js"></script>
+</body>
 </html>

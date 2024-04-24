@@ -33,7 +33,8 @@ namespace Server.Utilities
                 var config = new Dictionary<string, string>
                 {
                     { "VAULT_LOCATION", Path.Join(Path.GetTempPath(), "initialvault.db") },
-                    { "JWT_SECRET_KEY", Encoding.UTF8.GetString(PasswordUtil.GenerateSecurePassword(64)) }
+                    { "JWT_SECRET_KEY", Encoding.UTF8.GetString(PasswordUtil.GenerateSecurePassword(64)) },
+                    { "VAULT_INTERNET_ACCESS", "false" }
                 };
                 var configJson = JsonSerializer.Serialize(config);
                 File.WriteAllText(configPath, configJson);
@@ -100,6 +101,33 @@ namespace Server.Utilities
             if (config != null)
             {
                 config["JWT_SECRET_KEY"] = newKeyString;
+                var newConfigJson = JsonSerializer.Serialize(config);
+                File.WriteAllText(configPath, newConfigJson);
+            }
+        }
+
+        internal static bool GetVaultInternetAccess()
+        {
+            // Read the VAULT_INTERNET_ACCESS key from the config.json file
+            var configJson = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<Dictionary<string, string>>(configJson);
+
+            if (config != null && config.ContainsKey("VAULT_INTERNET_ACCESS"))
+            {
+                return bool.TryParse(config["VAULT_INTERNET_ACCESS"], out bool result) ? result : false;
+            }
+            return false;
+        }
+
+        internal static void SetVaultInternetAccess(bool value)
+        {
+            // Add it as the VAULT_INTERNET_ACCESS key in the config.json file
+            var configJson = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<Dictionary<string, string>>(configJson);
+
+            if (config != null)
+            {
+                config["VAULT_INTERNET_ACCESS"] = value.ToString().ToLower();
                 var newConfigJson = JsonSerializer.Serialize(config);
                 File.WriteAllText(configPath, newConfigJson);
             }

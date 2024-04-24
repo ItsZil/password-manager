@@ -11,7 +11,9 @@ const {
   sendUpdateVaultPassphraseRequest,
   sendLockVaultRequest,
   sendExportVaultRequest,
-  isAbsolutePathValid
+  isAbsolutePathValid,
+  sendGetVaultInternetAccessRequest,
+  sendSetVaultInternetAccessRequest
 } = require('./util/requestsUtil.js');
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
@@ -40,6 +42,10 @@ async function setElements() {
     window.location.replace('./setup.html');
   } else if (isAuthenticatedResult && hasExistingVault) {
     // User is authenticated and has an existing vault
+    // Set the vault internet access switch
+    const vaultInternetAccess = await sendGetVaultInternetAccessRequest();
+    $('#vault-internet-access-checkbox').prop('checked', vaultInternetAccess);
+
     $('#vault-login-modal').hide();
     $('#vault-login-modal-inner').removeClass('show');
     $('#page-loader').hide();
@@ -284,3 +290,20 @@ async function validatePath(path) {
   }
   return isPathValid;
 }
+
+$('#vault-internet-access-checkbox').on('change', async function () {
+  if ($(this).is(':checked')) {
+    // Checked, enable internet access
+    document.getElementById('show-enable-internet-access-modal-button').click();
+  } else {
+    // Not checked, disable internet access
+    const disabledSuccessfully = await sendSetVaultInternetAccessRequest(false);
+    $('#vault-internet-access-checkbox').prop('checked', !disabledSuccessfully);
+  }
+});
+
+$('#confirm-enable-internet-access-button').on('click', async function () {
+  const enabledSuccessfully = await sendSetVaultInternetAccessRequest(true);
+  $('#vault-internet-access-checkbox').prop('checked', enabledSuccessfully);
+  document.getElementById('show-enable-internet-access-modal-button').click();
+});

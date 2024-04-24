@@ -26,6 +26,8 @@ namespace Server.Endpoints
             group.MapGet("/checkauth", CheckAuth);
 
             group.MapPost("/exportvault", ExportBackupVault);
+            group.MapGet("/vaultinternetaccess", GetVaultInternetAccessSetting);
+            group.MapPut("/vaultinternetaccess", SetVaultInternetAccessSetting);
 
             return group;
         }
@@ -244,6 +246,23 @@ namespace Server.Endpoints
                 return Results.BadRequest();
 
             return Results.Ok(new ExportVaultResponse { AbsolutePathUri = Uri.EscapeDataString(backupPath) });
+        }
+
+        [Authorize]
+        internal static IResult GetVaultInternetAccessSetting()
+        {
+            bool setting = ConfigUtil.GetVaultInternetAccess();
+            return Results.Ok(setting);
+        }
+
+        [Authorize]
+        internal static IResult SetVaultInternetAccessSetting([FromQuery] bool? setting)
+        {
+            if (setting == null)
+                return Results.BadRequest();
+
+            ConfigUtil.SetVaultInternetAccess(setting ?? false);
+            return Results.NoContent();
         }
     }
 }

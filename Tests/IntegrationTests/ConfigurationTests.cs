@@ -128,6 +128,20 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
+        private async Task<HttpResponseMessage> GetVaultInternetAccessAsync()
+        {
+            var apiEndpoint = "api/vaultinternetaccess";
+            var response = await _client.GetAsync(apiEndpoint);
+            return response;
+        }
+
+        private async Task<HttpResponseMessage> SetVaultInternetAccessAsync(bool? internetAccess)
+        {
+            var apiEndpoint = $"api/vaultinternetaccess?setting={internetAccess}";
+            var response = await _client.PutAsync(apiEndpoint, null);
+            return response;
+        }
+
         [Fact]
         public async Task TestGenerateFourWordPassphraseReturnsOkAndPassphrase()
         {
@@ -368,6 +382,43 @@ namespace Tests.IntegrationTests.Server
             string exportDirectory = "not an absolute path";
             var exportVaultResponse = await ExportVaultAsync(new PathCheckRequest { AbsolutePathUri = Uri.EscapeDataString(exportDirectory) });
             Assert.Equal(HttpStatusCode.BadRequest, exportVaultResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestGetVaultInternetAccessSettingReturnsOk()
+        {
+            var getVaultInternetAccessResponse = await GetVaultInternetAccessAsync();
+            Assert.Equal(HttpStatusCode.OK, getVaultInternetAccessResponse.StatusCode);
+
+            string responseString = await getVaultInternetAccessResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            bool responseObj = JsonSerializer.Deserialize<bool>(responseString);
+            Assert.IsType<bool>(responseObj);
+        }
+
+        [Fact]
+        public async Task TestSetVaultInternetAccessSettingReturnsOk()
+        {
+            var setVaultInternetAccessResponse = await SetVaultInternetAccessAsync(true);
+            Assert.Equal(HttpStatusCode.NoContent, setVaultInternetAccessResponse.StatusCode);
+
+            var getVaultInternetAccessResponse = await GetVaultInternetAccessAsync();
+            Assert.Equal(HttpStatusCode.OK, getVaultInternetAccessResponse.StatusCode);
+
+            string responseString = await getVaultInternetAccessResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(responseString);
+
+            bool responseObj = JsonSerializer.Deserialize<bool>(responseString);
+            Assert.IsType<bool>(responseObj);
+            Assert.True(responseObj);
+        }
+
+        [Fact]
+        public async Task TestSetVaultInternetAccessNoSettingReturnsBadRequest()
+        {
+            var setVaultInternetAccessResponse = await SetVaultInternetAccessAsync(null);
+            Assert.Equal(HttpStatusCode.BadRequest, setVaultInternetAccessResponse.StatusCode);
         }
     }
 }
