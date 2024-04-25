@@ -173,12 +173,7 @@ async function validatePath(path) {
 }
 
 function validatePassphrase(passphrase) {
-  const words = passphrase.split(' ');
-  const isValid =
-    words.length >= 4 &&
-    words.length <= 10 &&
-    words.every((word) => word === word.toLowerCase());
-  return isValid;
+  return passphrase.length < 1;
 }
 
 $('#restart-import-button').on('click', function () {

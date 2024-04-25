@@ -80,7 +80,8 @@ namespace Server.Utilities
 
         internal byte[] GetSharedSecret(int sourceId = 0)
         {
-            return SharedSecrets[sourceId] ?? throw new Exception("Shared secret is null - has handshake completed?");
+            SharedSecrets.TryGetValue(sourceId, out byte[]? sharedSecret);
+            return sharedSecret ?? Array.Empty<byte>();
         }
 
         internal bool SharedSecretNotNull()

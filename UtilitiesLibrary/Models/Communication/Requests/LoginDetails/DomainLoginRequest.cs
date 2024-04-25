@@ -25,5 +25,10 @@ namespace UtilitiesLibrary.Models
         // If it is null, the user will be prompted for the PIN code.
         [JsonInclude]
         internal string? PinCode { get; set; }
+
+        // A passphrase to use for the login.
+        // If it is null, the user will be prompted for the passphrase.
+        [JsonInclude]
+        internal string? Passphrase { get; set; }
     }
 }

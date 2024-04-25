@@ -19,21 +19,28 @@ async function init() {
 
 // Listener for requests from content script
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
-  if (request.type === 'LOGIN_INPUT_FIELDS_FOUND') {
+  if (request.type === 'AUTOFILL_LOGIN_DETAILS') {
     handleInputFields(request.payload);
-  } else if (request.type == 'LOGIN_WITH_PIN_CODE') {
-    handleInputFields(request.payload);
-  }
+  } 
 });
 
 // Function to fetch login details from server and send them to the content script
-async function retrieveLoginInfo(domain, pinCode = null) {
+async function retrieveLoginInfo(domain, pinCode = null, passphrase = null) {
   passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
+
+  await passwordUtil.initiateHandshake();
+
+  let encryptedPassphrase = null;
+  if (passphrase != null) {
+    // Encrypt the passphrase
+    encryptedPassphrase = await passwordUtil.encryptPassword(passphrase);
+  }
 
   const domainLoginRequestBody = {
     sourceId: sourceId,
     domain: domain,
-    pinCode: pinCode
+    pinCode: pinCode,
+    passphrase: encryptedPassphrase
   };
 
   const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
@@ -51,7 +58,10 @@ async function retrieveLoginInfo(domain, pinCode = null) {
     // Extra authentication is needed for this domain.
     switch (response.extraAuthId) {
       case 2:
-        await promptForPINCode(response);
+        promptForPINCode(response);
+        break;
+      case 4:
+        promptForPassphrase(response);
         break;
     }
     return;
@@ -72,11 +82,21 @@ async function retrieveLoginInfo(domain, pinCode = null) {
   }
 }
 
-async function promptForPINCode(response) {
+function promptForPINCode(response) {
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-    // Send a message to the content script to show a PIN code request modal
+    // Send a message to the content script to show a PIN code request prompt
     chrome.tabs.sendMessage(tabs[0].id, {
       type: 'PIN_CODE_REQUEST',
+      loginDetailsId: response.loginDetailsId,
+    });
+  });
+}
+
+function promptForPassphrase(response) {
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    // Send a message to the content script to show a passphrase request prompt
+    chrome.tabs.sendMessage(tabs[0].id, {
+      type: 'PASSPHRASE_REQUEST',
       loginDetailsId: response.loginDetailsId,
     });
   });
@@ -87,7 +107,7 @@ function showIncorrectExtraAuthNotification() {
     type: 'basic',
     iconUrl: 'icons/icon_32.png',
     title: 'Extra Authentication Failed',
-    message: 'Extra authentication failed. Refresh to try again.',
+    message: 'Refresh to try again.',
   });
 }
 
@@ -95,7 +115,7 @@ function sendAutofillDetailsMessage(usernameField, passwordField, loginInfo) {
   // Send a message to content script to autofill the input fields
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     chrome.tabs.sendMessage(tabs[0].id, {
-      type: 'AUTOFILL_DETAILS',
+      type: 'AUTOFILL_DETAILS_REQUEST',
       username_field_id: usernameField.id,
       password_field_id: passwordField.id,
       username: loginInfo.username,
@@ -126,7 +146,7 @@ async function handleInputFields(message) {
 
   if (usernameField && passwordField) {
     try {
-      const loginInfo = await retrieveLoginInfo(message.domain, message.pinCode);
+      const loginInfo = await retrieveLoginInfo(message.domain, message.pinCode, message.passphrase);
 
       if (loginInfo) {
         // No extra authentication needed, send login info to content script

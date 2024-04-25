@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Geralt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
+using System.Text;
 using UtilitiesLibrary.Models;
 
 namespace Server.Endpoints
@@ -88,11 +90,11 @@ namespace Server.Endpoints
                 return Results.NotFound();
 
             bool needsExtraAuth = loginDetails.ExtraAuthId > 1;
-            if (needsExtraAuth) // We might already have the PIN code.
+            if (needsExtraAuth)
             {
-                // We might already have the PIN code.
                 if (loginDetails.ExtraAuthId == 2 && request.PinCode != null)
                 {
+                    // We already have the PIN code.
                     bool parsedPinCode = int.TryParse(request.PinCode, out int requestPinCode);
                     if (parsedPinCode && requestPinCode > 0 && requestPinCode < 10000)
                     {
@@ -105,6 +107,24 @@ namespace Server.Endpoints
                         // Incorrect PIN code provided.
                         return Results.Unauthorized();
                     }
+                }
+                else if (loginDetails.ExtraAuthId == 4 && request.Passphrase != null)
+                {
+                    // We have the passphrase, decrypt it & verify its hash matches the vault pragma key.
+                    byte[] decryptedPassphrase = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), Convert.FromBase64String(request.Passphrase));
+                    string sharedSecretB64 = Convert.ToBase64String(keyProvider.GetSharedSecret(request.SourceId));
+                    string decryptedPassphraseString = Encoding.UTF8.GetString(decryptedPassphrase);
+
+                    if (string.IsNullOrEmpty(decryptedPassphraseString))
+                        return Results.Unauthorized();
+
+                    byte[] hash = new byte[32];
+                    BLAKE2b.ComputeHash(hash, decryptedPassphrase);
+                    string hashBase64 = Convert.ToBase64String(hash);
+
+                    bool passphraseIsCorrect = keyProvider.GetVaultPragmaKey() == hashBase64;
+                    if (!passphraseIsCorrect)
+                        return Results.Unauthorized();
                 }
                 else
                 {

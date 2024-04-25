@@ -431,11 +431,7 @@ $('#unlock-vault-button').on('click', async function () {
   }
   const passphrase = $('#passphrase-input').val();
 
-  const words = passphrase.split(' ');
-  const isValid =
-    words.length >= 4 &&
-    words.length <= 10 &&
-    words.every((word) => word === word.toLowerCase());
+  const isValid = passphrase.trim().length > 1;
 
   if (!isValid) {
     $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
