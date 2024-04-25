@@ -56,9 +56,9 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
-        private async Task<HttpResponseMessage> GetAuthenticatorCodeAsync(int loginDetailsId, string timestamp)
+        private async Task<HttpResponseMessage> GetAuthenticatorCodeAsync(int authenticatorId, string timestamp)
         {
-            var getAuthenticatorCodeApiEndpoint = $"/api/authenticator?sourceId=1&loginDetailsId={loginDetailsId}&timestamp={timestamp}";
+            var getAuthenticatorCodeApiEndpoint = $"/api/authenticator?sourceId=1&id={authenticatorId}&timestamp={timestamp}";
             var response = await _client.GetAsync(getAuthenticatorCodeApiEndpoint);
             return response;
         }
