@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="./main.css" />
+
+    <title>Vault Authenticators</title>
+  </head>
+
+  <body class="d-flex flex-column" data-bs-theme="dark">
+    <div class="page page-center" id="page-loader">
+      <div class="container container-slim py-4">
+        <div class="text-center">
+          <div class="mb-3">
+            <div class="bi-database-fill" style="font-size: 45px"></div>
+          </div>
+          <div class="text-secondary mb-3">
+            Tip: keep your recovery codes secure.
+          </div>
+          <div class="progress progress-sm">
+            <div class="progress-bar progress-bar-indeterminate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="page page-center"
+      id="waiting-for-handshake"
+      style="display: none"
+    >
+      <div class="container container-slim py-4">
+        <div class="text-center">
+          <div class="mb-3">
+            <i
+              class="navbar-brand-image navbar-brand navbar-brand-autodark"
+              id="handshake-retry-icon"
+              style="font-size: xx-large"
+              alt="Password Manager"
+            ></i>
+          </div>
+          <div class="text-secondary">Connecting to vault service</div>
+          <div class="text-secondary mb-3" id="handshake-retry-text">
+            Retrying in 3
+          </div>
+          <div class="progress progress-sm">
+            <div class="progress-bar progress-bar-indeterminate"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div
+        class="container-xl mt-6"
+        id="authenticators-options"
+        style="display: none"
+      >
+        <div class="card">
+          <div class="row g-0">
+            <div class="col-12 col-md-3 border-end">
+              <div class="card-body">
+                <h4 class="subheader">Vault options</h4>
+                <div class="list-group list-group-transparent">
+                  <a
+                    href="./options.html"
+                    class="list-group-item list-group-item-action d-flex align-items-center"
+                    >Configuration</a
+                  >
+                  <a
+                    href="./passwords.html"
+                    class="list-group-item list-group-item-action d-flex align-items-center"
+                    >Passwords</a
+                  >
+                  <a
+                    href="#"
+                    class="list-group-item list-group-item-action d-flex align-items-center active"
+                    >Authenticators</a
+                  >
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-9 d-flex flex-column">
+              <div class="card-body">
+                <div class="card">
+                  <div class="card-header">
+                    <h2>Vault Authenticators</h2>
+                  </div>
+                  <div
+                    class="card-body"
+                    id="loading-authenticators-table"
+                    style="display: none"
+                  >
+                    <div class="progress">
+                      <div
+                        class="progress-bar progress-bar-indeterminate"
+                      ></div>
+                    </div>
+                  </div>
+                  <div id="authenticators-table" style="display: none">
+                    <div class="card-body border-bottom py-3">
+                      <div class="d-flex">
+                        <div class="ms-auto text-secondary">
+                          <!-- Create authenticator button -->
+                          <a
+                            href="#"
+                            class="btn btn-primary"
+                            id="create-authenticator-button"
+                            >Create New</a
+                          >
+                        </div>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table
+                        class="table card-table table-vcenter text-nowrap datatable"
+                      >
+                        <thead>
+                          <tr>
+                            <th class="w-1">ID</th>
+                            <th>Domain</th>
+                            <th>Username</th>
+                            <th>Code</th>
+                            <th>Last Accessed</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="authenticators-tbody"></tbody>
+                      </table>
+                    </div>
+                    <div class="card-footer d-flex align-items-center">
+                      <p class="m-0 text-secondary">
+                        Showing
+                        <span id="authenticators-current-min">1</span> to
+                        <span id="authenticators-current-max">10</span> of
+                        <span id="authenticators-max">10</span> entries
+                      </p>
+                      <ul class="pagination m-0 ms-auto" id="pagination">
+                        <li class="page-item">
+                          <a class="page-link" href="#" tabindex="-1">
+                            <i class="bi bi-chevron-left"></i>
+                          </a>
+                        </li>
+                        <li class="page-item active">
+                          <a class="page-link" href="#">1</a>
+                        </li>
+                        <li class="page-item">
+                          <a class="page-link" href="#">
+                            <i class="bi bi-chevron-right"></i>
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="card-footer bg-transparent mt-auto"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal modal-blur fade"
+      id="create-authenticator-modal"
+      tabindex="-1"
+      role="dialog"
+      style="display: none"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">New Authenticator</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+              id="create-authenticator-modal-close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label">Login Details</label>
+              <select id="login-details" class="form-select">
+                <option value="-1">Website - Username</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Secret Key</label>
+              <input
+                type="text"
+                class="form-control"
+                id="create-new-authenticator-secret-input"
+                placeholder="Provided by the website"
+              />
+            </div>
+            <small
+              class="text-danger"
+              id="create-error-text"
+              style="display: none"
+              >Something has gone wrong.</small
+            >
+          </div>
+          <div class="modal-footer">
+            <a
+              href="#"
+              class="btn btn-link link-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </a>
+            <a
+              href="#"
+              class="btn btn-primary ms-auto"
+              id="finish-create-authenticator-button"
+            >
+              <div
+                class="spinner-border spinner-border-sm ms-0 me-2"
+                id="finish-create-authenticator-spinner"
+                style="display: none"
+              ></div>
+              <i
+                class="bi bi-shield-plus me-2"
+                style="font-size: 20px"
+                id="finish-create-authenticator-icon"
+              ></i>
+              Create
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a
+      href="#"
+      id="show-create-authenticator-modal-button"
+      style="display: none"
+      data-bs-toggle="modal"
+      data-bs-target="#create-authenticator-modal"
+    ></a>
+
+    <div
+      class="modal modal-blur fade"
+      id="delete-confirm-modal"
+      tabindex="-1"
+      role="dialog"
+    >
+      <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Close"
+            id="close-delete-confirm-modal-button"
+          ></button>
+          <div class="modal-status bg-danger"></div>
+          <div class="modal-body text-center py-4">
+            <i
+              class="bi bi-exclamation-triangle"
+              style="font-size: 45px; color: red"
+            ></i>
+            <h3>Are you sure?</h3>
+            <div class="text-secondary" id="delete-confirm-error">
+              Do you really want to delete this authenticator?<br />
+              <div
+                class="text-secondary-emphasis"
+                id="delete-confirm-domain-username"
+              ></div>
+              <br />
+              This is a non-reversible action.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <div class="w-100">
+              <div class="row">
+                <div class="col">
+                  <a href="#" class="btn w-100" data-bs-dismiss="modal">
+                    Cancel
+                  </a>
+                </div>
+                <div class="col">
+                  <div
+                    id="authenticators-deletion-id"
+                    style="display: none"
+                  ></div>
+                  <a
+                    href="#"
+                    class="btn btn-danger w-100"
+                    id="confirm-authenticator-deletion-button"
+                  >
+                    Delete
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="vault-login-modal"
+      data-bs-target="#staticBackdrop"
+      style="display: none"
+    >
+      <div
+        class="modal modal-blur fade"
+        id="vault-login-modal-inner"
+        tabindex="-1"
+        style="display: block"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div
+          class="modal-dialog modal-sm modal-dialog-centered"
+          role="document"
+        >
+          <div class="modal-content">
+            <div class="modal-body">
+              <div class="mb-4">
+                <div
+                  class="bi-database-fill-lock text-center"
+                  style="font-size: 45px"
+                ></div>
+                <h2 class="card-title text-center">Vault Locked</h2>
+              </div>
+
+              <div id="passphrase-input-fields">
+                <p class="text-secondary-emphasis mt-0">
+                  Please enter your passphrase
+                </p>
+                <div class="mb-3 input-group input-group-flat">
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="passphrase-input"
+                    placeholder="Passphrase"
+                    autocomplete="off"
+                  />
+                  <span class="input-group-text">
+                    <a
+                      href="#"
+                      class="link-secondary bi-eye"
+                      id="toggle-passphrase-visibility"
+                    ></a>
+                  </span>
+                </div>
+                <div>
+                  <a
+                    class="btn btn-primary w-100 mb-4"
+                    id="unlock-vault-button"
+                  >
+                    <i class="bi-unlock-fill me-2"></i>
+                    Unlock
+                  </a>
+                </div>
+              </div>
+
+              <div
+                class="text-center"
+                id="unlock-in-progress"
+                style="display: none"
+              >
+                <div class="modal-title mb-4">Unlocking vault</div>
+                <div class="spinner-border mb-2"></div>
+                <div class="text-secondary-emphasis mb-4">
+                  This won't take long.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a
+      href="#"
+      id="show-authenticators-delete-confirm-modal-button"
+      style="display: none"
+      data-bs-toggle="modal"
+      data-bs-target="#delete-confirm-modal"
+    ></a>
+
+    <script src="./main.js"></script>
+    <script src="./authenticators.js"></script>
+  </body>
+</html>

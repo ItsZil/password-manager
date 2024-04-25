@@ -393,6 +393,35 @@ export async function sendLoginDetailsViewRequest(page) {
   }
 }
 
+// Function to send a request to retrieve all login details for view
+// Returns: List<LoginDetailsResponse>
+export async function sendAllLoginDetailsViewRequest(page) {
+  const apiEndpoint = `/api/logindetailsall`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to retrieve all login details: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
 // Function to send a request to retrieve a login details' password by ID
 // Returns: A base64 encoded, shared key encrypted password
 export async function sendLoginDetailsPasswordRequest(
@@ -789,6 +818,155 @@ export async function sendSetVaultInternetAccessRequest(setting) {
     } else {
       console.error(
         `Failed to set vault internet access setting: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to get the count of authenticators
+// Returns: the count of authenticators
+export async function sendAuthenticatorCountRequest() {
+  const apiEndpoint = '/api/authenticatorcount';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const count = await response.json();
+      return count;
+    } else {
+      console.error(
+        `Failed to retrieve authenticators count: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to get all authenticators for view
+// Returns: a list of AuthenticatorViewResponse objects
+export async function sendGetAuthenticatorViewRequest(page) {
+  const apiEndpoint = `/api/authenticatorview?page=${page}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      const json = await response.json();
+      return json;
+    } else {
+      console.error(
+        `Failed to get authenticators for view: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to get an authenticator code
+// Returns: a AuthenticatorCodeResponse JSON object
+export async function sendGetAuthenticatorCodeRequest(
+  authenticatorId,
+  timestamp
+) {
+  const apiEndpoint = `/api/authenticator?id=${authenticatorId}&timestamp=${timestamp}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to get authenticator code: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to create an authenticator
+// Returns: a CreateAuthenticatorResponse JSON object
+export async function sendCreateAuthenticatorRequest(
+  createAuthenticatorRequest
+) {
+  const apiEndpoint = '/api/authenticator';
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(createAuthenticatorRequest),
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to create authenticator: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
+// Function to send a request to delete an authenticator
+// Returns: a boolean indicating if the authenticator was successfully deleted
+export async function sendDeleteAuthenticatorRequest(authenticatorId) {
+  const apiEndpoint = `/api/authenticator?id=${authenticatorId}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 204) {
+      return true;
+    } else {
+      console.error(
+        `Failed to delete authenticator: ${response.status} ${response.statusText}`
       );
       return false;
     }

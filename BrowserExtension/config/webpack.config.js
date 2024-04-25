@@ -15,6 +15,7 @@ const config = (env, argv) =>
       setup: PATHS.src + '/setup.js',
       import: PATHS.src + '/import.js',
       passwords: PATHS.src + '/passwords.js',
+      authenticators: PATHS.src + '/authenticators.js',
 
       contentScript: PATHS.src + '/contentScript.js',
       background: PATHS.src + '/background.js',

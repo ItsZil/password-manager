@@ -71,9 +71,9 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
-        private async Task<HttpResponseMessage> DeleteAuthenticatorAsync(int loginDetailsId)
+        private async Task<HttpResponseMessage> DeleteAuthenticatorAsync(int id)
         {
-            var deleteAuthenticatorApiEndpoint = $"/api/authenticator?loginDetailsId={loginDetailsId}";
+            var deleteAuthenticatorApiEndpoint = $"/api/authenticator?id={id}";
             var response = await _client.DeleteAsync(deleteAuthenticatorApiEndpoint);
             return response;
         }

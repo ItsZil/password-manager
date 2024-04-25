@@ -14,6 +14,7 @@ namespace Server.Endpoints
             group.MapPost("/login", DomainLoginRequest);
 
             group.MapGet("/logindetails", GetLoginDetailsView);
+            group.MapGet("/logindetailsall", GetAllLoginDetailsView);
             group.MapGet("/logindetailscount", LoginDetailsCount);
             group.MapPost("/logindetailspassword", GetLoginDetailsPassword);
 
@@ -111,6 +112,26 @@ namespace Server.Endpoints
 
             var details = await dbContext.LoginDetails.Skip(skip).Take(pageSize).ToListAsync();
             
+            List<LoginDetailsViewResponse> results = new List<LoginDetailsViewResponse>();
+            foreach (var loginDetails in details)
+            {
+                results.Add(new LoginDetailsViewResponse
+                {
+                    DetailsId = loginDetails.Id,
+                    Domain = loginDetails.RootDomain,
+                    Username = loginDetails.Username,
+                    LastUsedDate = loginDetails.LastUsedDate,
+                    ExtraAuthId = loginDetails.ExtraAuthId
+                });
+            }
+            return Results.Ok(results);
+        }
+
+        [Authorize]
+        internal async static Task<IResult> GetAllLoginDetailsView(SqlContext dbContext)
+        {
+            var details = await dbContext.LoginDetails.ToListAsync();
+
             List<LoginDetailsViewResponse> results = new List<LoginDetailsViewResponse>();
             foreach (var loginDetails in details)
             {
