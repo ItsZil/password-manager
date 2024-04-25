@@ -54,7 +54,7 @@ async function retrieveLoginInfo(domain) {
 
   const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
 
-  if (response.hasPermission && response.hasCredentials) {
+  if (response && response.hasPermission && response.hasCredentials) {
     try {
       const loginInfo = {
         username: response.username,

@@ -571,17 +571,21 @@ function parseDomain() {
     return false;
   }
   // Parse domain
-  domain = domain.replace(/^(https?:\/\/)?(www\.)?/, ''); // Remove protocol
-  domain = domain.replace(/\/[^\/]*$/, ''); // Remove everything after /
-  domain = domain.replace(/^[^a-zA-Z0-9]*/, ''); // Remove non-letter and non-number characters at the beginning
-  $('#create-new-details-domain-input').val(domain);
+  const domainUrl = new URL(domain);
+  domain = domainUrl.hostname;
 
+  $('#create-new-details-domain-input').val(domain);
   return domain;
 }
 
 $('#finish-create-details-button').on('click', async function () {
   $('#create-error-text').hide();
   const domain = parseDomain();
+
+  if (!domain) {
+    // Error is shown in parseDomain
+    return;
+  }
 
   const username = $('#create-new-details-username-input').val();
   if (username.length < 1) {
@@ -628,7 +632,7 @@ $('#finish-create-details-button').on('click', async function () {
   const domainRegisterRequestBody = {
     sourceId: sourceId,
     domain: domain,
-    username: 'student',
+    username: username,
     password: encryptedPassword,
   };
 

@@ -27,10 +27,9 @@ export async function domainLoginRequest(domainLoginRequestBody) {
       return responseJson;
     } else if (response.status == 401) {
       // TODO: not logged in
+      return false;
     } else {
-      console.error(
-        `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
-      );
+      return false;
     }
   } catch (error) {
     console.error('Error retrieving response: ', error);

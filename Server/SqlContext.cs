@@ -120,7 +120,7 @@ namespace Server
             try
             {
                 await Database.EnsureCreatedAsync();
-                await connection.OpenAsync();
+                await connection.OpenAsync();           
             }
             catch (SqliteException ex)
             {
@@ -133,6 +133,7 @@ namespace Server
             if (opened)
             {
                 _keyProvider.SetVaultPragmaKeyHashed(hashedPragmaKeyB64);
+                await connection.CloseAsync();
                 return true;
             }
             return false;
