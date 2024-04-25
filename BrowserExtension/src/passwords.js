@@ -14,7 +14,6 @@ const {
   sendLoginDetailsViewRequest,
   sendLoginDetailsPasswordRequest,
   sendCreatePasskeyRequest,
-  sendGetPasskeyCredentialRequest,
   sendSetExtraAuthTypeRequest,
   sendRemoveExtraAuthTypeRequest,
   sendCreatePinRequest,
@@ -22,11 +21,7 @@ const {
   sendEditLoginDetailRequest,
 } = require('./util/requestsUtil.js');
 
-const {
-  isAuthenticated,
-  setTokens,
-  authenticatePasskey,
-} = require('./util/authUtil.js');
+const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
 const sourceId = 1;
 
@@ -92,8 +87,6 @@ async function refreshLoginDetailsTable(page) {
   $('#loading-passwords-table').show();
   $('#passwords-table').hide();
 
-  let loginDetails = await sendLoginDetailsViewRequest(page);
-
   if (loginDetailsCount > 0)
     $('#details-current-min').text((page - 1) * 10 + 1);
   else $('#details-current-min').text(0);
@@ -101,8 +94,11 @@ async function refreshLoginDetailsTable(page) {
   $('#details-current-max').text(Math.min(page * 10, loginDetailsCount));
   $('#details-max').text(loginDetailsCount);
 
-  // Populate the login details table
-  await populateLoginDetailsTable(page, loginDetails);
+  if (loginDetailsCount > 0) {
+    // Populate the login details table
+    let loginDetails = await sendLoginDetailsViewRequest(page);
+    await populateLoginDetailsTable(page, loginDetails);
+  }
 
   $('#loading-passwords-table').hide();
   $('#passwords-table').show();
@@ -562,20 +558,6 @@ async function setupPasskey(loginDetailsId, domain) {
   return true;
 }
 
-// Function to start the passkey authentication process
-async function startPasskeyAuth(loginDetailsId) {
-  // Retrieve the passkey credential from the server and decrypt the challenge
-  const passkeyCredential = await sendGetPasskeyCredentialRequest(
-    sourceId,
-    loginDetailsId
-  );
-  if (!passkeyCredential) return false;
-
-  // Authenticate the passkey credential
-  const challenge = await decryptPassword(passkeyCredential.challenge);
-  await authenticatePasskey(passkeyCredential, challenge, loginDetailsId);
-}
-
 function parseDomain() {
   // Verify domain
   let domain = $('#create-new-details-domain-input').val().trim();
@@ -625,8 +607,10 @@ $('#finish-create-details-button').on('click', async function () {
     $('#create-error-text').show();
     return;
   }
+
+  const selectedExtraAuth = $('#creation-extra-auth-selection').val();
   const pinInput = $('#create-details-pin-input').val();
-  if (pinInput.length !== 4) {
+  if (pinInput.length !== 4 && selectedExtraAuth == 'pin-extra-auth') {
     $('#create-details-pin-input').addClass('is-invalid is-invalid-lite');
 
     $('#create-error-text').text('Your PIN code must be exactly 4 digits.');
@@ -668,7 +652,6 @@ $('#finish-create-details-button').on('click', async function () {
   }
 
   // Process extra authentication on autofill
-  const selectedExtraAuth = $('#creation-extra-auth-selection').val();
   let extraAuthSetupResult = true;
   switch (selectedExtraAuth) {
     case 'pin-extra-auth':
@@ -696,6 +679,14 @@ $('#finish-create-details-button').on('click', async function () {
         createdDetails.domain
       );
 
+      if (!passkeySetupResult) {
+        $('#create-error-text').text(
+          'Something went wrong setting up your passkey. Edit login details to try again.'
+        );
+        $('#create-error-text').show();
+        break;
+      }
+
       extraAuthSetupResult = await sendSetExtraAuthTypeRequest(
         createdDetails.id,
         3
@@ -709,7 +700,7 @@ $('#finish-create-details-button').on('click', async function () {
       break;
   }
 
-  if (createdDetails.id <= currentPage * 10) {
+  if (createdDetails.id <= currentPage * 10 || createdDetails.id == 1) {
     await refreshLoginDetailsTable(currentPage);
   }
 

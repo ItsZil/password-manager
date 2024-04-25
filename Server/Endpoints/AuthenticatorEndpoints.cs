@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
 using System.Text;
 using OtpNet;
+using System.Globalization;
 
 namespace Server.Endpoints
 {
@@ -16,27 +17,42 @@ namespace Server.Endpoints
             group.MapPost("/authenticator", CreateAuthenticator);
             group.MapDelete("/authenticator", DeleteAuthenticator);
 
+            group.MapGet("/authenticatorcount", AuthenticatorsCount);
+            group.MapGet("/authenticatorview", GetAuthenticatorsView);
+
             return group;
         }
 
         [Authorize]
-        internal static async Task<IResult> GetAuthenticatorCode([FromQuery] int sourceId, [FromQuery] int loginDetailsId, [FromQuery] string timestamp, SqlContext sqlContext, KeyProvider keyProvider)
+        internal static async Task<IResult> GetAuthenticatorCode([FromQuery] int id, [FromQuery] string timestamp, SqlContext sqlContext, KeyProvider keyProvider)
         {
             // Check if an authenticator exists for the login details.
-            var authenticator = await sqlContext.Authenticators.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
+            var authenticator = await sqlContext.Authenticators.FirstOrDefaultAsync(x => x.AuthenticatorId == id);
             if (authenticator == null)
                 return Results.NotFound();
 
             // Parse the timestamp into a DateTime object.
+            timestamp = Uri.UnescapeDataString(timestamp);
             DateTime.TryParse(timestamp, out DateTime timestampTime);
             if (timestampTime == default)
                 return Results.BadRequest();
 
+            // Convert the timestamp to UTC time.
+            DateTime timestampUtcTime = timestampTime.ToUniversalTime();
+
             // Decrypt the secret key and retrieve the TOTP code.
             byte[] secretKeyDecrypted = await PasswordUtil.DecryptPassword(authenticator.Secret, authenticator.Salt, keyProvider.GetVaultPragmaKeyBytes());
+            string secretKeyDecryptedUTF8 = Encoding.UTF8.GetString(secretKeyDecrypted);
+            byte[] secretKey = Base32Encoding.ToBytes(secretKeyDecryptedUTF8);
 
-            Totp totp = new(authenticator.Secret);
-            string code = totp.ComputeTotp(timestampTime);
+            TimeCorrection timeCorrection = new(DateTime.UtcNow);
+            Totp totp = new(secretKey, timeCorrection: timeCorrection);
+
+            string code = totp.ComputeTotp(timestampUtcTime);
+
+            // Update the last accessed date.
+            authenticator.LastUsedDate = timestampTime;
+            await sqlContext.SaveChangesAsync();
 
             return Results.Ok(new AuthenticatorCodeResponse { Code = code });
         }
@@ -65,7 +81,6 @@ namespace Server.Endpoints
             // Decrypt the secret key into a base32 string.
             byte[] secretKeyEncrypted = Convert.FromBase64String(request.SecretKey);
             byte[] secretKeyDecrypted = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), secretKeyEncrypted);
-            string secretKey = Encoding.UTF8.GetString(secretKeyDecrypted);
 
             // Create an authenticator and retrieve the first code.
             Totp totp = new(secretKeyDecrypted);
@@ -85,15 +100,16 @@ namespace Server.Endpoints
 
             AuthenticatorCodeResponse response = new()
             {
+                AuthenticatorId = authenticatorDb.AuthenticatorId,
                 Code = code
             };
             return Results.Ok(response);
         }
 
         [Authorize]
-        internal static async Task<IResult> DeleteAuthenticator([FromQuery] int loginDetailsId, SqlContext sqlContext)
+        internal static async Task<IResult> DeleteAuthenticator([FromQuery] int id, SqlContext sqlContext)
         {
-            var authenticator = await sqlContext.Authenticators.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
+            var authenticator = await sqlContext.Authenticators.FirstOrDefaultAsync(x => x.AuthenticatorId == id);
             if (authenticator == null)
                 return Results.NotFound();
 
@@ -101,6 +117,34 @@ namespace Server.Endpoints
             await sqlContext.SaveChangesAsync();
 
             return Results.NoContent();
+        }
+
+        [Authorize]
+        internal async static Task<IResult>AuthenticatorsCount(SqlContext dbContext)
+        {
+            return Results.Ok(await dbContext.Authenticators.CountAsync());
+        }
+
+        [Authorize]
+        internal async static Task<IResult> GetAuthenticatorsView(SqlContext dbContext, [FromQuery] int page = 1)
+        {
+            int pageSize = 10;
+            int skip = (page - 1) * pageSize;
+
+            var authenticators = await dbContext.Authenticators.Include(x => x.LoginDetails).Skip(skip).Take(pageSize).ToListAsync();
+
+            List<AuthenticatorsViewResponse> results = new List<AuthenticatorsViewResponse>();
+            foreach (var authenticator in authenticators)
+            {
+                results.Add(new AuthenticatorsViewResponse
+                {
+                    AuthenticatorId = authenticator.AuthenticatorId,
+                    Domain = authenticator.LoginDetails.RootDomain,
+                    Username = authenticator.LoginDetails.Username,
+                    LastUsedDate = authenticator.LastUsedDate
+                });
+            }
+            return Results.Ok(results);
         }
     }
 }
