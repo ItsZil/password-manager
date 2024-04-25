@@ -5,8 +5,7 @@ function isInputField(element) {
   return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
 }
 
-// Function to parse the page and check for input fields
-function checkForInputFields() {
+function getAllInputFields() {
   const inputFields = document.querySelectorAll(
     'input[type="email"], input[type="password"], input[type="text"], input[type="tel"], textarea'
   );
@@ -18,36 +17,42 @@ function checkForInputFields() {
       id: inputField.id,
       name: inputField.name,
       value: inputField.value,
-      // Add more attributes as needed
     }));
-
-    var pageHref = window.location.href;
-
-    // Remove any queries from pageHref
-    var queryIndex = pageHref.indexOf('?');
-    if (queryIndex !== -1) {
-      pageHref = pageHref.substring(0, queryIndex);
-    }
-
-    // Grab the page domain
-    var domain = pageHref.split('/')[2];
-
-    // Notify the background script that input fields are found
-    chrome.runtime.sendMessage(
-      {
-        type: 'LOGIN_INPUT_FIELDS_FOUND',
-        payload: {
-          hasInputFields: true,
-          inputFieldInfo,
-          pageHref,
-          domain,
-        },
-      },
-      (response) => {
-        console.log(response.message);
-      }
-    );
+    return inputFieldInfo;
   }
+  return null;
+}
+
+// Function to parse the page and check for input fields
+function checkForInputFields() {
+  const inputFieldInfo = getAllInputFields();
+
+  // Grab the page domain
+  var domain = parseDomain();
+
+  // Notify the background script that input fields are found
+  chrome.runtime.sendMessage(
+    {
+      type: 'LOGIN_INPUT_FIELDS_FOUND',
+      payload: {
+        hasInputFields: true,
+        inputFieldInfo,
+        domain
+      },
+    }
+  );
+}
+
+function parseDomain() {
+  var pageHref = window.location.href;
+
+  // Remove any queries from pageHref
+  var queryIndex = pageHref.indexOf('?');
+  if (queryIndex !== -1) {
+    pageHref = pageHref.substring(0, queryIndex);
+  }
+
+  return pageHref.split('/')[2];;
 }
 
 // Run the checkForInputFields function when the DOM is ready
@@ -77,4 +82,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   // See https://github.com/mozilla/webextension-polyfill/issues/130#issuecomment-531531890
   sendResponse({});
   return true;
+});
+
+// Listen for a message from the background script indicating that we should open a modal to prompt for a PIN code
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'PIN_CODE_REQUEST') {
+    // Show a prompt for the PIN code
+    const pinCode = prompt('Please enter PIN code to retrieve login details:');
+
+    const domain = parseDomain();
+    const inputFieldInfo = getAllInputFields();
+
+    // Attempt to retirieve login details with the new pin code
+    chrome.runtime.sendMessage(
+      {
+        type: 'LOGIN_WITH_PIN_CODE',
+        payload: {
+          inputFieldInfo,
+          domain,
+          pinCode
+        },
+      }
+    );
+    return true;
+  }
 });

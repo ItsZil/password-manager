@@ -147,7 +147,26 @@ namespace Server.Endpoints
             bool signatureVerified = PasskeyUtil.VerifyPasskeySignature(publicKey, data, signature, passkey.AlgorithmId);
 
             if (signatureVerified)
+            {
+                if (request.IsForLogin)
+                {
+                    // We can return a DomainLoginResponse here with the user's login details.
+                    var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+                    if (loginDetails == null)
+                        return Results.NotFound();
+
+                    byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
+                    string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+
+                    byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+                    string encryptedPasswordSharedString = Convert.ToBase64String(encryptedPasswordShared);
+
+                    bool hasAuthenticator = await sqlContext.Authenticators.AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
+
+                    return Results.Ok(new DomainLoginResponse(loginDetails.Id, loginDetails.Username, encryptedPasswordSharedString, hasAuthenticator));
+                }
                 return Results.Ok();
+            }
             else
                 return Results.Unauthorized();
         }

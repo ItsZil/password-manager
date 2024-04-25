@@ -26,8 +26,7 @@ export async function domainLoginRequest(domainLoginRequestBody) {
       const responseJson = await response.json();
       return responseJson;
     } else if (response.status == 401) {
-      // TODO: not logged in
-      return false;
+      return { unauthorized: true };
     } else {
       return false;
     }

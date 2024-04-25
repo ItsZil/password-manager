@@ -8,6 +8,10 @@ namespace UtilitiesLibrary.Models
     public class PasskeyVerificationRequest
     {
         [JsonInclude]
+        [JsonPropertyName("sourceId")]
+        public int SourceId { get; set; } = 1;
+
+        [JsonInclude]
         [JsonPropertyName("credentialId")]
         public string CredentialIdB64 { get; set; } // Base64 encoded
 
@@ -30,5 +34,9 @@ namespace UtilitiesLibrary.Models
         [JsonInclude]
         [JsonPropertyName("loginDetailsId")]
         public int LoginDetailsId { get; set; }
+
+        [JsonInclude]
+        [JsonPropertyName("isForLogin")]
+        public bool IsForLogin { get; set; } = false;
     }
 }

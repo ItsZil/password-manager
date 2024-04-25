@@ -80,8 +80,6 @@ namespace Server.Endpoints
             if (!detailsExist)
                 return Results.NotFound();
 
-            // TODO: per-detail auth
-
             LoginDetails? loginDetails = lookupByUsername ?
                 await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain && x.Username == username) :
                 await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain);
@@ -89,12 +87,39 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
+            bool needsExtraAuth = loginDetails.ExtraAuthId > 1;
+            if (needsExtraAuth) // We might already have the PIN code.
+            {
+                // We might already have the PIN code.
+                if (loginDetails.ExtraAuthId == 2 && request.PinCode != null)
+                {
+                    bool parsedPinCode = int.TryParse(request.PinCode, out int requestPinCode);
+                    if (parsedPinCode && requestPinCode > 0 && requestPinCode < 10000)
+                    {
+                        var pinCode = await dbContext.PinCodes.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetails.Id);
+                        if (pinCode == null || pinCode.Code != requestPinCode)
+                            return Results.Unauthorized();
+                    }
+                    else
+                    {
+                        // Incorrect PIN code provided.
+                        return Results.Unauthorized();
+                    }
+                }
+                else
+                {
+                    // The user has extra authentication enabled, return the extra auth ID.
+                    return Results.Ok(new DomainLoginResponse(loginDetails.Id, needsExtraAuth, loginDetails.ExtraAuthId));
+                }
+            }
+
             byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
-
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+            
+            bool hasAuthenticator = await dbContext.Authenticators.AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
 
-            DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false);
+            DomainLoginResponse response = new(loginDetails.Id, loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), hasAuthenticator);
             return Results.Ok(response);
         }
 

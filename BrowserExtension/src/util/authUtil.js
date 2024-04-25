@@ -108,7 +108,9 @@ export function setCookie(name, value) {
 export async function authenticatePasskey(
   passkeyCredential,
   challenge,
-  loginDetailsId
+  loginDetailsId,
+  sourceId,
+  isForLogin
 ) {
   // Set up the public key credential request options
   const credentialId = Uint8Array.from(
@@ -165,6 +167,8 @@ export async function authenticatePasskey(
 
   // Send data to server for verification
   const passkeyVerificationRequestBody = {
+    sourceId: sourceId,
+    isForLogin: isForLogin,
     loginDetailsId: loginDetailsId,
     credentialId: credentialIdBase64,
     signature: signatureBase64,
@@ -176,6 +180,5 @@ export async function authenticatePasskey(
   const verified = await sendVerifyPasskeyCredentialRequest(
     passkeyVerificationRequestBody
   );
-  console.log(verified);
   return verified;
 }
