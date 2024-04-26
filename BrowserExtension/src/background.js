@@ -4,6 +4,10 @@
 import * as passwordUtil from './util/passwordUtil';
 import * as requests from './util/requestsUtil';
 
+const {
+  authenticatePasskey
+} = require('./util/authUtil');
+
 // onStartup listener that starts initialization
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onInstalled.addListener(init);
@@ -21,7 +25,9 @@ async function init() {
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === 'AUTOFILL_LOGIN_DETAILS') {
     handleInputFields(request.payload);
-  } 
+  } else if (request.type === 'VERIFY_PASSKEY_CREDENTIALS') {
+    await verifyPasskeyCredentials(request.payload);
+  }
 });
 
 // Function to fetch login details from server and send them to the content script
@@ -59,6 +65,9 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null) {
     switch (response.extraAuthId) {
       case 2:
         promptForPINCode(response);
+        break;
+      case 3:
+        promptForPasskey(response);
         break;
       case 4:
         promptForPassphrase(response);
@@ -100,6 +109,36 @@ function promptForPassphrase(response) {
       loginDetailsId: response.loginDetailsId,
     });
   });
+}
+
+async function promptForPasskey(response) {
+  const passkeyCredentials = await requests.sendGetPasskeyCredentialRequest(sourceId, response.loginDetailsId);
+
+  if (!passkeyCredentials) {
+    return false;
+  }
+
+  const credentialId = passkeyCredentials.credentialId;
+  const challenge = await passwordUtil.decryptPassword(passkeyCredentials.challenge);
+
+  chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+    // Send a message to the content script to show a passkey request prompt
+    chrome.tabs.sendMessage(tabs[0].id, {
+      type: 'PASSKEY_REQUEST',
+      loginDetailsId: response.loginDetailsId,
+      credentialId: credentialId,
+      challenge: challenge,
+      sourceId: sourceId
+    });
+  });
+}
+
+async function verifyPasskeyCredentials(payload) {
+  // parse json of userPasskeyCredentialsJSON
+  const userPasskeyCredentials = JSON.parse(payload.userPasskeyCredentialsJSON);
+  console.log('Received userPasskeyCredentials:', userPasskeyCredentials);
+  const response = await authenticatePasskey(userPasskeyCredentials, null, payload.loginDetailsId, sourceId, crypto, true, true);
+  console.log(response);
 }
 
 function showIncorrectExtraAuthNotification() {
@@ -157,3 +196,4 @@ async function handleInputFields(message) {
     }
   }
 }
+

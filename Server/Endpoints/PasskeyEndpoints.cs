@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Geralt;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Server.Endpoints
 {
@@ -40,7 +41,8 @@ namespace Server.Endpoints
             if (challenge.Length < 16)
                 return Results.BadRequest();
 
-            if (await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId) == null)
+            var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId);
+            if (loginDetails == null)
                 return Results.NotFound();
 
             var existingPasskey = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
@@ -51,12 +53,14 @@ namespace Server.Endpoints
                 await sqlContext.SaveChangesAsync();
             }
 
+            string loginDetailsOrigin = loginDetails.RootDomain;
             Passkey newPasskey = new Passkey
             {
                 CredentialId = credentialId,
                 UserId = userId,
                 PublicKey = publicKey,
                 Challenge = challenge,
+                Origin = loginDetailsOrigin,
                 LoginDetailsId = loginDetailsId,
                 AlgorithmId = request.AlgorithmId
             };
@@ -106,7 +110,7 @@ namespace Server.Endpoints
                 return Results.Unauthorized();
 
             // Convert the clientDataJSON into a ClientDataJson object
-            string clientDataJson = Encoding.UTF8.GetString(Convert.FromBase64String(request.clientDataJsonBase64));
+            string clientDataJson = Encoding.UTF8.GetString(Base64UrlEncoder.DecodeBytes(request.clientDataJsonBase64));
             var clientData = JsonSerializer.Deserialize<ClientDataJson>(clientDataJson);
 
             if (clientData == null)
@@ -133,17 +137,20 @@ namespace Server.Endpoints
             passkey.Challenge = newChallenge;
             await sqlContext.SaveChangesAsync();
 
-            // Check if the origin is the extension
-            if (clientData.Origin != "chrome-extension://icbeakhigcgladpiblnolcogihmcdoif")
+            // Check if the origin matches the passkey's origin
+            string clientOrigin = clientData.Origin;
+            clientOrigin = Regex.Replace(clientOrigin, @"^(https?://)?(www\.)?", "");
+
+            if (clientOrigin != passkey.Origin)
                 return Results.Unauthorized();
 
             // Concatenate the authenticator data and the clientDataJSON hash
-            byte[] authenticatorData = Convert.FromBase64String(request.AuthenticatorDataB64);
-            byte[] clientDataHash = Convert.FromBase64String(request.ClientDataHashB64);
+            byte[] authenticatorData = Base64UrlEncoder.DecodeBytes(request.AuthenticatorDataB64);
+            byte[] clientDataHash = Base64UrlEncoder.DecodeBytes(request.ClientDataHashB64);
             byte[] data = PasskeyUtil.ConcatenateArrays(authenticatorData, clientDataHash);
 
             // Verify the signature
-            byte[] signature = Convert.FromBase64String(request.SignatureB64);
+            byte[] signature = Base64UrlEncoder.DecodeBytes(request.SignatureB64);
             bool signatureVerified = PasskeyUtil.VerifyPasskeySignature(publicKey, data, signature, passkey.AlgorithmId);
 
             if (signatureVerified)

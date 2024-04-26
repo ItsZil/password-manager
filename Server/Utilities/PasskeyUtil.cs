@@ -1,9 +1,10 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography;
 
 namespace Server.Utilities
 {
     internal static class PasskeyUtil
-    {
+    { 
         internal static bool VerifyPasskeySignature(byte[] publicKey, byte[] data, byte[] signature, int algorithmId)
         {
             switch (algorithmId)
@@ -33,7 +34,7 @@ namespace Server.Utilities
             try
             {
                 // Decode base64 string into byte array
-                byte[] authenticatorData = Convert.FromBase64String(authenticatorDataBase64);
+                byte[] authenticatorData = Base64UrlEncoder.DecodeBytes(authenticatorDataBase64);
 
                 // Get the flags byte
                 byte flags = authenticatorData[32];

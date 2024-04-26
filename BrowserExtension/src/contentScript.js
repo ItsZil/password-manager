@@ -1,5 +1,8 @@
 'use strict';
 
+const { getUserPasskeyCredentials } = require('./util/authUtil.js');
+const { str2ab } = require('./util/passwordUtil.js');
+
 // Function to check if an element is an input field
 function isInputField(element) {
   return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
@@ -116,7 +119,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Listen for a message from the background script indicating that we should prompt for a passphrase
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'PASSPHRASE_REQUEST') {
-    // Show a prompt for the PIN code
+    // Show a prompt for the passprhase
     const passphrase = prompt('Please enter passphrase to retrieve login details:');
 
     if (passphrase == null || passphrase.length == 0) {
@@ -141,3 +144,69 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
+
+// Listen for a message from the background script indicating that we should prompt for a passkey
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  if (request.type === 'PASSKEY_REQUEST') {
+    const credentialId = request.credentialId;
+    const challenge = str2ab(request.challenge);
+
+    console.log('Using challenge: ', challenge)
+
+    const credential = await getUserPasskeyCredentials(credentialId, challenge);
+    console.log('User passkey credentials', credential);
+
+    const serializeable = {
+      authenticatorAttachment: credential.authenticatorAttachment,
+      id: credential.id,
+      rawId: bufferToBase64url(credential.rawId),
+      response: {
+        attestationObject: bufferToBase64url(credential.response.attestationObject),
+        clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
+        signature: bufferToBase64url(credential.response.signature),
+        authenticatorData: bufferToBase64url(credential.response.authenticatorData)
+      },
+      type: credential.type
+    };
+    const serialized = JSON.stringify(serializeable);
+    console.log('Sending userPasskeyCredentials', serialized);
+
+    const domain = parseDomain();
+    const inputFieldInfo = getAllInputFields();
+
+    chrome.runtime.sendMessage(
+      {
+        type: 'VERIFY_PASSKEY_CREDENTIALS',
+        payload: {
+          inputFieldInfo,
+          domain,
+          userPasskeyCredentialsJSON: serialized,
+          loginDetailsId: request.loginDetailsId
+        },
+      }
+    );
+    return true;
+  }
+});
+
+function bufferToBase64url(buffer) {
+
+  // modified from https://github.com/github/webauthn-json/blob/main/src/webauthn-json/base64url.ts
+
+  const byteView = new Uint8Array(buffer);
+  let str = "";
+  for (const charCode of byteView) {
+    str += String.fromCharCode(charCode);
+  }
+
+  // Binary string to base64
+  const base64String = btoa(str);
+
+  // Base64 to base64url
+  // We assume that the base64url string is well-formed.
+  const base64urlString = base64String.replace(/\+/g, "-").replace(
+    /\//g,
+    "_",
+  ).replace(/=/g, "");
+  return base64urlString;
+}

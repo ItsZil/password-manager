@@ -9,6 +9,7 @@ namespace UtilitiesLibrary.Models
         public byte[] UserId { get; set; }
         public byte[] PublicKey { get; set; }
         public byte[] Challenge { get; set; }
+        public string Origin { get; set; }
 
         public int LoginDetailsId { get; set; }
         public int AlgorithmId { get; set; } // Expecting -7 (ES256) or -257 (RS256)
