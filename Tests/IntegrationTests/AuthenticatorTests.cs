@@ -63,6 +63,13 @@ namespace Tests.IntegrationTests.Server
             return response;
         }
 
+        private async Task<HttpResponseMessage> GetAuthenticatorCodeByDomainAsync(string domain, string timestamp)
+        {
+            var getAuthenticatorCodeByDomainApiEndpoint = $"/api/authenticatorbydomain?sourceId=1&domain={domain}&timestamp={timestamp}";
+            var response = await _client.GetAsync(getAuthenticatorCodeByDomainApiEndpoint);
+            return response;
+        }
+
         private async Task<HttpResponseMessage> CreateAuthenticatorAsync(CreateAuthenticatorRequest request)
         {
             var createAuthenticatorApiEndpoint = "/api/authenticator";
@@ -185,6 +192,48 @@ namespace Tests.IntegrationTests.Server
         }
 
         [Fact]
+        public async Task TestGetAuthenticatorByDomainReturnsOk()
+        {
+            // Create a domain
+            await RegisterDomainAsync("authenticatortests.com");
+
+            // Generate a random secret key
+            byte[] secretKey = PasswordUtil.GenerateSecurePassword(32);
+            string secretKeyBase32 = Base32Encoding.ToString(secretKey);
+            byte[] encryptedSecretKey = await PasswordUtil.EncryptMessage(_sharedSecretKey, Encoding.UTF8.GetBytes(secretKeyBase32));
+
+            CreateAuthenticatorRequest createAuthenticatorRequest = new()
+            {
+                LoginDetailsId = 1,
+                SecretKey = Convert.ToBase64String(encryptedSecretKey),
+                Timestamp = DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            };
+
+            var createAuthenticatorResponse = await CreateAuthenticatorAsync(createAuthenticatorRequest);
+            Assert.Equal(HttpStatusCode.OK, createAuthenticatorResponse.StatusCode);
+
+            // Verify that the response contains the authenticator code
+            var createAuthenticatorResponseContent = await createAuthenticatorResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(createAuthenticatorResponseContent);
+            
+            var createAuthenticatorResponseObject = JsonSerializer.Deserialize<AuthenticatorCodeResponse>(createAuthenticatorResponseContent);
+            Assert.NotNull(createAuthenticatorResponseObject);
+            Assert.NotNull(createAuthenticatorResponseObject.Code);
+
+            // Get the authenticator code
+            var getAuthenticatorCodeByDomainResponse = await GetAuthenticatorCodeByDomainAsync("authenticatortests.com", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+            Assert.Equal(HttpStatusCode.OK, getAuthenticatorCodeByDomainResponse.StatusCode);
+
+            // Verify that the response contains the authenticator code
+            var getAuthenticatorCodeByDomainResponseContent = await getAuthenticatorCodeByDomainResponse.Content.ReadAsStringAsync();
+            Assert.NotNull(getAuthenticatorCodeByDomainResponseContent);
+            
+            var getAuthenticatorCodeByDomainResponseObject = JsonSerializer.Deserialize<AuthenticatorCodeResponse>(getAuthenticatorCodeByDomainResponseContent);
+            Assert.NotNull(getAuthenticatorCodeByDomainResponseObject);
+            Assert.NotNull(getAuthenticatorCodeByDomainResponseObject.Code);
+        }
+
+        [Fact]
         public async Task TestGetIncorrectTimestampAuthenticatorReturnsBadRequest()
         {
             // Create a domain
@@ -216,6 +265,14 @@ namespace Tests.IntegrationTests.Server
             // Get the authenticator code
             var getAuthenticatorCodeResponse = await GetAuthenticatorCodeAsync(1, "invalid");
             Assert.Equal(HttpStatusCode.BadRequest, getAuthenticatorCodeResponse.StatusCode);
+        }
+
+        [Fact]
+        public async Task TestGetIncorrectDomainAuthenticatorReturnsNotFound()
+        {
+            // Get the authenticator code
+            var getAuthenticatorCodeByDomainResponse = await GetAuthenticatorCodeByDomainAsync("invalid", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ssZ"));
+            Assert.Equal(HttpStatusCode.NotFound, getAuthenticatorCodeByDomainResponse.StatusCode);
         }
 
         [Fact]
