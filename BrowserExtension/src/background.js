@@ -156,9 +156,9 @@ async function verifyPasskeyCredentials(payload) {
 function showIncorrectExtraAuthNotification() {
   chrome.notifications.create({
     type: 'basic',
-    iconUrl: 'icons/icon_32.png',
+    iconUrl: 'icons/icon_fail_196.png',
     title: 'Extra Authentication Failed',
-    message: 'Refresh to try again.',
+    message: 'Refresh to try again',
   });
 }
 
