@@ -10,7 +10,7 @@
     "48": "icons/icon_48.png",
     "128": "icons/icon_128.png"
   },
-  "permissions": ["storage", "clipboardWrite", "cookies", "notifications"],
+  "permissions": ["storage", "contextMenus", "cookies", "notifications", "scripting"],
   "background": {
     "service_worker": "background.js"
   },

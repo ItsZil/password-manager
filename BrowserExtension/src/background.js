@@ -12,6 +12,9 @@ const {
 chrome.runtime.onStartup.addListener(init);
 chrome.runtime.onInstalled.addListener(init);
 
+// Context menu onClick listener
+chrome.contextMenus.onClicked.addListener(contextMenuOnClick);
+
 const sourceId = 0;
 
 async function init() {
@@ -19,6 +22,91 @@ async function init() {
 
   // We need to pass the crypto object to the passwordUtil file and start handshake process
   passwordUtil.init(sourceId, crypto);
+
+  // Initialize the context menus
+  addContextMenus();
+}
+
+function addContextMenus() {
+  let contexts = ['editable'];
+  let parent = chrome.contextMenus.create({
+    title: 'Password Manager',
+    contexts: contexts,
+    id: 'parent'
+  });
+
+  chrome.contextMenus.create({
+    title: 'Paste Generated Password',
+    parentId: parent,
+    contexts: contexts,
+    id: 'pasteGeneratedPassword'
+  });
+  chrome.contextMenus.create({
+    title: 'Paste Authenticator Code',
+    parentId: parent,
+    contexts: contexts,
+    id: 'pasteAuthenticatorCode'
+  });
+}
+
+// A context menu onClick callback function.
+function contextMenuOnClick(info, tab) {
+  switch (info.menuItemId) {
+    case 'pasteGeneratedPassword':
+      contextMenuPasteValue(tab, 'Generated Password');
+      break;
+    case 'pasteAuthenticatorCode':
+      contextMenuPasteValue(tab, 'Authenticator Code');
+      break;
+    default:
+      // Standard context menu item function
+      console.log('Standard context menu item clicked.');
+  }
+}
+
+// Function to paste a value into the focused input field
+function contextMenuPasteValue(tab, value) {
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    function: function (value) {
+      // Find the focused input field
+      var inputField = document.activeElement;
+
+      // Check if the input field exists and is editable
+      if (inputField && (inputField.tagName === 'INPUT' || inputField.tagName === 'TEXTAREA') && !inputField.readOnly) {
+        inputField.value = value;
+
+
+        if (inputField.id) {
+          // If the inputField has an id, return it
+          return { id: inputField.id };
+        } else {
+          // If the inputField doesn't have an id, use tagName and index
+          var parent = element.parentNode;
+          var tagName = element.tagName.toLowerCase();
+          var index = Array.from(parent.children).indexOf(element);
+          return { tagName: tagName, index: index };
+        }
+      } else {
+        return { title: 'Paste Failed', message: 'No input field is focused or editable.' };
+      }
+    },
+    args: [value]
+  }).then((response) => {
+    const result = response[0].result;
+    if (result.title && result.message) {
+      // Show a notification if the paste failed
+      showFailureNotification(result.title, result.message);
+    } else if (result.id || result.index) {
+      // Send a message to the content script to animate the input field
+      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          type: 'ANIMATE_INPUT_FIELD',
+          inputFieldResult: result,
+        });
+      });
+    }
+  });
 }
 
 // Listener for requests from content script
@@ -66,7 +154,7 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null) {
     return null;
   } else if (response.unauthorized) {
     // Incorrect PIN code entered.
-    showIncorrectExtraAuthNotification();
+    showFailureNotification('Extra Authentication Failed', 'Refresh to try again');
     return;
   }
 
@@ -153,12 +241,12 @@ async function verifyPasskeyCredentials(payload) {
   return domainLoginResponse;
 }
 
-function showIncorrectExtraAuthNotification() {
+function showFailureNotification(title, message) {
   chrome.notifications.create({
     type: 'basic',
     iconUrl: 'icons/icon_fail_196.png',
-    title: 'Extra Authentication Failed',
-    message: 'Refresh to try again',
+    title: title,
+    message: message
   });
 }
 
