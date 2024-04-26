@@ -495,6 +495,7 @@ async function setupPasskey(loginDetailsId, domain) {
     challenge: randomChallenge,
     rp: {
       name: 'Password Manager Vault',
+      id: domain
     },
     user: {
       id: randomUserId,
@@ -534,13 +535,12 @@ async function setupPasskey(loginDetailsId, domain) {
   );
 
   // Create the PasskeyCreationRequest object
-  const encryptedChallenge = await encryptPassword(randomChallengeBase64);
   const createPasskeyRequestBody = {
     sourceId: sourceId,
     userId: userIdBase64,
     credentialId: credentialIdBase64,
     publicKey: credentialPublicKeyBase64,
-    challenge: encryptedChallenge,
+    challenge: randomChallengeBase64,
     loginDetailsId: loginDetailsId,
     algorithmId: algorithmId,
   };
@@ -571,17 +571,21 @@ function parseDomain() {
     return false;
   }
   // Parse domain
-  domain = domain.replace(/^(https?:\/\/)?(www\.)?/, ''); // Remove protocol
-  domain = domain.replace(/\/[^\/]*$/, ''); // Remove everything after /
-  domain = domain.replace(/^[^a-zA-Z0-9]*/, ''); // Remove non-letter and non-number characters at the beginning
-  $('#create-new-details-domain-input').val(domain);
+  const domainUrl = new URL(domain.startsWith("http") ? domain : `https://${domain}`);
+  domain = domainUrl.hostname;
 
+  $('#create-new-details-domain-input').val(domain);
   return domain;
 }
 
 $('#finish-create-details-button').on('click', async function () {
   $('#create-error-text').hide();
   const domain = parseDomain();
+
+  if (!domain) {
+    // Error is shown in parseDomain
+    return;
+  }
 
   const username = $('#create-new-details-username-input').val();
   if (username.length < 1) {
@@ -628,7 +632,7 @@ $('#finish-create-details-button').on('click', async function () {
   const domainRegisterRequestBody = {
     sourceId: sourceId,
     domain: domain,
-    username: 'student',
+    username: username,
     password: encryptedPassword,
   };
 
@@ -676,7 +680,7 @@ $('#finish-create-details-button').on('click', async function () {
     case 'passkey-extra-auth':
       const passkeySetupResult = await setupPasskey(
         createdDetails.id,
-        createdDetails.domain
+        domain
       );
 
       if (!passkeySetupResult) {
@@ -736,11 +740,7 @@ $('#unlock-vault-button').on('click', async function () {
   }
   const passphrase = $('#passphrase-input').val();
 
-  const words = passphrase.split(' ');
-  const isValid =
-    words.length >= 4 &&
-    words.length <= 10 &&
-    words.every((word) => word === word.toLowerCase());
+  const isValid = passphrase.trim().length > 1;
 
   if (!isValid) {
     $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');

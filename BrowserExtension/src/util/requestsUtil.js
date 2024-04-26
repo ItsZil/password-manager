@@ -26,11 +26,9 @@ export async function domainLoginRequest(domainLoginRequestBody) {
       const responseJson = await response.json();
       return responseJson;
     } else if (response.status == 401) {
-      // TODO: not logged in
+      return { unauthorized: true };
     } else {
-      console.error(
-        `Failed to login to ${domainLoginRequestBody.domain}: ${response.status} ${response.statusText}`
-      );
+      return false;
     }
   } catch (error) {
     console.error('Error retrieving response: ', error);
@@ -537,6 +535,12 @@ export async function sendVerifyPasskeyCredentialRequest(
     });
 
     if (response.status === 200) {
+      const responseJson = await response.json();
+      if (responseJson.password) {
+        // A DomainLoginResponse was returned.
+        return responseJson;
+      }
+
       return true;
     } else {
       console.error(

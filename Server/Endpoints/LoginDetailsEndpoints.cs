@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Geralt;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
+using System.Text;
 using UtilitiesLibrary.Models;
 
 namespace Server.Endpoints
@@ -80,8 +82,6 @@ namespace Server.Endpoints
             if (!detailsExist)
                 return Results.NotFound();
 
-            // TODO: per-detail auth
-
             LoginDetails? loginDetails = lookupByUsername ?
                 await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain && x.Username == username) :
                 await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.RootDomain == domain);
@@ -89,12 +89,57 @@ namespace Server.Endpoints
             if (loginDetails == null)
                 return Results.NotFound();
 
+            bool needsExtraAuth = loginDetails.ExtraAuthId > 1;
+            if (needsExtraAuth)
+            {
+                if (loginDetails.ExtraAuthId == 2 && request.PinCode != null)
+                {
+                    // We already have the PIN code.
+                    bool parsedPinCode = int.TryParse(request.PinCode, out int requestPinCode);
+                    if (parsedPinCode && requestPinCode > 0 && requestPinCode < 10000)
+                    {
+                        var pinCode = await dbContext.PinCodes.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetails.Id);
+                        if (pinCode == null || pinCode.Code != requestPinCode)
+                            return Results.Unauthorized();
+                    }
+                    else
+                    {
+                        // Incorrect PIN code provided.
+                        return Results.Unauthorized();
+                    }
+                }
+                else if (loginDetails.ExtraAuthId == 4 && request.Passphrase != null)
+                {
+                    // We have the passphrase, decrypt it & verify its hash matches the vault pragma key.
+                    byte[] decryptedPassphrase = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), Convert.FromBase64String(request.Passphrase));
+                    string sharedSecretB64 = Convert.ToBase64String(keyProvider.GetSharedSecret(request.SourceId));
+                    string decryptedPassphraseString = Encoding.UTF8.GetString(decryptedPassphrase);
+
+                    if (string.IsNullOrEmpty(decryptedPassphraseString))
+                        return Results.Unauthorized();
+
+                    byte[] hash = new byte[32];
+                    BLAKE2b.ComputeHash(hash, decryptedPassphrase);
+                    string hashBase64 = Convert.ToBase64String(hash);
+
+                    bool passphraseIsCorrect = keyProvider.GetVaultPragmaKey() == hashBase64;
+                    if (!passphraseIsCorrect)
+                        return Results.Unauthorized();
+                }
+                else
+                {
+                    // The user has extra authentication enabled, return the extra auth ID.
+                    return Results.Ok(new DomainLoginResponse(loginDetails.Id, needsExtraAuth, loginDetails.ExtraAuthId));
+                }
+            }
+
             byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
             string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
-
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+            
+            bool hasAuthenticator = await dbContext.Authenticators.AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
 
-            DomainLoginResponse response = new(loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), false);
+            DomainLoginResponse response = new(loginDetails.Id, loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), hasAuthenticator);
             return Results.Ok(response);
         }
 

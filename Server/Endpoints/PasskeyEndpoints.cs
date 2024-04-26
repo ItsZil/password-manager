@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Geralt;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Server.Endpoints
 {
@@ -33,14 +34,12 @@ namespace Server.Endpoints
             if (credentialId.Length < 32 || publicKey.Length < 32 || challenge.Length < 16 || (request.AlgorithmId != -7 && request.AlgorithmId != -257))
                 return Results.BadRequest();
 
-            // Decrypt the challenge
-            challenge = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), challenge);
-
-            // Check if challenge was decrypted successfully
+            // Check if challenge is the correct size
             if (challenge.Length < 16)
                 return Results.BadRequest();
 
-            if (await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId) == null)
+            var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId);
+            if (loginDetails == null)
                 return Results.NotFound();
 
             var existingPasskey = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
@@ -51,12 +50,14 @@ namespace Server.Endpoints
                 await sqlContext.SaveChangesAsync();
             }
 
+            string loginDetailsOrigin = loginDetails.RootDomain;
             Passkey newPasskey = new Passkey
             {
                 CredentialId = credentialId,
                 UserId = userId,
                 PublicKey = publicKey,
                 Challenge = challenge,
+                Origin = loginDetailsOrigin,
                 LoginDetailsId = loginDetailsId,
                 AlgorithmId = request.AlgorithmId
             };
@@ -82,13 +83,12 @@ namespace Server.Endpoints
             passkey.Challenge = randomChallenge;
             await sqlContext.SaveChangesAsync();
 
-            byte[] encryptedChallenge = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(sourceId), passkey.Challenge);
             return Results.Ok(new PasskeyCredentialResponse
             {
                 CredentialIdB64 = Convert.ToBase64String(passkey.CredentialId),
                 UserId = Convert.ToBase64String(passkey.UserId),
                 PublicKeyB64 = Convert.ToBase64String(passkey.PublicKey),
-                ChallengeB64 = Convert.ToBase64String(encryptedChallenge)
+                ChallengeB64 = Convert.ToBase64String(randomChallenge)
             });
         }
 
@@ -106,7 +106,7 @@ namespace Server.Endpoints
                 return Results.Unauthorized();
 
             // Convert the clientDataJSON into a ClientDataJson object
-            string clientDataJson = Encoding.UTF8.GetString(Convert.FromBase64String(request.clientDataJsonBase64));
+            string clientDataJson = Encoding.UTF8.GetString(Base64UrlEncoder.DecodeBytes(request.clientDataJsonBase64));
             var clientData = JsonSerializer.Deserialize<ClientDataJson>(clientDataJson);
 
             if (clientData == null)
@@ -133,21 +133,43 @@ namespace Server.Endpoints
             passkey.Challenge = newChallenge;
             await sqlContext.SaveChangesAsync();
 
-            // Check if the origin is the extension
-            if (clientData.Origin != "chrome-extension://icbeakhigcgladpiblnolcogihmcdoif")
+            // Check if the origin matches the passkey's origin
+            string clientOrigin = clientData.Origin;
+            clientOrigin = Regex.Replace(clientOrigin, @"^(https?://)?(www\.)?", "");
+
+            if (clientOrigin != passkey.Origin)
                 return Results.Unauthorized();
 
             // Concatenate the authenticator data and the clientDataJSON hash
-            byte[] authenticatorData = Convert.FromBase64String(request.AuthenticatorDataB64);
-            byte[] clientDataHash = Convert.FromBase64String(request.ClientDataHashB64);
+            byte[] authenticatorData = Base64UrlEncoder.DecodeBytes(request.AuthenticatorDataB64);
+            byte[] clientDataHash = Base64UrlEncoder.DecodeBytes(request.ClientDataHashB64);
             byte[] data = PasskeyUtil.ConcatenateArrays(authenticatorData, clientDataHash);
 
             // Verify the signature
-            byte[] signature = Convert.FromBase64String(request.SignatureB64);
+            byte[] signature = Base64UrlEncoder.DecodeBytes(request.SignatureB64);
             bool signatureVerified = PasskeyUtil.VerifyPasskeySignature(publicKey, data, signature, passkey.AlgorithmId);
 
             if (signatureVerified)
+            {
+                if (request.IsForLogin)
+                {
+                    // We can return a DomainLoginResponse here with the user's login details.
+                    var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+                    if (loginDetails == null)
+                        return Results.NotFound();
+
+                    byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
+                    string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+
+                    byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
+                    string encryptedPasswordSharedString = Convert.ToBase64String(encryptedPasswordShared);
+
+                    bool hasAuthenticator = await sqlContext.Authenticators.AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
+
+                    return Results.Ok(new DomainLoginResponse(loginDetails.Id, loginDetails.Username, encryptedPasswordSharedString, hasAuthenticator));
+                }
                 return Results.Ok();
+            }
             else
                 return Results.Unauthorized();
         }

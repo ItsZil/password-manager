@@ -5,7 +5,6 @@ const { str2ab } = require('./passwordUtil.js');
 const {
   sendRefreshTokenRequest,
   sendCheckAuthRequest,
-  sendGetPasskeyCredentialRequest,
   sendVerifyPasskeyCredentialRequest,
 } = require('./requestsUtil.js');
 
@@ -108,14 +107,61 @@ export function setCookie(name, value) {
 export async function authenticatePasskey(
   passkeyCredential,
   challenge,
-  loginDetailsId
+  loginDetailsId,
+  sourceId,
+  crypto,
+  isForLogin,
+  credentialAlreadyRetrieved = false,
 ) {
-  // Set up the public key credential request options
-  const credentialId = Uint8Array.from(
-    atob(passkeyCredential.credentialId),
+
+  let credential = passkeyCredential;
+  if (!credentialAlreadyRetrieved) {
+    credential = await getUserPasskeyCredentials(passkeyCredential, challenge);
+  }
+
+  // Prepare the data to send to the server for verification
+  const credentialIdBase64 = credential.id;
+  const authenticatorDataBase64 = credential.response.authenticatorData;
+  const signatureBase64 = credential.response.signature;
+  const clientDataJsonBase64 = credential.response.clientDataJSON;
+
+  // Encode the client data hash
+  const clientDataAB = Uint8Array.from(
+    atob(clientDataJsonBase64),
     (c) => c.charCodeAt(0)
   );
-  const challengeArrayBuffer = str2ab(challenge);
+  const clientDataHash = await crypto.subtle.digest(
+    'SHA-256',
+    clientDataAB
+  );
+  const clientDataHashBase64 = btoa(
+    String.fromCharCode.apply(null, new Uint8Array(clientDataHash))
+  );
+
+  // Send data to server for verification
+  const passkeyVerificationRequestBody = {
+    sourceId: sourceId,
+    isForLogin: isForLogin,
+    loginDetailsId: loginDetailsId,
+    credentialId: credentialIdBase64,
+    signature: signatureBase64,
+    authenticatorData: authenticatorDataBase64,
+    clientDataJson: clientDataJsonBase64,
+    clientDataHash: clientDataHashBase64
+  };
+
+  const verified = await sendVerifyPasskeyCredentialRequest(
+    passkeyVerificationRequestBody
+  );
+  return verified;
+}
+
+export async function getUserPasskeyCredentials(passkeyCredential, challengeArrayBuffer) {
+  // Set up the public key credential request options
+  const credentialId = Uint8Array.from(
+    atob(passkeyCredential),
+    (c) => c.charCodeAt(0)
+  );
 
   const publicKeyCredentialRequestOptions = {
     challenge: challengeArrayBuffer,
@@ -133,49 +179,5 @@ export async function authenticatePasskey(
     publicKey: publicKeyCredentialRequestOptions,
   });
 
-  // Prepare the data to send to the server for verification
-  const credentialIdBase64 = credential.id;
-  const authenticatorDataBase64 = btoa(
-    String.fromCharCode.apply(
-      null,
-      new Uint8Array(credential.response.authenticatorData)
-    )
-  );
-  const signatureBase64 = btoa(
-    String.fromCharCode.apply(
-      null,
-      new Uint8Array(credential.response.signature)
-    )
-  );
-  const clientDataJsonBase64 = btoa(
-    String.fromCharCode.apply(
-      null,
-      new Uint8Array(credential.response.clientDataJSON)
-    )
-  );
-
-  // Encode the client data hash
-  const clientDataHash = await window.crypto.subtle.digest(
-    'SHA-256',
-    credential.response.clientDataJSON
-  );
-  const clientDataHashBase64 = btoa(
-    String.fromCharCode.apply(null, new Uint8Array(clientDataHash))
-  );
-
-  // Send data to server for verification
-  const passkeyVerificationRequestBody = {
-    loginDetailsId: loginDetailsId,
-    credentialId: credentialIdBase64,
-    signature: signatureBase64,
-    authenticatorData: authenticatorDataBase64,
-    clientDataJson: clientDataJsonBase64,
-    clientDataHash: clientDataHashBase64,
-  };
-
-  const verified = await sendVerifyPasskeyCredentialRequest(
-    passkeyVerificationRequestBody
-  );
-  console.log(verified);
-  return verified;
+  return credential;
 }
