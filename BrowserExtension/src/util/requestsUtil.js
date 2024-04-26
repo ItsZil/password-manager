@@ -920,6 +920,37 @@ export async function sendGetAuthenticatorCodeRequest(
   }
 }
 
+// Function to send a request to get an authenticator code by domain
+// Returns: a AuthenticatorCodeResponse JSON object
+export async function sendGetAuthenticatorCodeByDomainRequest(
+  domain,
+  timestamp
+) {
+  const apiEndpoint = `/api/authenticatorbydomain/?domain=${domain}&timestamp=${timestamp}`;
+  const accessToken = await getAccessToken();
+
+  try {
+    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (response.status === 200) {
+      return response.json();
+    } else {
+      console.error(
+        `Failed to get authenticator code by domain: ${response.status} ${response.statusText}`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error('Error retrieving response: ', error);
+    return false;
+  }
+}
+
 // Function to send a request to create an authenticator
 // Returns: a CreateAuthenticatorResponse JSON object
 export async function sendCreateAuthenticatorRequest(

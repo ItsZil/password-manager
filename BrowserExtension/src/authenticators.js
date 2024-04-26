@@ -402,7 +402,8 @@ $('#finish-create-authenticator-button').on('click', async function () {
     return;
   }
 
-  if (createAuthenticatorResponse.authenticatorId <= currentPage * 10) {
+  const authenticatorId = createAuthenticatorResponse.authenticatorId;
+  if (authenticatorId == 1 || (createAuthenticatorResponse.authenticatorId <= currentPage * 10)) {
     await refreshAuthenticatorsTable(currentPage);
   }
 

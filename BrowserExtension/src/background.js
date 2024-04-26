@@ -50,17 +50,40 @@ function addContextMenus() {
 }
 
 // A context menu onClick callback function.
-function contextMenuOnClick(info, tab) {
+async function contextMenuOnClick(info, tab) {
   switch (info.menuItemId) {
     case 'pasteGeneratedPassword':
-      contextMenuPasteValue(tab, 'Generated Password');
+      let generatedPassword = await requests.generatePassword(sourceId);
+      if (generatedPassword) {
+        generatedPassword = await passwordUtil.decryptPassword(generatedPassword);
+      } else {
+        showFailureNotification('Password Generation Failed', 'Please try again');
+      }
+
+      contextMenuPasteValue(tab, generatedPassword);
       break;
     case 'pasteAuthenticatorCode':
-      contextMenuPasteValue(tab, 'Authenticator Code');
+      // Parse the domain
+      let domain = tab.url;
+      var queryIndex = domain.indexOf('?');
+      if (queryIndex !== -1) {
+        domain = domain.substring(0, queryIndex);
+      }
+      domain = domain.split('/')[2];;
+
+      // Get the current timestamp
+      const timestamp = new Date().toISOString();
+      const timestampUri = encodeURIComponent(timestamp);
+
+      // Get the authenticator code
+      const authenticatorCode = await requests.sendGetAuthenticatorCodeByDomainRequest(domain, timestampUri);
+      if (!authenticatorCode.code) {
+        showFailureNotification('Failed to get authenticator code', 'Please try again');
+        break;
+      }
+
+      contextMenuPasteValue(tab, authenticatorCode.code);
       break;
-    default:
-      // Standard context menu item function
-      console.log('Standard context menu item clicked.');
   }
 }
 
@@ -269,18 +292,12 @@ async function handleInputFields(message) {
     return;
   }
 
-  const usernameField = message.inputFieldInfo.find(
-    (field) =>
-      field.type === 'username' ||
-      field.id === 'username' ||
-      field.name === 'username' ||
-      field.name === 'nick'
+  const usernameField = message.inputFieldInfo.find(field =>
+    isUsernameField(field)
   );
-  const passwordField = message.inputFieldInfo.find(
-    (field) =>
-      field.type === 'password' ||
-      field.id === 'password' ||
-      field.name === 'password'
+
+  const passwordField = message.inputFieldInfo.find(field =>
+    isPasswordField(field)
   );
 
   if (usernameField && passwordField) {
@@ -300,3 +317,30 @@ async function handleInputFields(message) {
   }
 }
 
+function isUsernameField(field) {
+  const usernameKeywords = ['username', 'email', 'user', 'login', 'nickname'];
+
+  // Check if any of the common keywords appear in id, name, or placeholder
+  return (
+    (field.type === 'text' || field.type === 'email') &&
+    (usernameKeywords.includes(field.id) ||
+      usernameKeywords.includes(field.name) ||
+      usernameKeywords.some(keyword =>
+        field.placeholder.toLowerCase().includes(keyword)
+      ))
+  );
+}
+
+function isPasswordField(field) {
+  const passwordKeywords = ['password', 'passcode', 'pass', 'pwd'];
+
+  // Check if any of the common keywords appear in id, name, or placeholder
+  return (
+    field.type === 'password' &&
+    (passwordKeywords.includes(field.id) ||
+      passwordKeywords.includes(field.name) ||
+      passwordKeywords.some(keyword =>
+        field.placeholder.toLowerCase().includes(keyword)
+      ))
+  );
+}

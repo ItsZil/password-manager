@@ -17,6 +17,7 @@ function getAllInputFields() {
       id: inputField.id,
       name: inputField.name,
       value: inputField.value,
+      placeholder: inputField.placeholder
     }));
     return inputFieldInfo;
   }
@@ -43,7 +44,7 @@ function checkForInputFields() {
   );
 }
 
-function parseDomain() {
+export function parseDomain() {
   var pageHref = window.location.href;
 
   // Remove any queries from pageHref

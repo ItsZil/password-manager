@@ -47,7 +47,7 @@ namespace Server.Endpoints
 
             // Decrypt password with shared secret
             byte[] decryptedPasswordPlain = passwordIsEncrypted ? await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), password) : password;
-            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+            string decryptedPasswordPlainString = Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with long-term encryption key
             (byte[] encryptedPassword, byte[] salt) = await PasswordUtil.EncryptPassword(decryptedPasswordPlain, keyProvider.GetVaultPragmaKeyBytes());
@@ -134,10 +134,10 @@ namespace Server.Endpoints
             }
 
             byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
-            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+            string decryptedPasswordPlainString = Encoding.UTF8.GetString(decryptedPasswordPlain);
             byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
             
-            bool hasAuthenticator = await dbContext.Authenticators.AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
+            bool hasAuthenticator = await dbContext.Authenticators.AsNoTracking().AnyAsync(x => x.LoginDetailsId == loginDetails.Id);
 
             DomainLoginResponse response = new(loginDetails.Id, loginDetails.Username, Convert.ToBase64String(encryptedPasswordShared), hasAuthenticator);
             return Results.Ok(response);
@@ -155,7 +155,7 @@ namespace Server.Endpoints
             int pageSize = 10;
             int skip = (page - 1) * pageSize;
 
-            var details = await dbContext.LoginDetails.Skip(skip).Take(pageSize).ToListAsync();
+            var details = await dbContext.LoginDetails.AsNoTracking().Skip(skip).Take(pageSize).ToListAsync();
             
             List<LoginDetailsViewResponse> results = new List<LoginDetailsViewResponse>();
             foreach (var loginDetails in details)
@@ -175,7 +175,7 @@ namespace Server.Endpoints
         [Authorize]
         internal async static Task<IResult> GetAllLoginDetailsView(SqlContext dbContext)
         {
-            var details = await dbContext.LoginDetails.ToListAsync();
+            var details = await dbContext.LoginDetails.AsNoTracking().ToListAsync();
 
             List<LoginDetailsViewResponse> results = new List<LoginDetailsViewResponse>();
             foreach (var loginDetails in details)
@@ -196,13 +196,13 @@ namespace Server.Endpoints
         internal async static Task<IResult> GetLoginDetailsPassword([FromBody] DomainLoginPasswordRequest request, SqlContext dbContext, KeyProvider keyProvider)
         {
             // Check if login details exist
-            var loginDetails = await dbContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+            var loginDetails = await dbContext.LoginDetails.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
             if (loginDetails == null)
                 return Results.NotFound();
 
             // Decrypt password with long-term encryption key
             byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
-            string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+            string decryptedPasswordPlainString = Encoding.UTF8.GetString(decryptedPasswordPlain);
 
             // Encrypt password with shared secret and send it back to the client
             string encryptedPasswordShared = Convert.ToBase64String(await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain));

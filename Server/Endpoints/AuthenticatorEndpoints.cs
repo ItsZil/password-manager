@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
 using System.Text;
 using OtpNet;
-using System.Globalization;
 
 namespace Server.Endpoints
 {
@@ -19,6 +18,7 @@ namespace Server.Endpoints
 
             group.MapGet("/authenticatorcount", AuthenticatorsCount);
             group.MapGet("/authenticatorview", GetAuthenticatorsView);
+            group.MapGet("/authenticatorbydomain", GetAuthenticatorCodeByDomain);
 
             return group;
         }
@@ -58,10 +58,49 @@ namespace Server.Endpoints
         }
 
         [Authorize]
+        internal static async Task<IResult> GetAuthenticatorCodeByDomain([FromQuery] string domain, [FromQuery] string timestamp, SqlContext sqlContext, KeyProvider keyProvider)
+        {
+            // Find the login details for the domain.
+            var loginDetails = await sqlContext.LoginDetails.AsNoTracking().FirstOrDefaultAsync(x => x.RootDomain == domain);
+            if (loginDetails == null)
+                return Results.NotFound();
+
+            // Check if an authenticator exists for the login details.
+            var authenticator = await sqlContext.Authenticators.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetails.Id);
+            if (authenticator == null)
+                return Results.NotFound();
+
+            // Parse the timestamp into a DateTime object.
+            timestamp = Uri.UnescapeDataString(timestamp);
+            DateTime.TryParse(timestamp, out DateTime timestampTime);
+            if (timestampTime == default)
+                return Results.BadRequest();
+
+            // Convert the timestamp to UTC time.
+            DateTime timestampUtcTime = timestampTime.ToUniversalTime();
+
+            // Decrypt the secret key and retrieve the TOTP code.
+            byte[] secretKeyDecrypted = await PasswordUtil.DecryptPassword(authenticator.Secret, authenticator.Salt, keyProvider.GetVaultPragmaKeyBytes());
+            string secretKeyDecryptedUTF8 = Encoding.UTF8.GetString(secretKeyDecrypted);
+            byte[] secretKey = Base32Encoding.ToBytes(secretKeyDecryptedUTF8);
+
+            TimeCorrection timeCorrection = new(DateTime.UtcNow);
+            Totp totp = new(secretKey, timeCorrection: timeCorrection);
+
+            string code = totp.ComputeTotp(timestampUtcTime);
+
+            // Update the last accessed date.
+            authenticator.LastUsedDate = timestampTime;
+            await sqlContext.SaveChangesAsync();
+
+            return Results.Ok(new AuthenticatorCodeResponse { Code = code });
+        }
+
+        [Authorize]
         internal static async Task<IResult> CreateAuthenticator([FromBody] CreateAuthenticatorRequest request, SqlContext sqlContext, KeyProvider keyProvider)
         {
             // Check if the login details exist.
-            var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+            var loginDetails = await sqlContext.LoginDetails.AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
             if (loginDetails == null)
                 return Results.NotFound();
 

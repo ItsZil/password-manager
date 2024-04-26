@@ -19,7 +19,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> GetExtraAuthTypeId([FromQuery] int loginDetailsId, SqlContext sqlContext)
         {
-            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).FirstOrDefaultAsync(x => x.Id == loginDetailsId);
+            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).AsNoTracking().FirstOrDefaultAsync(x => x.Id == loginDetailsId);
             if (loginDetails == null || loginDetails.ExtraAuth == null)
                 return Results.NotFound();
 
@@ -29,7 +29,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> SetExtraAuth([FromBody] SetExtraAuthRequest request, SqlContext sqlContext)
         {
-            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
             if (loginDetails == null || loginDetails.ExtraAuth == null)
                 return Results.NotFound();
 
@@ -43,13 +43,13 @@ namespace Server.Endpoints
             {
                 case 2:
                     // User wants to use a PIN code. Verify it exists in the database.
-                    var pinCode = await sqlContext.PinCodes.FirstOrDefaultAsync(x => x.LoginDetailsId == request.LoginDetailsId);
+                    var pinCode = await sqlContext.PinCodes.AsNoTracking().FirstOrDefaultAsync(x => x.LoginDetailsId == request.LoginDetailsId);
                     if (pinCode == null)
                         return Results.NotFound();
                     break;
                 case 3:
                     // User wants to set extra auth method to passkey, retrieve it from the database to confirm it exists.
-                    var passkeyToUse = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.LoginDetailsId == request.LoginDetailsId);
+                    var passkeyToUse = await sqlContext.Passkeys.AsNoTracking().FirstOrDefaultAsync(x => x.LoginDetailsId == request.LoginDetailsId);
                     if (passkeyToUse == null)
                         return Results.NotFound();
                     break;
