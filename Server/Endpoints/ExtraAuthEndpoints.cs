@@ -29,7 +29,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> SetExtraAuth([FromBody] SetExtraAuthRequest request, SqlContext sqlContext)
         {
-            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).AsNoTracking().FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
+            var loginDetails = await sqlContext.LoginDetails.Include(x => x.ExtraAuth).FirstOrDefaultAsync(x => x.Id == request.LoginDetailsId);
             if (loginDetails == null || loginDetails.ExtraAuth == null)
                 return Results.NotFound();
 
