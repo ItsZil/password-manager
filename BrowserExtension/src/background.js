@@ -15,7 +15,7 @@ chrome.runtime.onInstalled.addListener(init);
 // Context menu onClick listener
 chrome.contextMenus.onClicked.addListener(contextMenuOnClick);
 
-const sourceId = 0;
+const sourceId = Math.floor(Math.random() * 1000000);
 
 async function init() {
   console.log('Password Manager extension started.');
@@ -152,7 +152,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 });
 
 // Function to fetch login details from server and send them to the content script
-async function retrieveLoginInfo(domain, pinCode = null, passphrase = null) {
+async function retrieveLoginInfo(domain, pinCode = null, passphrase = null, attempt = 0) {
   passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
 
   await passwordUtil.initiateHandshake();
@@ -207,8 +207,14 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null) {
     // Returning login info to handleInputFields.
     return loginInfo;
   } catch (error) {
-    console.error('Error during decryption: ', error);
-    return null;
+    if (attempt < 3) {
+      // Retry
+      return await retrieveLoginInfo(domain, pinCode, passphrase, attempt + 1);
+    } else {
+      console.error('Error during decryption: ', error);
+
+      return null;
+    }
   }
 }
 

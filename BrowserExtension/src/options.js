@@ -18,7 +18,7 @@ const {
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
-const sourceId = 1;
+const sourceId = Math.floor(Math.random() * 1000000);
 
 $(document).ready(async function () {
   initPublic(sourceId, window.crypto);
