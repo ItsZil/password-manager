@@ -38,7 +38,7 @@ namespace Server.Endpoints
             if (challenge.Length < 16)
                 return Results.BadRequest();
 
-            var loginDetails = await sqlContext.LoginDetails.FirstOrDefaultAsync(x => x.Id == loginDetailsId);
+            var loginDetails = await sqlContext.LoginDetails.AsNoTracking().FirstOrDefaultAsync(x => x.Id == loginDetailsId);
             if (loginDetails == null)
                 return Results.NotFound();
 
@@ -71,7 +71,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> GetPasskeyCredentials([FromQuery] int sourceId, [FromQuery] int loginDetailsId, KeyProvider keyProvider, SqlContext sqlContext)
         {
-            Passkey? passkey = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
+            Passkey? passkey = await sqlContext.Passkeys.AsNoTracking().FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
 
             if (passkey == null)
                 return Results.NotFound();

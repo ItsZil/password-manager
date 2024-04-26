@@ -18,7 +18,7 @@ const {
 
 const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 
-const sourceId = 1;
+const sourceId = Math.floor(Math.random() * 1000000);
 
 let authenticatorsCount = 0;
 let currentPage = 1;
@@ -402,7 +402,8 @@ $('#finish-create-authenticator-button').on('click', async function () {
     return;
   }
 
-  if (createAuthenticatorResponse.authenticatorId <= currentPage * 10) {
+  const authenticatorId = createAuthenticatorResponse.authenticatorId;
+  if (authenticatorId == 1 || (createAuthenticatorResponse.authenticatorId <= currentPage * 10)) {
     await refreshAuthenticatorsTable(currentPage);
   }
 

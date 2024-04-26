@@ -3,6 +3,8 @@
 const { getUserPasskeyCredentials } = require('./util/authUtil.js');
 const { str2ab } = require('./util/passwordUtil.js');
 
+const autofillAnimLength = 300;
+
 function getAllInputFields() {
   const inputFields = document.querySelectorAll(
     'input[type="email"], input[type="password"], input[type="text"], input[type="tel"], textarea'
@@ -15,6 +17,7 @@ function getAllInputFields() {
       id: inputField.id,
       name: inputField.name,
       value: inputField.value,
+      placeholder: inputField.placeholder
     }));
     return inputFieldInfo;
   }
@@ -41,7 +44,7 @@ function checkForInputFields() {
   );
 }
 
-function parseDomain() {
+export function parseDomain() {
   var pageHref = window.location.href;
 
   // Remove any queries from pageHref
@@ -60,7 +63,7 @@ if (document.readyState === 'loading') {
   checkForInputFields();
 }
 
-function addStylesheet() {
+export function addStylesheet() {
   const styleElement = document.createElement('style');
 
   styleElement.textContent = `
@@ -105,6 +108,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         passwordField.classList.add('autofilled');
         passwordField.value = request.password;
       }, 100);
+
+      // Wait for autofillAnimLength before removing the autofilled class
+      setTimeout(() => {
+        usernameField.classList.remove('autofilled');
+        passwordField.classList.remove('autofilled');
+      }, autofillAnimLength + 100);
     } else {
       // Username and/or password fields not found on the page. // TODO: Add error handling, we probably should've gone this far if we can't find the fields.
     }
@@ -213,6 +222,38 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     return true;
   }
 });
+
+// Listen for a message from the background script indicating that we should animate an input field
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.type === 'ANIMATE_INPUT_FIELD') {
+    const inputFieldResult = request.inputFieldResult;
+
+    let inputField;
+    if (inputFieldResult.id) {
+      // If the inputFieldResult has an id, find the element using getElementById
+      inputField = document.getElementById(inputFieldResult.id);
+    } else {
+      // If the inputFieldResult doesn't have an id, find the element using tag name and index
+      const parent = document.body; // Assuming the parent is the body element
+      const elements = parent.getElementsByTagName(inputFieldResult.tagName);
+      if (elements.length > inputFieldResult.index) {
+        inputField = elements[inputFieldResult.index];
+      }
+    }
+
+    if (inputField) {
+      // Perform actions on the input field
+      addStylesheet(); // Assuming addStylesheet is defined elsewhere
+      inputField.classList.add('autofilled');
+
+      // Wait for autofillAnimLength before removing the autofilled class
+      setTimeout(() => {
+        inputField.classList.remove('autofilled');
+      }, autofillAnimLength);
+    }
+  }
+});
+
 
 function bufferToBase64url(buffer) {
 

@@ -21,7 +21,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> GetPinCode([FromQuery] int sourceId, [FromQuery] int loginDetailsId, SqlContext sqlContext, KeyProvider keyProvider)
         {
-            var pinCode = await sqlContext.PinCodes.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
+            var pinCode = await sqlContext.PinCodes.AsNoTracking().FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
             if (pinCode == null)
                 return Results.NotFound();
 
@@ -36,7 +36,7 @@ namespace Server.Endpoints
         internal static async Task<IResult> CreatePinCode([FromBody] CreatePinCodeRequest request, SqlContext sqlContext, KeyProvider keyProvider)
         {
             // Check if the login details exist.
-            if (!await sqlContext.LoginDetails.AnyAsync(x => x.Id == request.LoginDetailsId))
+            if (!await sqlContext.LoginDetails.AsNoTracking().AnyAsync(x => x.Id == request.LoginDetailsId))
                 return Results.NotFound();
 
             byte[] encryptedPinCode = Convert.FromBase64String(request.PinCode);
