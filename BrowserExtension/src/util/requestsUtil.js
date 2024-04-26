@@ -535,6 +535,12 @@ export async function sendVerifyPasskeyCredentialRequest(
     });
 
     if (response.status === 200) {
+      const responseJson = await response.json();
+      if (responseJson.password) {
+        // A DomainLoginResponse was returned.
+        return responseJson;
+      }
+
       return true;
     } else {
       console.error(

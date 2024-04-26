@@ -535,13 +535,12 @@ async function setupPasskey(loginDetailsId, domain) {
   );
 
   // Create the PasskeyCreationRequest object
-  const encryptedChallenge = await encryptPassword(randomChallengeBase64);
   const createPasskeyRequestBody = {
     sourceId: sourceId,
     userId: userIdBase64,
     credentialId: credentialIdBase64,
     publicKey: credentialPublicKeyBase64,
-    challenge: encryptedChallenge,
+    challenge: randomChallengeBase64,
     loginDetailsId: loginDetailsId,
     algorithmId: algorithmId,
   };

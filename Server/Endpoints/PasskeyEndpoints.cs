@@ -34,10 +34,7 @@ namespace Server.Endpoints
             if (credentialId.Length < 32 || publicKey.Length < 32 || challenge.Length < 16 || (request.AlgorithmId != -7 && request.AlgorithmId != -257))
                 return Results.BadRequest();
 
-            // Decrypt the challenge
-            challenge = await PasswordUtil.DecryptMessage(keyProvider.GetSharedSecret(request.SourceId), challenge);
-
-            // Check if challenge was decrypted successfully
+            // Check if challenge is the correct size
             if (challenge.Length < 16)
                 return Results.BadRequest();
 
@@ -86,13 +83,12 @@ namespace Server.Endpoints
             passkey.Challenge = randomChallenge;
             await sqlContext.SaveChangesAsync();
 
-            byte[] encryptedChallenge = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(sourceId), passkey.Challenge);
             return Results.Ok(new PasskeyCredentialResponse
             {
                 CredentialIdB64 = Convert.ToBase64String(passkey.CredentialId),
                 UserId = Convert.ToBase64String(passkey.UserId),
                 PublicKeyB64 = Convert.ToBase64String(passkey.PublicKey),
-                ChallengeB64 = Convert.ToBase64String(encryptedChallenge)
+                ChallengeB64 = Convert.ToBase64String(randomChallenge)
             });
         }
 

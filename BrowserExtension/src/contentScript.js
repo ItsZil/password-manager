@@ -149,14 +149,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === 'PASSKEY_REQUEST') {
     const credentialId = request.credentialId;
-    const challenge = str2ab(request.challenge);
-
-    console.log('Using challenge: ', challenge)
+    const challenge = str2ab(atob(request.challenge));
 
     const credential = await getUserPasskeyCredentials(credentialId, challenge);
-    console.log('User passkey credentials', credential);
 
-    const serializeable = {
+    const serializeableCredentials = {
       authenticatorAttachment: credential.authenticatorAttachment,
       id: credential.id,
       rawId: bufferToBase64url(credential.rawId),
@@ -168,8 +165,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       },
       type: credential.type
     };
-    const serialized = JSON.stringify(serializeable);
-    console.log('Sending userPasskeyCredentials', serialized);
+    const serializedCredentials = JSON.stringify(serializeableCredentials);
 
     const domain = parseDomain();
     const inputFieldInfo = getAllInputFields();
@@ -180,7 +176,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         payload: {
           inputFieldInfo,
           domain,
-          userPasskeyCredentialsJSON: serialized,
+          userPasskeyCredentialsJSON: serializedCredentials,
           loginDetailsId: request.loginDetailsId
         },
       }

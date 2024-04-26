@@ -26,7 +26,17 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   if (request.type === 'AUTOFILL_LOGIN_DETAILS') {
     handleInputFields(request.payload);
   } else if (request.type === 'VERIFY_PASSKEY_CREDENTIALS') {
-    await verifyPasskeyCredentials(request.payload);
+    const domainLoginResponse = await verifyPasskeyCredentials(request.payload);
+    if (domainLoginResponse.username && domainLoginResponse.password) {
+      // Authentication successful, send login info to content script
+      const loginInfo = {
+        username: domainLoginResponse.username,
+        password: await passwordUtil.decryptPassword(domainLoginResponse.password),
+      };
+
+      request.payload.loginInfo = loginInfo;
+      handleInputFields(request.payload);
+    }
   }
 });
 
@@ -119,7 +129,7 @@ async function promptForPasskey(response) {
   }
 
   const credentialId = passkeyCredentials.credentialId;
-  const challenge = await passwordUtil.decryptPassword(passkeyCredentials.challenge);
+  const challenge = passkeyCredentials.challenge;
 
   chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
     // Send a message to the content script to show a passkey request prompt
@@ -134,11 +144,13 @@ async function promptForPasskey(response) {
 }
 
 async function verifyPasskeyCredentials(payload) {
-  // parse json of userPasskeyCredentialsJSON
   const userPasskeyCredentials = JSON.parse(payload.userPasskeyCredentialsJSON);
-  console.log('Received userPasskeyCredentials:', userPasskeyCredentials);
-  const response = await authenticatePasskey(userPasskeyCredentials, null, payload.loginDetailsId, sourceId, crypto, true, true);
-  console.log(response);
+  const domainLoginResponse = await authenticatePasskey(userPasskeyCredentials, null, payload.loginDetailsId, sourceId, crypto, true, true);
+
+  if (domainLoginResponse.password) {
+    // Authentication successful, send login info to content script
+  }
+  return domainLoginResponse;
 }
 
 function showIncorrectExtraAuthNotification() {
@@ -185,7 +197,10 @@ async function handleInputFields(message) {
 
   if (usernameField && passwordField) {
     try {
-      const loginInfo = await retrieveLoginInfo(message.domain, message.pinCode, message.passphrase);
+      let loginInfo = message.loginInfo;
+      if (!loginInfo) {
+        loginInfo = await retrieveLoginInfo(message.domain, message.pinCode, message.passphrase);
+      }
 
       if (loginInfo) {
         // No extra authentication needed, send login info to content script
