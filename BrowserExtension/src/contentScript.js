@@ -3,11 +3,6 @@
 const { getUserPasskeyCredentials } = require('./util/authUtil.js');
 const { str2ab } = require('./util/passwordUtil.js');
 
-// Function to check if an element is an input field
-function isInputField(element) {
-  return element.tagName === 'INPUT' || element.tagName === 'TEXTAREA';
-}
-
 function getAllInputFields() {
   const inputFields = document.querySelectorAll(
     'input[type="email"], input[type="password"], input[type="text"], input[type="tel"], textarea'
@@ -65,6 +60,31 @@ if (document.readyState === 'loading') {
   checkForInputFields();
 }
 
+function addStylesheet() {
+  const styleElement = document.createElement('style');
+
+  styleElement.textContent = `
+  .autofilled {
+    animation: autofillAnimation 0.3s ease-in-out;
+  }
+
+  @keyframes autofillAnimation {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.07);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+  }
+`;
+
+  document.head.appendChild(styleElement);
+}
+
 // Listen for a message from the background script indicating that we should auto fill login details
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'AUTOFILL_DETAILS_REQUEST') {
@@ -74,8 +94,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     // Autofill the fields if found
     if (usernameField && passwordField) {
+      // Run an autofill animation
+      addStylesheet();
+
+      usernameField.classList.add('autofilled');
       usernameField.value = request.username;
-      passwordField.value = request.password;
+
+      // Wait 0.1s before animating the password field
+      setTimeout(() => {
+        passwordField.classList.add('autofilled');
+        passwordField.value = request.password;
+      }, 100);
     } else {
       // Username and/or password fields not found on the page. // TODO: Add error handling, we probably should've gone this far if we can't find the fields.
     }
