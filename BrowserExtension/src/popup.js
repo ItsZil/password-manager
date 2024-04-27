@@ -97,7 +97,7 @@ $('#unlock-vault-button').on('click', async function () {
 });
 
 $(async () => {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
 
   serverIsUp = await checkIfServerReachable();
   isUserAuthenticated = await isAuthenticated();

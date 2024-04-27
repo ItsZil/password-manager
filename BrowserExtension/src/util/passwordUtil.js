@@ -9,23 +9,35 @@ const ServerUrl = 'https://localhost:54782';
 let crypto = null;
 let SharedSecret = null;
 let isTryingHandshake = false;
+let clientKeyPair = null;
 
 // Function to initialize the crypto object from the background script
-export function init(sourceId, chromeCrypto) {
+export async function init(sourceId, chromeCrypto) {
   crypto = chromeCrypto;
 
+  await generateClientKeyPair();
   tryHandshake(sourceId);
 }
 
 // Function to initialize the crypto object from frontend scripts
-export function initPublic(sourceId, windowCrypto) {
+export async function initPublic(sourceId, windowCrypto) {
   crypto = windowCrypto;
 
+  await generateClientKeyPair();
   tryHandshake(sourceId);
 }
 
 export function isHandshakeComplete() {
   return SharedSecret !== null;
+}
+
+async function generateClientKeyPair() {
+  // Generate client key pair
+  clientKeyPair = await crypto.subtle.generateKey(
+    { name: 'ECDH', namedCurve: 'P-256' },
+    true,
+    ['deriveKey', 'deriveBits']
+  );
 }
 
 // Function to repeatedly initiate handshake with server
@@ -53,13 +65,6 @@ async function tryHandshake(sourceId) {
 // Function to initiate handshake with server in order to generate a shared secret
 export async function initiateHandshake(sourceId) {
   try {
-    // Generate client key pair
-    const clientKeyPair = await crypto.subtle.generateKey(
-      { name: 'ECDH', namedCurve: 'P-256' },
-      true,
-      ['deriveKey', 'deriveBits']
-    );
-
     // Export client public key
     const clientPublicKey = await crypto.subtle.exportKey(
       'spki',

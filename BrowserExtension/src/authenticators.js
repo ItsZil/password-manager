@@ -24,7 +24,7 @@ let authenticatorsCount = 0;
 let currentPage = 1;
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
   await waitForHandshake();
 });
 

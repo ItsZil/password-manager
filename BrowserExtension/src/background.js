@@ -19,7 +19,7 @@ async function init() {
   console.log('Password Manager extension started.');
 
   // We need to pass the crypto object to the passwordUtil file and start handshake process
-  passwordUtil.init(sourceId, crypto);
+  await passwordUtil.init(sourceId, crypto);
 
   // Initialize the context menus
   addContextMenus();
@@ -52,6 +52,7 @@ async function contextMenuOnClick(info, tab) {
   switch (info.menuItemId) {
     case 'pasteGeneratedPassword':
       let generatedPassword = await requests.generatePassword(sourceId);
+
       if (generatedPassword) {
         generatedPassword = await passwordUtil.decryptPassword(
           generatedPassword
@@ -182,9 +183,9 @@ async function retrieveLoginInfo(
   passphrase = null,
   attempt = 0
 ) {
-  passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
+  await passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
 
-  await passwordUtil.initiateHandshake();
+  await passwordUtil.initiateHandshake(sourceId);
 
   let encryptedPassphrase = null;
   if (passphrase != null) {
