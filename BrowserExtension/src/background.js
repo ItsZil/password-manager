@@ -86,10 +86,18 @@ async function contextMenuOnClick(info, tab) {
           timestampUri
         );
       if (!authenticatorCode.code) {
-        showFailureNotification(
-          'Failed to get authenticator code',
-          'Please try again'
-        );
+        if (authenticatorCode.notFound) {
+          showFailureNotification(
+            'Authenticator not found',
+            'Create one in options'
+          );
+        } else {
+          showFailureNotification(
+            'Failed to get authenticator code',
+            'Please try again'
+          );
+        }
+
         break;
       }
 

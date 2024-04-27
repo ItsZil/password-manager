@@ -6,6 +6,8 @@ const {
   sendHasExistingVaultRequest,
   sendUnlockVaultRequest,
   sendLockVaultRequest,
+  sendLoginDetailsCountRequest,
+  sendAuthenticatorCountRequest,
 } = require('./util/requestsUtil.js');
 
 const {
@@ -160,6 +162,14 @@ async function setElements() {
       $('#connection-ok-icon')
         .removeClass('bi-database-fill-lock')
         .addClass('bi-database-fill-check');
+
+      const passwordCount = await sendLoginDetailsCountRequest();
+      const authenticatorCount = await sendAuthenticatorCountRequest();
+
+      $('#vault-passwords-count').text('Number of passwords: ' + passwordCount);
+      $('#vault-authenticators-count').text(
+        'Number of authenticators: ' + authenticatorCount
+      );
     } else {
       // User is not authenticated, display only login element.
       notAuthenticatedElement.show();

@@ -961,6 +961,8 @@ export async function sendGetAuthenticatorCodeByDomainRequest(
 
     if (response.status === 200) {
       return response.json();
+    } else if (response.status === 404) {
+      return { notFound: true };
     } else {
       console.error(
         `Failed to get authenticator code by domain: ${response.status} ${response.statusText}`
