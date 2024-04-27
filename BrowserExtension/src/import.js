@@ -4,6 +4,7 @@ const {
   encryptPassword,
 } = require('./util/passwordUtil.js');
 const {
+  setServerAddress,
   isAbsolutePathValid,
   sendSetupVaultRequest,
   sendHasExistingVaultRequest,
@@ -14,7 +15,7 @@ const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 const sourceId = Math.floor(Math.random() * 1000000);
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();
@@ -85,6 +86,7 @@ $(document).ready(async function () {
     const vaultKey = await encryptPassword(passPhrase);
 
     const importVaultRequestBody = {
+      sourceId: sourceId,
       absolutePathUri: vaultPath,
       vaultRawKeyBase64: vaultKey,
     };
@@ -103,16 +105,28 @@ $(document).ready(async function () {
       $('#setup-fields').hide();
       $('#setup-complete-message').show();
 
-      const accessToken = tokenResponse.accessToken;
-      const refreshToken = tokenResponse.refreshToken;
+      const accessToken = importSucceeded.accessToken;
+      const refreshToken = importSucceeded.refreshToken;
 
-      setTokens(accessToken, refreshToken);
+      await setTokens(accessToken, refreshToken);
     } else {
       // Show failure UI
       $('#vault-import-progress-modal').hide();
       $('#vault-import-failure-modal').show();
     }
   });
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
+  }
 });
 
 // Function to wait for handshake to complete and show the appropriate UI
@@ -173,7 +187,7 @@ async function validatePath(path) {
 }
 
 function validatePassphrase(passphrase) {
-  return passphrase.length < 1;
+  return passphrase.length > 1;
 }
 
 $('#restart-import-button').on('click', function () {

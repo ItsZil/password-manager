@@ -12,8 +12,24 @@
       <div class="container text-center mt-4">
         <div class="col-md-4" id="connection-status-fail">
           <div class="bi-database-fill-x" style="font-size: 45px"></div>
-          <h3 class="mb-2">Connection status: FAIL</h3>
+          <h3 class="mb-2">Connection status: PENDING</h3>
           <p class="animated-dots">Is the vault service running? Retrying</p>
+
+          <div class="input-group gap-2">
+            <input
+              type="text"
+              id="vault-server-address-input"
+              class="form-control"
+              placeholder="Vault server address"
+            />
+            <a
+              href="#"
+              class="btn btn-primary"
+              id="set-vault-server-address-button"
+            >
+              Save
+            </a>
+          </div>
         </div>
 
         <div id="connection-status-ok" style="display: none">
@@ -97,49 +113,53 @@
 
                 <div class="col-md-4 mt-0">
                   <h2>Vault statistics</h2>
-                  <p class="mb-0">Number of passwords: 10</p>
-                  <p>Number of authenticators: 5</p>
+                  <p class="mb-0" id="vault-passwords-count">
+                    Number of passwords: Loading
+                  </p>
+                  <p id="vault-authenticators-count">
+                    Number of authenticators: Loading
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Footer -->
-      <footer
-        class="footer py-3 bg-body-secondary text-center"
-        id="footer"
-        style="display: none"
-      >
-        <ul class="nav justify-content-center border-bottom">
-          <li class="nav-item">
-            <a href="#" class="nav-link px-4" id="passwords-button">
-              <i class="bi-key-fill h1 mb-0"></i>
-            </a>
-            <p class="text-light h5 mt-0">Passwords</p>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link px-4" id="authenticators-button">
-              <i class="bi-shield-lock-fill h1 mb-0"></i>
-            </a>
-            <p class="text-light h5 mt-0">Authenticators</p>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link px-4" id="options-button">
-              <i class="bi-database-fill-gear h1 mb-0"></i>
-            </a>
-            <p class="text-light h5 mt-0">Options</p>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link px-4" id="lock-vault-button">
-              <i class="bi-database-fill-lock h1 mb-0"></i>
-            </a>
-            <p class="text-light h5 mt-0">Lock</p>
-          </li>
-        </ul>
-      </footer>
     </main>
+
+    <!-- Footer -->
+    <footer
+      class="footer py-2 bg-body-secondary text-center"
+      id="footer"
+      style="display: none"
+    >
+      <ul class="nav justify-content-center border-bottom">
+        <li class="nav-item">
+          <a href="#" class="nav-link px-4" id="passwords-button">
+            <i class="bi-key-fill h1 mb-0"></i>
+          </a>
+          <p class="text-light h5 mt-0">Passwords</p>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link px-4" id="authenticators-button">
+            <i class="bi-shield-lock-fill h1 mb-0"></i>
+          </a>
+          <p class="text-light h5 mt-0">Authenticators</p>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link px-4" id="options-button">
+            <i class="bi-database-fill-gear h1 mb-0"></i>
+          </a>
+          <p class="text-light h5 mt-0">Options</p>
+        </li>
+        <li class="nav-item">
+          <a href="#" class="nav-link px-4" id="lock-vault-button">
+            <i class="bi-database-fill-lock h1 mb-0"></i>
+          </a>
+          <p class="text-light h5 mt-0">Lock</p>
+        </li>
+      </ul>
+    </footer>
 
     <script src="./popup.js"></script>
   </body>
@@ -148,6 +168,6 @@
 <style>
   body {
     width: 350px;
-    height: 250px;
+    height: 200px;
   }
 </style>

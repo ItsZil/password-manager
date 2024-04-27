@@ -17,7 +17,7 @@ function getAllInputFields() {
       id: inputField.id,
       name: inputField.name,
       value: inputField.value,
-      placeholder: inputField.placeholder
+      placeholder: inputField.placeholder,
     }));
     return inputFieldInfo;
   }
@@ -32,16 +32,14 @@ function checkForInputFields() {
   var domain = parseDomain();
 
   // Notify the background script that input fields are found
-  chrome.runtime.sendMessage(
-    {
-      type: 'AUTOFILL_LOGIN_DETAILS',
-      payload: {
-        hasInputFields: true,
-        inputFieldInfo,
-        domain
-      },
-    }
-  );
+  chrome.runtime.sendMessage({
+    type: 'AUTOFILL_LOGIN_DETAILS',
+    payload: {
+      hasInputFields: true,
+      inputFieldInfo,
+      domain,
+    },
+  });
 }
 
 export function parseDomain() {
@@ -53,7 +51,7 @@ export function parseDomain() {
     pageHref = pageHref.substring(0, queryIndex);
   }
 
-  return pageHref.split('/')[2];;
+  return pageHref.split('/')[2];
 }
 
 // Run the checkForInputFields function when the DOM is ready
@@ -135,21 +133,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // User has cancelled the prompt
       return;
     }
-    
+
     const domain = parseDomain();
     const inputFieldInfo = getAllInputFields();
 
     // Attempt to retrieve login details with the pin code
-    chrome.runtime.sendMessage(
-      {
-        type: 'AUTOFILL_LOGIN_DETAILS',
-        payload: {
-          inputFieldInfo,
-          domain,
-          pinCode
-        },
-      }
-    );
+    chrome.runtime.sendMessage({
+      type: 'AUTOFILL_LOGIN_DETAILS',
+      payload: {
+        inputFieldInfo,
+        domain,
+        pinCode,
+      },
+    });
     return true;
   }
 });
@@ -158,7 +154,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'PASSPHRASE_REQUEST') {
     // Show a prompt for the passprhase
-    const passphrase = prompt('Please enter passphrase to retrieve login details:');
+    const passphrase = prompt(
+      'Please enter passphrase to retrieve login details:'
+    );
 
     if (passphrase == null || passphrase.length == 0) {
       // User has cancelled the prompt
@@ -169,16 +167,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const inputFieldInfo = getAllInputFields();
 
     // Attempt to retrieve login details with the passphrase
-    chrome.runtime.sendMessage(
-      {
-        type: 'AUTOFILL_LOGIN_DETAILS',
-        payload: {
-          inputFieldInfo,
-          domain,
-          passphrase
-        },
-      }
-    );
+    chrome.runtime.sendMessage({
+      type: 'AUTOFILL_LOGIN_DETAILS',
+      payload: {
+        inputFieldInfo,
+        domain,
+        passphrase,
+      },
+    });
     return true;
   }
 });
@@ -196,29 +192,31 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       id: credential.id,
       rawId: bufferToBase64url(credential.rawId),
       response: {
-        attestationObject: bufferToBase64url(credential.response.attestationObject),
+        attestationObject: bufferToBase64url(
+          credential.response.attestationObject
+        ),
         clientDataJSON: bufferToBase64url(credential.response.clientDataJSON),
         signature: bufferToBase64url(credential.response.signature),
-        authenticatorData: bufferToBase64url(credential.response.authenticatorData)
+        authenticatorData: bufferToBase64url(
+          credential.response.authenticatorData
+        ),
       },
-      type: credential.type
+      type: credential.type,
     };
     const serializedCredentials = JSON.stringify(serializeableCredentials);
 
     const domain = parseDomain();
     const inputFieldInfo = getAllInputFields();
 
-    chrome.runtime.sendMessage(
-      {
-        type: 'VERIFY_PASSKEY_CREDENTIALS',
-        payload: {
-          inputFieldInfo,
-          domain,
-          userPasskeyCredentialsJSON: serializedCredentials,
-          loginDetailsId: request.loginDetailsId
-        },
-      }
-    );
+    chrome.runtime.sendMessage({
+      type: 'VERIFY_PASSKEY_CREDENTIALS',
+      payload: {
+        inputFieldInfo,
+        domain,
+        userPasskeyCredentialsJSON: serializedCredentials,
+        loginDetailsId: request.loginDetailsId,
+      },
+    });
     return true;
   }
 });
@@ -254,13 +252,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-
 function bufferToBase64url(buffer) {
-
   // modified from https://github.com/github/webauthn-json/blob/main/src/webauthn-json/base64url.ts
 
   const byteView = new Uint8Array(buffer);
-  let str = "";
+  let str = '';
   for (const charCode of byteView) {
     str += String.fromCharCode(charCode);
   }
@@ -270,9 +266,9 @@ function bufferToBase64url(buffer) {
 
   // Base64 to base64url
   // We assume that the base64url string is well-formed.
-  const base64urlString = base64String.replace(/\+/g, "-").replace(
-    /\//g,
-    "_",
-  ).replace(/=/g, "");
+  const base64urlString = base64String
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
   return base64urlString;
 }

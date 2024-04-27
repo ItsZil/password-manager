@@ -4,9 +4,7 @@
 import * as passwordUtil from './util/passwordUtil';
 import * as requests from './util/requestsUtil';
 
-const {
-  authenticatePasskey
-} = require('./util/authUtil');
+const { authenticatePasskey } = require('./util/authUtil');
 
 // onStartup listener that starts initialization
 chrome.runtime.onStartup.addListener(init);
@@ -21,7 +19,7 @@ async function init() {
   console.log('Password Manager extension started.');
 
   // We need to pass the crypto object to the passwordUtil file and start handshake process
-  passwordUtil.init(sourceId, crypto);
+  await passwordUtil.init(sourceId, crypto);
 
   // Initialize the context menus
   addContextMenus();
@@ -32,20 +30,20 @@ function addContextMenus() {
   let parent = chrome.contextMenus.create({
     title: 'Password Manager',
     contexts: contexts,
-    id: 'parent'
+    id: 'parent',
   });
 
   chrome.contextMenus.create({
     title: 'Paste Generated Password',
     parentId: parent,
     contexts: contexts,
-    id: 'pasteGeneratedPassword'
+    id: 'pasteGeneratedPassword',
   });
   chrome.contextMenus.create({
     title: 'Paste Authenticator Code',
     parentId: parent,
     contexts: contexts,
-    id: 'pasteAuthenticatorCode'
+    id: 'pasteAuthenticatorCode',
   });
 }
 
@@ -54,13 +52,21 @@ async function contextMenuOnClick(info, tab) {
   switch (info.menuItemId) {
     case 'pasteGeneratedPassword':
       let generatedPassword = await requests.generatePassword(sourceId);
+
       if (generatedPassword) {
-        generatedPassword = await passwordUtil.decryptPassword(generatedPassword);
+        generatedPassword = await passwordUtil.decryptPassword(
+          generatedPassword
+        );
+        showSuccessNotification('Password Generated', 'Copied to clipboard');
       } else {
-        showFailureNotification('Password Generation Failed', 'Please try again');
+        showFailureNotification(
+          'Password Generation Failed',
+          'Please try again'
+        );
+        break;
       }
 
-      contextMenuPasteValue(tab, generatedPassword);
+      contextMenuPasteValue(tab, generatedPassword, true);
       break;
     case 'pasteAuthenticatorCode':
       // Parse the domain
@@ -69,16 +75,31 @@ async function contextMenuOnClick(info, tab) {
       if (queryIndex !== -1) {
         domain = domain.substring(0, queryIndex);
       }
-      domain = domain.split('/')[2];;
+      domain = domain.split('/')[2];
 
       // Get the current timestamp
       const timestamp = new Date().toISOString();
       const timestampUri = encodeURIComponent(timestamp);
 
       // Get the authenticator code
-      const authenticatorCode = await requests.sendGetAuthenticatorCodeByDomainRequest(domain, timestampUri);
+      const authenticatorCode =
+        await requests.sendGetAuthenticatorCodeByDomainRequest(
+          domain,
+          timestampUri
+        );
       if (!authenticatorCode.code) {
-        showFailureNotification('Failed to get authenticator code', 'Please try again');
+        if (authenticatorCode.notFound) {
+          showFailureNotification(
+            'Authenticator not found',
+            'Create one in options'
+          );
+        } else {
+          showFailureNotification(
+            'Failed to get authenticator code',
+            'Please try again'
+          );
+        }
+
         break;
       }
 
@@ -88,48 +109,64 @@ async function contextMenuOnClick(info, tab) {
 }
 
 // Function to paste a value into the focused input field
-function contextMenuPasteValue(tab, value) {
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id },
-    function: function (value) {
-      // Find the focused input field
-      var inputField = document.activeElement;
-
-      // Check if the input field exists and is editable
-      if (inputField && (inputField.tagName === 'INPUT' || inputField.tagName === 'TEXTAREA') && !inputField.readOnly) {
-        inputField.value = value;
-
-
-        if (inputField.id) {
-          // If the inputField has an id, return it
-          return { id: inputField.id };
-        } else {
-          // If the inputField doesn't have an id, use tagName and index
-          var parent = element.parentNode;
-          var tagName = element.tagName.toLowerCase();
-          var index = Array.from(parent.children).indexOf(element);
-          return { tagName: tagName, index: index };
+function contextMenuPasteValue(tab, value, saveToClipboard = false) {
+  chrome.scripting
+    .executeScript({
+      target: { tabId: tab.id },
+      function: function (value, saveToClipboard = false) {
+        if (saveToClipboard) {
+          navigator.clipboard.writeText(value);
         }
-      } else {
-        return { title: 'Paste Failed', message: 'No input field is focused or editable.' };
+
+        // Find the focused input field
+        var inputField = document.activeElement;
+
+        // Check if the input field exists and is editable
+        if (
+          inputField &&
+          (inputField.tagName === 'INPUT' ||
+            inputField.tagName === 'TEXTAREA') &&
+          !inputField.readOnly
+        ) {
+          inputField.value = value;
+
+          if (inputField.id) {
+            // If the inputField has an id, return it
+            return { id: inputField.id };
+          } else {
+            // If the inputField doesn't have an id, use tagName and index
+            var parent = element.parentNode;
+            var tagName = element.tagName.toLowerCase();
+            var index = Array.from(parent.children).indexOf(element);
+            return { tagName: tagName, index: index };
+          }
+        } else {
+          return {
+            title: 'Paste Failed',
+            message: 'No input field is focused or editable.',
+          };
+        }
+      },
+      args: [value, saveToClipboard],
+    })
+    .then((response) => {
+      const result = response[0].result;
+      if (result.title && result.message) {
+        // Show a notification if the paste failed
+        showFailureNotification(result.title, result.message);
+      } else if (result.id || result.index) {
+        // Send a message to the content script to animate the input field
+        chrome.tabs.query(
+          { active: true, currentWindow: true },
+          function (tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, {
+              type: 'ANIMATE_INPUT_FIELD',
+              inputFieldResult: result,
+            });
+          }
+        );
       }
-    },
-    args: [value]
-  }).then((response) => {
-    const result = response[0].result;
-    if (result.title && result.message) {
-      // Show a notification if the paste failed
-      showFailureNotification(result.title, result.message);
-    } else if (result.id || result.index) {
-      // Send a message to the content script to animate the input field
-      chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {
-          type: 'ANIMATE_INPUT_FIELD',
-          inputFieldResult: result,
-        });
-      });
-    }
-  });
+    });
 }
 
 // Listener for requests from content script
@@ -142,7 +179,9 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       // Authentication successful, send login info to content script
       const loginInfo = {
         username: domainLoginResponse.username,
-        password: await passwordUtil.decryptPassword(domainLoginResponse.password),
+        password: await passwordUtil.decryptPassword(
+          domainLoginResponse.password
+        ),
       };
 
       request.payload.loginInfo = loginInfo;
@@ -152,10 +191,15 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
 });
 
 // Function to fetch login details from server and send them to the content script
-async function retrieveLoginInfo(domain, pinCode = null, passphrase = null, attempt = 0) {
-  passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
+async function retrieveLoginInfo(
+  domain,
+  pinCode = null,
+  passphrase = null,
+  attempt = 0
+) {
+  await passwordUtil.init(sourceId, crypto); // Ensure we are initialized and have completed handshake.
 
-  await passwordUtil.initiateHandshake();
+  await passwordUtil.initiateHandshake(sourceId);
 
   let encryptedPassphrase = null;
   if (passphrase != null) {
@@ -167,7 +211,7 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null, atte
     sourceId: sourceId,
     domain: domain,
     pinCode: pinCode,
-    passphrase: encryptedPassphrase
+    passphrase: encryptedPassphrase,
   };
 
   const response = await requests.domainLoginRequest(domainLoginRequestBody); // DomainLoginResponse
@@ -177,7 +221,10 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null, atte
     return null;
   } else if (response.unauthorized) {
     // Incorrect PIN code entered.
-    showFailureNotification('Extra Authentication Failed', 'Refresh to try again');
+    showFailureNotification(
+      'Extra Authentication Failed',
+      'Refresh to try again'
+    );
     return;
   }
 
@@ -196,7 +243,6 @@ async function retrieveLoginInfo(domain, pinCode = null, passphrase = null, atte
     }
     return;
   }
-
 
   try {
     const loginInfo = {
@@ -239,7 +285,10 @@ function promptForPassphrase(response) {
 }
 
 async function promptForPasskey(response) {
-  const passkeyCredentials = await requests.sendGetPasskeyCredentialRequest(sourceId, response.loginDetailsId);
+  const passkeyCredentials = await requests.sendGetPasskeyCredentialRequest(
+    sourceId,
+    response.loginDetailsId
+  );
 
   if (!passkeyCredentials) {
     return false;
@@ -255,14 +304,22 @@ async function promptForPasskey(response) {
       loginDetailsId: response.loginDetailsId,
       credentialId: credentialId,
       challenge: challenge,
-      sourceId: sourceId
+      sourceId: sourceId,
     });
   });
 }
 
 async function verifyPasskeyCredentials(payload) {
   const userPasskeyCredentials = JSON.parse(payload.userPasskeyCredentialsJSON);
-  const domainLoginResponse = await authenticatePasskey(userPasskeyCredentials, null, payload.loginDetailsId, sourceId, crypto, true, true);
+  const domainLoginResponse = await authenticatePasskey(
+    userPasskeyCredentials,
+    null,
+    payload.loginDetailsId,
+    sourceId,
+    crypto,
+    true,
+    true
+  );
 
   if (domainLoginResponse.password) {
     // Authentication successful, send login info to content script
@@ -275,7 +332,16 @@ function showFailureNotification(title, message) {
     type: 'basic',
     iconUrl: 'icons/icon_fail_196.png',
     title: title,
-    message: message
+    message: message,
+  });
+}
+
+function showSuccessNotification(title, message) {
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/icon_128.png',
+    title: title,
+    message: message,
   });
 }
 
@@ -298,11 +364,11 @@ async function handleInputFields(message) {
     return;
   }
 
-  const usernameField = message.inputFieldInfo.find(field =>
+  const usernameField = message.inputFieldInfo.find((field) =>
     isUsernameField(field)
   );
 
-  const passwordField = message.inputFieldInfo.find(field =>
+  const passwordField = message.inputFieldInfo.find((field) =>
     isPasswordField(field)
   );
 
@@ -310,7 +376,11 @@ async function handleInputFields(message) {
     try {
       let loginInfo = message.loginInfo;
       if (!loginInfo) {
-        loginInfo = await retrieveLoginInfo(message.domain, message.pinCode, message.passphrase);
+        loginInfo = await retrieveLoginInfo(
+          message.domain,
+          message.pinCode,
+          message.passphrase
+        );
       }
 
       if (loginInfo) {
@@ -331,7 +401,7 @@ function isUsernameField(field) {
     (field.type === 'text' || field.type === 'email') &&
     (usernameKeywords.includes(field.id) ||
       usernameKeywords.includes(field.name) ||
-      usernameKeywords.some(keyword =>
+      usernameKeywords.some((keyword) =>
         field.placeholder.toLowerCase().includes(keyword)
       ))
   );
@@ -345,7 +415,7 @@ function isPasswordField(field) {
     field.type === 'password' &&
     (passwordKeywords.includes(field.id) ||
       passwordKeywords.includes(field.name) ||
-      passwordKeywords.some(keyword =>
+      passwordKeywords.some((keyword) =>
         field.placeholder.toLowerCase().includes(keyword)
       ))
   );

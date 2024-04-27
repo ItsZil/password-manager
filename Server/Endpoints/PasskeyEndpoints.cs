@@ -71,7 +71,7 @@ namespace Server.Endpoints
         [Authorize]
         internal static async Task<IResult> GetPasskeyCredentials([FromQuery] int sourceId, [FromQuery] int loginDetailsId, KeyProvider keyProvider, SqlContext sqlContext)
         {
-            Passkey? passkey = await sqlContext.Passkeys.AsNoTracking().FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
+            Passkey? passkey = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.LoginDetailsId == loginDetailsId);
 
             if (passkey == null)
                 return Results.NotFound();
@@ -159,7 +159,7 @@ namespace Server.Endpoints
                         return Results.NotFound();
 
                     byte[] decryptedPasswordPlain = await PasswordUtil.DecryptPassword(loginDetails.Password, loginDetails.Salt, keyProvider.GetVaultPragmaKeyBytes());
-                    string decryptedPasswordPlainString = System.Text.Encoding.UTF8.GetString(decryptedPasswordPlain);
+                    string decryptedPasswordPlainString = Encoding.UTF8.GetString(decryptedPasswordPlain);
 
                     byte[] encryptedPasswordShared = await PasswordUtil.EncryptMessage(keyProvider.GetSharedSecret(request.SourceId), decryptedPasswordPlain);
                     string encryptedPasswordSharedString = Convert.ToBase64String(encryptedPasswordShared);

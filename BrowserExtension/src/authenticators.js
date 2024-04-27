@@ -2,10 +2,10 @@ const {
   initPublic,
   isHandshakeComplete,
   encryptPassword,
-  decryptPassword,
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
   sendAuthenticatorCountRequest,
@@ -24,7 +24,7 @@ let authenticatorsCount = 0;
 let currentPage = 1;
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
   await waitForHandshake();
 });
 
@@ -159,6 +159,7 @@ async function refreshAuthenticatorsTable(page) {
     const deleted = await sendDeleteAuthenticatorRequest(id);
     if (deleted) {
       document.getElementById('close-delete-confirm-modal-button').click();
+      authenticatorsCount--;
       await refreshAuthenticatorsTable(currentPage);
     } else {
       $('#delete-confirm-error').text(
@@ -402,8 +403,8 @@ $('#finish-create-authenticator-button').on('click', async function () {
     return;
   }
 
-  const authenticatorId = createAuthenticatorResponse.authenticatorId;
-  if (authenticatorId == 1 || (createAuthenticatorResponse.authenticatorId <= currentPage * 10)) {
+  authenticatorsCount++;
+  if (createAuthenticatorResponse.authenticatorId <= currentPage * 10) {
     await refreshAuthenticatorsTable(currentPage);
   }
 
@@ -462,9 +463,21 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setTokens(accessToken, refreshToken);
+    await setTokens(accessToken, refreshToken);
 
     await setElements();
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
   }
 });
 

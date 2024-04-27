@@ -6,6 +6,7 @@ const {
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   generatePassword,
   domainRegisterRequest,
   sendUnlockVaultRequest,
@@ -29,7 +30,7 @@ let loginDetailsCount = 0;
 let currentPage = 1;
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
   await waitForHandshake();
 });
 
@@ -231,6 +232,7 @@ async function refreshLoginDetailsTable(page) {
     const deleted = await sendDeleteLoginDetailRequest(loginDetailsId);
     if (deleted) {
       document.getElementById('close-delete-confirm-modal-button').click();
+      loginDetailsCount--;
       await refreshLoginDetailsTable(currentPage);
     } else {
       $('#delete-confirm-error').text(
@@ -495,7 +497,7 @@ async function setupPasskey(loginDetailsId, domain) {
     challenge: randomChallenge,
     rp: {
       name: 'Password Manager Vault',
-      id: domain
+      id: domain,
     },
     user: {
       id: randomUserId,
@@ -571,7 +573,9 @@ function parseDomain() {
     return false;
   }
   // Parse domain
-  const domainUrl = new URL(domain.startsWith("http") ? domain : `https://${domain}`);
+  const domainUrl = new URL(
+    domain.startsWith('http') ? domain : `https://${domain}`
+  );
   domain = domainUrl.hostname;
 
   $('#create-new-details-domain-input').val(domain);
@@ -678,10 +682,7 @@ $('#finish-create-details-button').on('click', async function () {
 
       break;
     case 'passkey-extra-auth':
-      const passkeySetupResult = await setupPasskey(
-        createdDetails.id,
-        domain
-      );
+      const passkeySetupResult = await setupPasskey(createdDetails.id, domain);
 
       if (!passkeySetupResult) {
         $('#create-error-text').text(
@@ -704,6 +705,7 @@ $('#finish-create-details-button').on('click', async function () {
       break;
   }
 
+  loginDetailsCount++;
   if (createdDetails.id <= currentPage * 10 || createdDetails.id == 1) {
     await refreshLoginDetailsTable(currentPage);
   }
@@ -770,9 +772,21 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setTokens(accessToken, refreshToken);
+    await setTokens(accessToken, refreshToken);
 
     await setElements();
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
   }
 });
 

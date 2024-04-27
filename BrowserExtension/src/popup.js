@@ -1,10 +1,13 @@
 'use strict';
 
 const {
+  setServerAddress,
   checkIfServerReachable,
   sendHasExistingVaultRequest,
   sendUnlockVaultRequest,
   sendLockVaultRequest,
+  sendLoginDetailsCountRequest,
+  sendAuthenticatorCountRequest,
 } = require('./util/requestsUtil.js');
 
 const {
@@ -36,6 +39,12 @@ $('#passphrase-input').on('input', function () {
     .removeClass('is-invalid-lite');
 });
 
+$('#vault-server-address-input').on('input', function () {
+  $('#vault-login-server-address-input')
+    .removeClass('is-invalid')
+    .removeClass('is-invalid-lite');
+});
+
 $('#toggle-passphrase-visibility').on('click', function () {
   const input = $('#passphrase-input');
 
@@ -51,10 +60,9 @@ $('#unlock-vault-button').on('click', async function () {
     return;
   }
   const passphrase = $('#passphrase-input').val();
+  const passphraseIsValid = passphrase.trim().length > 1;
 
-  const isValid = passphrase.trim().length > 1;
-
-  if (!isValid) {
+  if (!passphraseIsValid) {
     $('#passphrase-input').addClass('is-invalid').addClass('is-invalid-lite');
     return false;
   }
@@ -84,14 +92,14 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setTokens(accessToken, refreshToken);
+    await setTokens(accessToken, refreshToken);
 
     await setElements();
   }
 });
 
 $(async () => {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
 
   serverIsUp = await checkIfServerReachable();
   isUserAuthenticated = await isAuthenticated();
@@ -154,6 +162,14 @@ async function setElements() {
       $('#connection-ok-icon')
         .removeClass('bi-database-fill-lock')
         .addClass('bi-database-fill-check');
+
+      const passwordCount = await sendLoginDetailsCountRequest();
+      const authenticatorCount = await sendAuthenticatorCountRequest();
+
+      $('#vault-passwords-count').text('Number of passwords: ' + passwordCount);
+      $('#vault-authenticators-count').text(
+        'Number of authenticators: ' + authenticatorCount
+      );
     } else {
       // User is not authenticated, display only login element.
       notAuthenticatedElement.show();
@@ -170,6 +186,19 @@ async function setElements() {
     authenticatedReadyElement.hide();
   }
 }
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
+    serverIsUp = await checkIfServerReachable();
+  }
+});
 
 $('#passwords-button').on('click', function () {
   // Open the passwords page in a new tab.
@@ -188,7 +217,7 @@ $('#options-button').on('click', function () {
 
 $('#lock-vault-button').on('click', async function () {
   // Remove tokens from secure HttpOnly cookie
-  setTokens(null, null);
+  await setTokens(null, null);
   isUserAuthenticated = false;
   await setElements();
 

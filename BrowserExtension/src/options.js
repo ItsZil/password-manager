@@ -6,6 +6,7 @@ const {
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
   sendUpdateVaultPassphraseRequest,
@@ -21,7 +22,7 @@ const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 const sourceId = Math.floor(Math.random() * 1000000);
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
 
   await waitForHandshake();
 });
@@ -86,7 +87,7 @@ $('#unlock-vault-button').on('click', async function () {
   $('#unlock-in-progress').show();
 
   const response = await sendUnlockVaultRequest(unlockVaultRequestBody);
-
+  console.log(response);
   if (response == false) {
     // Unlock failed.
     $('#passphrase-input-fields').show();
@@ -98,9 +99,21 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setTokens(accessToken, refreshToken);
+    await setTokens(accessToken, refreshToken);
 
     await setElements();
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
   }
 });
 
@@ -215,7 +228,7 @@ $('#save-new-passphrase-button').on('click', async function () {
       .click();
 
     // Log out the user.
-    setTokens(null, null);
+    await setTokens(null, null);
 
     // Reload the page so they are prompted to login.
     location.reload();
@@ -232,7 +245,7 @@ $('#save-new-passphrase-button').on('click', async function () {
 
 $('#confirm-log-out-button').on('click', async function () {
   // Remove tokens from secure HttpOnly cookie
-  setTokens(null, null);
+  await setTokens(null, null);
 
   // Make a request for the server to invalidate all tokens and close connection to database
   await sendLockVaultRequest();
@@ -309,6 +322,10 @@ $('#vault-internet-access-checkbox').on('change', async function () {
     const disabledSuccessfully = await sendSetVaultInternetAccessRequest(false);
     $('#vault-internet-access-checkbox').prop('checked', !disabledSuccessfully);
   }
+});
+
+$('#cancel-enable-internet-access-button').on('click', function () {
+  $('#vault-internet-access-checkbox').prop('checked', false);
 });
 
 $('#confirm-enable-internet-access-button').on('click', async function () {

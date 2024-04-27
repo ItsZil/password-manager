@@ -6,9 +6,9 @@ const {
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   isAbsolutePathValid,
   sendSetupVaultRequest,
-  domainRegisterRequest,
   sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
@@ -17,12 +17,12 @@ const { isAuthenticated, setTokens } = require('./util/authUtil.js');
 const sourceId = Math.floor(Math.random() * 1000000);
 
 $(document).ready(async function () {
-  initPublic(sourceId, window.crypto);
+  await initPublic(sourceId, window.crypto);
   await waitForHandshake();
 
   const isAuthenticatedResult = await isAuthenticated();
   const hasExistingVault = await sendHasExistingVaultRequest();
-  if (isAuthenticatedResult && hasExistingVault) {
+  if (isAuthenticatedResult || hasExistingVault) {
     // Open the options page
     chrome.runtime.openOptionsPage();
 
@@ -132,25 +132,13 @@ $(document).ready(async function () {
       const accessToken = tokenResponse.accessToken;
       const refreshToken = tokenResponse.refreshToken;
 
-      setTokens(accessToken, refreshToken);
+      await setTokens(accessToken, refreshToken);
     } else {
       // Show failure UI
       $('#vault-creation-progress-modal').hide();
       $('#vault-creation-failure-modal').show();
     }
   });
-});
-
-$('#create-test-details').on('click', async function () {
-  let password = 'Password123';
-  const encryptedPassword = await encryptPassword(password);
-  const domainRegisterRequestBody = {
-    sourceId: sourceId,
-    domain: 'practicetestautomation.com',
-    username: 'student',
-    password: encryptedPassword,
-  };
-  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 $('#generatePassphrase').on('click', async function () {
@@ -168,6 +156,18 @@ $('#generatePassphrase').on('click', async function () {
     $('#passPhraseInput').val(
       'Something went wrong: is the vault service running?'
     );
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  } else {
+    await setServerAddress(serverAddress);
   }
 });
 
