@@ -1,7 +1,7 @@
 const {
   initPublic,
   isHandshakeComplete,
-  encryptPassword
+  encryptPassword,
 } = require('./util/passwordUtil.js');
 
 const {
@@ -403,7 +403,10 @@ $('#finish-create-authenticator-button').on('click', async function () {
   }
 
   const authenticatorId = createAuthenticatorResponse.authenticatorId;
-  if (authenticatorId == 1 || (createAuthenticatorResponse.authenticatorId <= currentPage * 10)) {
+  if (
+    authenticatorId == 1 ||
+    createAuthenticatorResponse.authenticatorId <= currentPage * 10
+  ) {
     await refreshAuthenticatorsTable(currentPage);
   }
 
@@ -475,8 +478,7 @@ $('#set-vault-server-address-button').on('click', async function () {
     $('#vault-server-address-input')
       .addClass('is-invalid')
       .addClass('is-invalid-lite');
-  }
-  else {
+  } else {
     await setServerAddress(serverAddress);
   }
 });

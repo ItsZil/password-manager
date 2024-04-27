@@ -28,7 +28,7 @@ $(document).ready(async function () {
 });
 
 async function setElements() {
-  console.log('setting elements.')
+  console.log('setting elements.');
   const isAuthenticatedResult = await isAuthenticated();
   const hasExistingVault = await sendHasExistingVaultRequest();
   const handshakeComplete = isHandshakeComplete();
@@ -115,8 +115,7 @@ $('#set-vault-server-address-button').on('click', async function () {
     $('#vault-server-address-input')
       .addClass('is-invalid')
       .addClass('is-invalid-lite');
-  }
-  else {
+  } else {
     await setServerAddress(serverAddress);
   }
 });

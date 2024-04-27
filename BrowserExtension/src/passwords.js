@@ -496,7 +496,7 @@ async function setupPasskey(loginDetailsId, domain) {
     challenge: randomChallenge,
     rp: {
       name: 'Password Manager Vault',
-      id: domain
+      id: domain,
     },
     user: {
       id: randomUserId,
@@ -572,7 +572,9 @@ function parseDomain() {
     return false;
   }
   // Parse domain
-  const domainUrl = new URL(domain.startsWith("http") ? domain : `https://${domain}`);
+  const domainUrl = new URL(
+    domain.startsWith('http') ? domain : `https://${domain}`
+  );
   domain = domainUrl.hostname;
 
   $('#create-new-details-domain-input').val(domain);
@@ -679,10 +681,7 @@ $('#finish-create-details-button').on('click', async function () {
 
       break;
     case 'passkey-extra-auth':
-      const passkeySetupResult = await setupPasskey(
-        createdDetails.id,
-        domain
-      );
+      const passkeySetupResult = await setupPasskey(createdDetails.id, domain);
 
       if (!passkeySetupResult) {
         $('#create-error-text').text(
@@ -777,7 +776,6 @@ $('#unlock-vault-button').on('click', async function () {
   }
 });
 
-
 $('#set-vault-server-address-button').on('click', async function () {
   const serverAddress = $('#vault-server-address-input').val();
 
@@ -785,8 +783,7 @@ $('#set-vault-server-address-button').on('click', async function () {
     $('#vault-server-address-input')
       .addClass('is-invalid')
       .addClass('is-invalid-lite');
-  }
-  else {
+  } else {
     await setServerAddress(serverAddress);
   }
 });

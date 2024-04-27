@@ -22,7 +22,7 @@ export async function getServerAddress() {
 // Function to set the server url
 export async function setServerAddress(serverAddress) {
   ServerUrl = serverAddress;
-  await chrome.storage.sync.set({ 'vaultServerAddress': ServerUrl });
+  await chrome.storage.sync.set({ vaultServerAddress: ServerUrl });
 }
 
 // Function to handle input fields found in the page by sending a domain login details request

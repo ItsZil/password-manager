@@ -16,99 +16,111 @@
           <p class="animated-dots">Is the vault service running? Retrying</p>
 
           <div class="input-group gap-2">
-            <input type="text"
-                    id="vault-server-address-input"
-                    class="form-control"
-                    placeholder="Vault server address" />
-            <a href="#"
-                class="btn btn-primary"
-                id="set-vault-server-address-button">
+            <input
+              type="text"
+              id="vault-server-address-input"
+              class="form-control"
+              placeholder="Vault server address"
+            />
+            <a
+              href="#"
+              class="btn btn-primary"
+              id="set-vault-server-address-button"
+            >
               Save
             </a>
           </div>
         </div>
 
-          <div id="connection-status-ok" style="display: none">
-            <div class="col-md-4">
-              <div class="bi-database-fill-check"
-                   id="connection-ok-icon"
-                   style="font-size: 45px"></div>
-              <h3 class="mb-2">Connection status: OK</h3>
+        <div id="connection-status-ok" style="display: none">
+          <div class="col-md-4">
+            <div
+              class="bi-database-fill-check"
+              id="connection-ok-icon"
+              style="font-size: 45px"
+            ></div>
+            <h3 class="mb-2">Connection status: OK</h3>
+          </div>
+
+          <!-- User has not completed setup -->
+          <div id="initial-setup" style="display: none">
+            <div class="p-5 text-center">
+              <h1 class="mb-3">Welcome</h1>
+              <p class="mb-4">Choose an option to get started</p>
+
+              <button id="newVaultBtn" class="btn btn-info mb-2 w-100">
+                Create New Vault
+              </button>
+              <button id="importVaultBtn" class="btn btn-secondary w-100">
+                Import Existing Vault
+              </button>
             </div>
+          </div>
 
-            <!-- User has not completed setup -->
-            <div id="initial-setup" style="display: none">
-              <div class="p-5 text-center">
-                <h1 class="mb-3">Welcome</h1>
-                <p class="mb-4">Choose an option to get started</p>
+          <div id="not-authenticated" style="display: none">
+            <div class="card-body text-center ps-4 pe-4">
+              <div class="mb-4">
+                <h2 class="card-title">Vault Locked</h2>
+              </div>
 
-                <button id="newVaultBtn" class="btn btn-info mb-2 w-100">
-                  Create New Vault
-                </button>
-                <button id="importVaultBtn" class="btn btn-secondary w-100">
-                  Import Existing Vault
-                </button>
+              <div id="passphrase-input-fields">
+                <p class="text-secondary-emphasis mt-0">
+                  Please enter your passphrase
+                </p>
+                <div class="mb-3 input-group input-group-flat">
+                  <input
+                    type="password"
+                    class="form-control"
+                    id="passphrase-input"
+                    placeholder="Passphrase"
+                    autocomplete="off"
+                  />
+                  <span class="input-group-text">
+                    <a
+                      href="#"
+                      class="link-secondary bi-eye"
+                      id="toggle-passphrase-visibility"
+                    ></a>
+                  </span>
+                </div>
+                <div>
+                  <a
+                    class="btn btn-primary w-100 mb-4"
+                    id="unlock-vault-button"
+                  >
+                    <i class="bi-unlock-fill me-2"></i>
+                    Unlock
+                  </a>
+                </div>
+              </div>
+
+              <div id="unlock-in-progress" style="display: none">
+                <div class="modal-title mb-4">Unlocking vault</div>
+                <div class="spinner-border mb-2"></div>
+                <div class="text-secondary-emphasis mb-4">
+                  This won't take long.
+                </div>
               </div>
             </div>
+          </div>
 
-            <div id="not-authenticated" style="display: none">
-              <div class="card-body text-center ps-4 pe-4">
-                <div class="mb-4">
-                  <h2 class="card-title">Vault Locked</h2>
-                </div>
+          <!-- User has completed setup and is authenticated setup -->
+          <div id="authenticated-ready" style="display: none">
+            <div class="container text-center mt-2">
+              <div class="row">
+                <!-- Divider -->
+                <hr class="my-3" />
 
-                <div id="passphrase-input-fields">
-                  <p class="text-secondary-emphasis mt-0">
-                    Please enter your passphrase
-                  </p>
-                  <div class="mb-3 input-group input-group-flat">
-                    <input type="password"
-                           class="form-control"
-                           id="passphrase-input"
-                           placeholder="Passphrase"
-                           autocomplete="off" />
-                    <span class="input-group-text">
-                      <a href="#"
-                         class="link-secondary bi-eye"
-                         id="toggle-passphrase-visibility"></a>
-                    </span>
-                  </div>
-                  <div>
-                    <a class="btn btn-primary w-100 mb-4"
-                       id="unlock-vault-button">
-                      <i class="bi-unlock-fill me-2"></i>
-                      Unlock
-                    </a>
-                  </div>
-                </div>
-
-                <div id="unlock-in-progress" style="display: none">
-                  <div class="modal-title mb-4">Unlocking vault</div>
-                  <div class="spinner-border mb-2"></div>
-                  <div class="text-secondary-emphasis mb-4">
-                    This won't take long.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- User has completed setup and is authenticated setup -->
-            <div id="authenticated-ready" style="display: none">
-              <div class="container text-center mt-2">
-                <div class="row">
-                  <!-- Divider -->
-                  <hr class="my-3" />
-
-                  <div class="col-md-4 mt-0">
-                    <h2>Vault statistics</h2>
-                    <p class="mb-0">Number of passwords: 10</p>
-                    <p>Number of authenticators: 5</p>
-                  </div>
+                <div class="col-md-4 mt-0">
+                  <h2>Vault statistics</h2>
+                  <p class="mb-0">Number of passwords: 10</p>
+                  <p>Number of authenticators: 5</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       <!-- Footer -->
       <footer

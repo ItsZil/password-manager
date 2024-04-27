@@ -1,6 +1,6 @@
 'use strict';
 
-import { getServerAddress } from "./requestsUtil";
+import { getServerAddress } from './requestsUtil';
 
 // Constants
 const ServerUrl = 'https://localhost:54782';
@@ -82,7 +82,7 @@ export async function initiateHandshake(sourceId) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Origin': 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif'
+          Origin: 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif',
         },
         body: requestBody,
       });
@@ -212,7 +212,7 @@ export async function fetchPassphrase(sourceId, wordCount) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Origin': 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif'
+        Origin: 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif',
       },
       body: requestBody,
     });

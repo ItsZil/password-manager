@@ -123,8 +123,7 @@ $('#set-vault-server-address-button').on('click', async function () {
     $('#vault-server-address-input')
       .addClass('is-invalid')
       .addClass('is-invalid-lite');
-  }
-  else {
+  } else {
     await setServerAddress(serverAddress);
   }
 });

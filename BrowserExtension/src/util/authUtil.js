@@ -95,12 +95,9 @@ export async function getCookie(name) {
   const url = await getServerAddress();
 
   return new Promise((resolve) => {
-    chrome.cookies.get(
-      { url: url, name: name },
-      (cookie) => {
-        resolve(cookie);
-      }
-    );
+    chrome.cookies.get({ url: url, name: name }, (cookie) => {
+      resolve(cookie);
+    });
   });
 }
 
@@ -123,9 +120,8 @@ export async function authenticatePasskey(
   sourceId,
   crypto,
   isForLogin,
-  credentialAlreadyRetrieved = false,
+  credentialAlreadyRetrieved = false
 ) {
-
   let credential = passkeyCredential;
   if (!credentialAlreadyRetrieved) {
     credential = await getUserPasskeyCredentials(passkeyCredential, challenge);
@@ -138,14 +134,10 @@ export async function authenticatePasskey(
   const clientDataJsonBase64 = credential.response.clientDataJSON;
 
   // Encode the client data hash
-  const clientDataAB = Uint8Array.from(
-    atob(clientDataJsonBase64),
-    (c) => c.charCodeAt(0)
+  const clientDataAB = Uint8Array.from(atob(clientDataJsonBase64), (c) =>
+    c.charCodeAt(0)
   );
-  const clientDataHash = await crypto.subtle.digest(
-    'SHA-256',
-    clientDataAB
-  );
+  const clientDataHash = await crypto.subtle.digest('SHA-256', clientDataAB);
   const clientDataHashBase64 = btoa(
     String.fromCharCode.apply(null, new Uint8Array(clientDataHash))
   );
@@ -159,7 +151,7 @@ export async function authenticatePasskey(
     signature: signatureBase64,
     authenticatorData: authenticatorDataBase64,
     clientDataJson: clientDataJsonBase64,
-    clientDataHash: clientDataHashBase64
+    clientDataHash: clientDataHashBase64,
   };
 
   const verified = await sendVerifyPasskeyCredentialRequest(
@@ -168,11 +160,13 @@ export async function authenticatePasskey(
   return verified;
 }
 
-export async function getUserPasskeyCredentials(passkeyCredential, challengeArrayBuffer) {
+export async function getUserPasskeyCredentials(
+  passkeyCredential,
+  challengeArrayBuffer
+) {
   // Set up the public key credential request options
-  const credentialId = Uint8Array.from(
-    atob(passkeyCredential),
-    (c) => c.charCodeAt(0)
+  const credentialId = Uint8Array.from(atob(passkeyCredential), (c) =>
+    c.charCodeAt(0)
   );
 
   const publicKeyCredentialRequestOptions = {
