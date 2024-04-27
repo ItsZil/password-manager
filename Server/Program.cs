@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.IdentityModel.Tokens;
 using Server.Endpoints;
+using Server.Middleware;
 using Server.Utilities;
 using UtilitiesLibrary.Models;
 
@@ -83,7 +84,10 @@ namespace Server
             app.MapMethods("", new[] { "HEAD" }, () => { });
 
             // Middleware to check if a shared secret key has been computed (handshake process complete)
-            //app.UseMiddleware<KeyMiddleware>();
+            app.UseMiddleware<KeyMiddleware>();
+
+            // Middleware to check if the origin is the chrome extension
+            //app.UseMiddleware<ChromeExtensionMiddleware>();
 
             // Middleware to limit access to the local network
             bool internetAccessEnabled = ConfigUtil.GetVaultInternetAccess();

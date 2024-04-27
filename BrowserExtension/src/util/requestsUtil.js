@@ -3,7 +3,27 @@
 const { getAccessToken } = require('./authUtil.js');
 
 // Constants
-const ServerUrl = 'https://localhost:54782';
+let ServerUrl = 'https://localhost:54782';
+
+// Function to retrieve and set the server url
+export async function getServerAddress() {
+  let storageData = await chrome.storage.sync.get('vaultServerAddress');
+  let vaultServerAddress = storageData['vaultServerAddress'];
+
+  if (!vaultServerAddress) {
+    vaultServerAddress = 'https://localhost:54782';
+    await setServerAddress(vaultServerAddress);
+  }
+
+  ServerUrl = vaultServerAddress;
+  return vaultServerAddress;
+}
+
+// Function to set the server url
+export async function setServerAddress(serverAddress) {
+  ServerUrl = serverAddress;
+  await chrome.storage.sync.set({ 'vaultServerAddress': ServerUrl });
+}
 
 // Function to handle input fields found in the page by sending a domain login details request
 // Return: A DomainLoginResponse JSON object
@@ -13,7 +33,7 @@ export async function domainLoginRequest(domainLoginRequestBody) {
   try {
     const accessToken = await getAccessToken();
 
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +64,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
   try {
     const accessToken = await getAccessToken();
 
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -75,7 +95,7 @@ export async function isAbsolutePathValid(absolutePathUri) {
   const apiEndpoint = '/api/isabsolutepathvalid';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,7 +124,7 @@ export async function generatePassword(sourceId) {
   const apiEndpoint = `/api/generatepassword?sourceId=${sourceId}`;
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
     });
 
@@ -129,7 +149,7 @@ export async function sendSetupVaultRequest(setupVaultRequestBody) {
   const apiEndpoint = '/api/setupvault';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -161,7 +181,7 @@ export async function sendUpdateVaultPassphraseRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -190,7 +210,7 @@ export async function sendHasExistingVaultRequest() {
   const apiEndpoint = '/api/hasexistingvault';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
     });
 
@@ -212,8 +232,10 @@ export async function sendHasExistingVaultRequest() {
 // Function to check if the server is reachable
 // Returns: A boolean indicating if the server is reachable
 export async function checkIfServerReachable() {
+  const serverUrl = await getServerAddress();
+
   try {
-    return await fetch(ServerUrl, { method: 'HEAD' })
+    return await fetch(serverUrl, { method: 'HEAD' })
       .then((response) => {
         if (response.ok) {
           return true;
@@ -235,7 +257,7 @@ export async function sendUnlockVaultRequest(unlockVaultRequestBody) {
   const apiEndpoint = '/api/unlockvault';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -263,7 +285,7 @@ export async function sendRefreshTokenRequest(refreshToken) {
   const apiEndpoint = '/api/refreshtoken';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -292,7 +314,7 @@ export async function sendLockVaultRequest() {
   const apiEndpoint = '/api/lockvault';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
     });
 
@@ -316,7 +338,7 @@ export async function sendCheckAuthRequest(accessToken) {
   const apiEndpoint = '/api/checkauth';
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -340,7 +362,7 @@ export async function sendLoginDetailsCountRequest() {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -369,7 +391,7 @@ export async function sendLoginDetailsViewRequest(page) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -398,7 +420,7 @@ export async function sendAllLoginDetailsViewRequest(page) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -429,7 +451,7 @@ export async function sendLoginDetailsPasswordRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,7 +482,7 @@ export async function sendCreatePasskeyRequest(passkeyCreationRequestBody) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -493,7 +515,7 @@ export async function sendGetPasskeyCredentialRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -525,7 +547,7 @@ export async function sendVerifyPasskeyCredentialRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -561,7 +583,7 @@ export async function sendGetExtraAuthTypeRequest(loginDetailsId) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -602,7 +624,7 @@ export async function sendSetExtraAuthTypeRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -635,7 +657,7 @@ export async function sendRemoveExtraAuthTypeRequest(loginDetailsId) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -663,7 +685,7 @@ export async function sendCreatePinRequest(request) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -693,7 +715,7 @@ export async function sendDeleteLoginDetailRequest(loginDetailsId) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -721,7 +743,7 @@ export async function sendEditLoginDetailRequest(loginDetailsRequestBody) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -751,7 +773,7 @@ export async function sendExportVaultRequest(exportVaultRequestBody) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -781,7 +803,7 @@ export async function sendGetVaultInternetAccessRequest() {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -810,7 +832,7 @@ export async function sendSetVaultInternetAccessRequest(setting) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -838,7 +860,7 @@ export async function sendAuthenticatorCountRequest() {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -867,7 +889,7 @@ export async function sendGetAuthenticatorViewRequest(page) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -899,7 +921,7 @@ export async function sendGetAuthenticatorCodeRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -930,7 +952,7 @@ export async function sendGetAuthenticatorCodeByDomainRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -960,7 +982,7 @@ export async function sendCreateAuthenticatorRequest(
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -990,7 +1012,7 @@ export async function sendDeleteAuthenticatorRequest(authenticatorId) {
   const accessToken = await getAccessToken();
 
   try {
-    const response = await fetch(`${ServerUrl}${apiEndpoint}`, {
+    const response = await fetch(`${await getServerAddress()}${apiEndpoint}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`,

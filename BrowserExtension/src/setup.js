@@ -6,6 +6,7 @@ const {
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   isAbsolutePathValid,
   sendSetupVaultRequest,
   domainRegisterRequest,
@@ -132,7 +133,7 @@ $(document).ready(async function () {
       const accessToken = tokenResponse.accessToken;
       const refreshToken = tokenResponse.refreshToken;
 
-      setTokens(accessToken, refreshToken);
+      await setTokens(accessToken, refreshToken);
     } else {
       // Show failure UI
       $('#vault-creation-progress-modal').hide();
@@ -168,6 +169,19 @@ $('#generatePassphrase').on('click', async function () {
     $('#passPhraseInput').val(
       'Something went wrong: is the vault service running?'
     );
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  }
+  else {
+    await setServerAddress(serverAddress);
   }
 });
 

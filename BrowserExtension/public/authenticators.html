@@ -32,12 +32,10 @@
       <div class="container container-slim py-4">
         <div class="text-center">
           <div class="mb-3">
-            <i
-              class="navbar-brand-image navbar-brand navbar-brand-autodark"
-              id="handshake-retry-icon"
-              style="font-size: xx-large"
-              alt="Password Manager"
-            ></i>
+            <i class="navbar-brand-image navbar-brand navbar-brand-autodark"
+               id="handshake-retry-icon"
+               style="font-size: xx-large"
+               alt="Password Manager"></i>
           </div>
           <div class="text-secondary">Connecting to vault service</div>
           <div class="text-secondary mb-3" id="handshake-retry-text">
@@ -45,6 +43,17 @@
           </div>
           <div class="progress progress-sm">
             <div class="progress-bar progress-bar-indeterminate"></div>
+          </div>
+          <div class="mt-4 mb-2 input-group gap-2">
+            <input type="text"
+                   id="vault-server-address-input"
+                   class="form-control"
+                   placeholder="Vault server address" />
+            <a href="#"
+               class="btn btn-primary"
+               id="set-vault-server-address-button">
+              Save
+            </a>
           </div>
         </div>
       </div>

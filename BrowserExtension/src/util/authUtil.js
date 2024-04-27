@@ -1,8 +1,7 @@
 'use strict';
 
-const { str2ab } = require('./passwordUtil.js');
-
 const {
+  getServerAddress,
   sendRefreshTokenRequest,
   sendCheckAuthRequest,
   sendVerifyPasskeyCredentialRequest,
@@ -13,9 +12,14 @@ const { jwtDecode } = require('jwt-decode');
 // Function to check if the user is authenticated
 export async function isAuthenticated() {
   const accessTokenCookie = await getCookie('accessToken');
+
   // Check if the access token cookie exists
   if (accessTokenCookie) {
     const accessToken = accessTokenCookie.value;
+
+    if (accessToken.length < 1) {
+      await setTokens(null, null);
+    }
 
     // Check if decoded access token is expired
     let isExpired = true;
@@ -33,6 +37,11 @@ export async function isAuthenticated() {
       if (refreshTokenCookie) {
         const refreshToken = refreshTokenCookie.value;
 
+        if (refreshToken.length < 1) {
+          await setTokens(null, null);
+          return false;
+        }
+
         // Send a refresh token request to the server
         const refreshTokenResponse = await sendRefreshTokenRequest(
           refreshToken
@@ -44,7 +53,7 @@ export async function isAuthenticated() {
           const newRefreshToken = refreshTokenResponse.refreshToken;
 
           // Store the new access token and refresh token in cookies
-          setTokens(newAccessToken, newRefreshToken);
+          await setTokens(newAccessToken, newRefreshToken);
 
           return true;
         }
@@ -55,7 +64,7 @@ export async function isAuthenticated() {
 
       // If the vault is not unlocked, then the users' tokens are invalid.
       if (!authConfirmed) {
-        setTokens(null, null);
+        await setTokens(null, null);
         return false;
       }
       return true;
@@ -76,16 +85,18 @@ export async function getAccessToken() {
   }
 }
 
-export function setTokens(accessToken, refreshToken) {
-  setCookie('accessToken', accessToken);
-  setCookie('refreshToken', refreshToken);
+export async function setTokens(accessToken, refreshToken) {
+  await setCookie('accessToken', accessToken);
+  await setCookie('refreshToken', refreshToken);
 }
 
 // Function to retrieve a cookie by name
-export function getCookie(name) {
+export async function getCookie(name) {
+  const url = await getServerAddress();
+
   return new Promise((resolve) => {
     chrome.cookies.get(
-      { url: 'https://localhost:54782', name: name },
+      { url: url, name: name },
       (cookie) => {
         resolve(cookie);
       }
@@ -94,9 +105,10 @@ export function getCookie(name) {
 }
 
 // Function to set a cookie by name and value
-export function setCookie(name, value) {
-  chrome.cookies.set({
-    url: 'https://localhost:54782',
+export async function setCookie(name, value) {
+  const url = await getServerAddress();
+  await chrome.cookies.set({
+    url: url,
     name: name,
     value: value,
     httpOnly: true,

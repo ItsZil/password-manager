@@ -1,5 +1,7 @@
 'use strict';
 
+import { getServerAddress } from "./requestsUtil";
+
 // Constants
 const ServerUrl = 'https://localhost:54782';
 
@@ -76,7 +78,7 @@ export async function initiateHandshake(sourceId) {
 
     let response;
     try {
-      response = await fetch(`${ServerUrl}/api/handshake`, {
+      response = await fetch(`${await getServerAddress()}/api/handshake`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

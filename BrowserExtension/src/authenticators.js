@@ -1,11 +1,11 @@
 const {
   initPublic,
   isHandshakeComplete,
-  encryptPassword,
-  decryptPassword,
+  encryptPassword
 } = require('./util/passwordUtil.js');
 
 const {
+  setServerAddress,
   sendUnlockVaultRequest,
   sendHasExistingVaultRequest,
   sendAuthenticatorCountRequest,
@@ -462,9 +462,22 @@ $('#unlock-vault-button').on('click', async function () {
     const refreshToken = response.refreshToken;
 
     // Store accessToken and refreshToken in a secure HttpOnly cookie
-    setTokens(accessToken, refreshToken);
+    await setTokens(accessToken, refreshToken);
 
     await setElements();
+  }
+});
+
+$('#set-vault-server-address-button').on('click', async function () {
+  const serverAddress = $('#vault-server-address-input').val();
+
+  if (serverAddress.trim().length < 1) {
+    $('#vault-server-address-input')
+      .addClass('is-invalid')
+      .addClass('is-invalid-lite');
+  }
+  else {
+    await setServerAddress(serverAddress);
   }
 });
 
