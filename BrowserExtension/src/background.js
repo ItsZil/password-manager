@@ -57,14 +57,16 @@ async function contextMenuOnClick(info, tab) {
         generatedPassword = await passwordUtil.decryptPassword(
           generatedPassword
         );
+        showSuccessNotification('Password Generated', 'Copied to clipboard');
       } else {
         showFailureNotification(
           'Password Generation Failed',
           'Please try again'
         );
+        break;
       }
 
-      contextMenuPasteValue(tab, generatedPassword);
+      contextMenuPasteValue(tab, generatedPassword, true);
       break;
     case 'pasteAuthenticatorCode':
       // Parse the domain
@@ -107,11 +109,15 @@ async function contextMenuOnClick(info, tab) {
 }
 
 // Function to paste a value into the focused input field
-function contextMenuPasteValue(tab, value) {
+function contextMenuPasteValue(tab, value, saveToClipboard = false) {
   chrome.scripting
     .executeScript({
       target: { tabId: tab.id },
-      function: function (value) {
+      function: function (value, saveToClipboard = false) {
+        if (saveToClipboard) {
+          navigator.clipboard.writeText(value);
+        }
+
         // Find the focused input field
         var inputField = document.activeElement;
 
@@ -141,7 +147,7 @@ function contextMenuPasteValue(tab, value) {
           };
         }
       },
-      args: [value],
+      args: [value, saveToClipboard],
     })
     .then((response) => {
       const result = response[0].result;
@@ -325,6 +331,15 @@ function showFailureNotification(title, message) {
   chrome.notifications.create({
     type: 'basic',
     iconUrl: 'icons/icon_fail_196.png',
+    title: title,
+    message: message,
+  });
+}
+
+function showSuccessNotification(title, message) {
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/icon_128.png',
     title: title,
     message: message,
   });
