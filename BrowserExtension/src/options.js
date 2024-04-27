@@ -28,14 +28,11 @@ $(document).ready(async function () {
 });
 
 async function setElements() {
-  console.log('setting elements.');
   const isAuthenticatedResult = await isAuthenticated();
   const hasExistingVault = await sendHasExistingVaultRequest();
   const handshakeComplete = isHandshakeComplete();
 
   if (!handshakeComplete) return;
-
-  console.log('isAuthenticatedResult:', isAuthenticatedResult);
 
   if (!isAuthenticatedResult && hasExistingVault) {
     // Show login modal
@@ -325,6 +322,10 @@ $('#vault-internet-access-checkbox').on('change', async function () {
     const disabledSuccessfully = await sendSetVaultInternetAccessRequest(false);
     $('#vault-internet-access-checkbox').prop('checked', !disabledSuccessfully);
   }
+});
+
+$('#cancel-enable-internet-access-button').on('click', function () {
+  $('#vault-internet-access-checkbox').prop('checked', false);
 });
 
 $('#confirm-enable-internet-access-button').on('click', async function () {
