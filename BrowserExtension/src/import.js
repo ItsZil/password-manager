@@ -86,6 +86,7 @@ $(document).ready(async function () {
     const vaultKey = await encryptPassword(passPhrase);
 
     const importVaultRequestBody = {
+      sourceId: sourceId,
       absolutePathUri: vaultPath,
       vaultRawKeyBase64: vaultKey,
     };
@@ -104,8 +105,8 @@ $(document).ready(async function () {
       $('#setup-fields').hide();
       $('#setup-complete-message').show();
 
-      const accessToken = tokenResponse.accessToken;
-      const refreshToken = tokenResponse.refreshToken;
+      const accessToken = importSucceeded.accessToken;
+      const refreshToken = importSucceeded.refreshToken;
 
       await setTokens(accessToken, refreshToken);
     } else {
@@ -186,7 +187,7 @@ async function validatePath(path) {
 }
 
 function validatePassphrase(passphrase) {
-  return passphrase.length < 1;
+  return passphrase.length > 1;
 }
 
 $('#restart-import-button').on('click', function () {

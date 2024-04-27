@@ -704,7 +704,7 @@ $('#finish-create-details-button').on('click', async function () {
       break;
   }
 
-  if (createdDetails.id <= currentPage * 10 || createdDetails.id == 1) {
+  if (createdDetails.id == 1 || (createdDetails.id <= currentPage * 10 || createdDetails.id == 1)) {
     await refreshLoginDetailsTable(currentPage);
   }
 
