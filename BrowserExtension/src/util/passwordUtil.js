@@ -82,6 +82,7 @@ export async function initiateHandshake(sourceId) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Origin': 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif'
         },
         body: requestBody,
       });
@@ -211,6 +212,7 @@ export async function fetchPassphrase(sourceId, wordCount) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Origin': 'chrome-extension://icbeakhigcgladpiblnolcogihmcdoif'
       },
       body: requestBody,
     });

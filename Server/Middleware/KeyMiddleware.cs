@@ -1,5 +1,4 @@
 ﻿using Server.Utilities;
-using System.Linq;
 
 namespace Server.Middleware
 {
@@ -16,7 +15,7 @@ namespace Server.Middleware
         public async Task InvokeAsync(HttpContext context, KeyProvider keyProvider)
         {
             // Check if this is not a request to handshake
-            if (!exceptionEndpoints.Contains(context.Request.Path) && context.Request.Method != "POST" && context.Request.Method != "HEAD")
+            if (!exceptionEndpoints.Contains(context.Request.Path.ToString().ToLower()) && context.Request.Method != "POST" && context.Request.Method != "HEAD")
             {
                 // Check if KeyProvider.GetSharedSecret() is null
                 if (!keyProvider.SharedSecretNotNull())

@@ -9,7 +9,6 @@ const {
   setServerAddress,
   isAbsolutePathValid,
   sendSetupVaultRequest,
-  domainRegisterRequest,
   sendHasExistingVaultRequest,
 } = require('./util/requestsUtil.js');
 
@@ -23,7 +22,7 @@ $(document).ready(async function () {
 
   const isAuthenticatedResult = await isAuthenticated();
   const hasExistingVault = await sendHasExistingVaultRequest();
-  if (isAuthenticatedResult && hasExistingVault) {
+  if (isAuthenticatedResult || hasExistingVault) {
     // Open the options page
     chrome.runtime.openOptionsPage();
 
@@ -140,18 +139,6 @@ $(document).ready(async function () {
       $('#vault-creation-failure-modal').show();
     }
   });
-});
-
-$('#create-test-details').on('click', async function () {
-  let password = 'Password123';
-  const encryptedPassword = await encryptPassword(password);
-  const domainRegisterRequestBody = {
-    sourceId: sourceId,
-    domain: 'practicetestautomation.com',
-    username: 'student',
-    password: encryptedPassword,
-  };
-  await domainRegisterRequest(domainRegisterRequestBody);
 });
 
 $('#generatePassphrase').on('click', async function () {

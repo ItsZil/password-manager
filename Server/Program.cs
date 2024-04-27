@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -45,6 +44,8 @@ namespace Server
             });
 
             builder.Services.AddAuthorization();
+            builder.Services.AddCors();
+            builder.Services.AddResponseCaching();
 
             // Configure the app to serve over HTTPS only
             builder.WebHost.UseKestrelHttpsConfiguration();
@@ -86,27 +87,22 @@ namespace Server
             // Middleware to check if a shared secret key has been computed (handshake process complete)
             app.UseMiddleware<KeyMiddleware>();
 
-            // Middleware to check if the origin is the chrome extension
-            //app.UseMiddleware<ChromeExtensionMiddleware>();
-
             // Middleware to limit access to the local network
             bool internetAccessEnabled = ConfigUtil.GetVaultInternetAccess();
             if (!app.Environment.IsEnvironment("TEST_INTEGRATION") && !internetAccessEnabled)
             {
-                app.Use(async (context, next) =>
-                {
-                    var remoteIp = context.Connection.RemoteIpAddress;
-                    if (remoteIp != null && (remoteIp.Equals(IPAddress.Loopback) || remoteIp.Equals(IPAddress.IPv6Loopback) && context.Request.IsHttps))
-                    {
-                        await next.Invoke();
-                    }
-                    else
-                    {
-                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                        await context.Response.WriteAsync("Access denied. This service is only available within the local network.");
-                    }
-                });
+                app.UseMiddleware<InternetAccessMiddleware>();
             }
+
+            // Only allow the Chrome extension to access the vault
+            app.UseCors(builder =>
+            {
+                builder.WithOrigins("chrome-extension://icbeakhigcgladpiblnolcogihmcdoif")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+
+            app.UseResponseCaching();
 
             var rootApi = app.MapGroup("/api/");
             rootApi.MapLoginDetailsEndpoints();
