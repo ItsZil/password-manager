@@ -159,6 +159,7 @@ async function refreshAuthenticatorsTable(page) {
     const deleted = await sendDeleteAuthenticatorRequest(id);
     if (deleted) {
       document.getElementById('close-delete-confirm-modal-button').click();
+      authenticatorsCount--;
       await refreshAuthenticatorsTable(currentPage);
     } else {
       $('#delete-confirm-error').text(
@@ -402,11 +403,8 @@ $('#finish-create-authenticator-button').on('click', async function () {
     return;
   }
 
-  const authenticatorId = createAuthenticatorResponse.authenticatorId;
-  if (
-    authenticatorId == 1 ||
-    createAuthenticatorResponse.authenticatorId <= currentPage * 10
-  ) {
+  authenticatorsCount++;
+  if (createAuthenticatorResponse.authenticatorId <= currentPage * 10) {
     await refreshAuthenticatorsTable(currentPage);
   }
 

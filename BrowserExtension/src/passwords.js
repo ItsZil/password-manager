@@ -232,6 +232,7 @@ async function refreshLoginDetailsTable(page) {
     const deleted = await sendDeleteLoginDetailRequest(loginDetailsId);
     if (deleted) {
       document.getElementById('close-delete-confirm-modal-button').click();
+      loginDetailsCount--;
       await refreshLoginDetailsTable(currentPage);
     } else {
       $('#delete-confirm-error').text(
@@ -704,7 +705,8 @@ $('#finish-create-details-button').on('click', async function () {
       break;
   }
 
-  if (createdDetails.id == 1 || (createdDetails.id <= currentPage * 10 || createdDetails.id == 1)) {
+  loginDetailsCount++;
+  if (createdDetails.id <= currentPage * 10 || createdDetails.id == 1) {
     await refreshLoginDetailsTable(currentPage);
   }
 
