@@ -172,7 +172,7 @@ async function validatePath(path) {
 
   path = path.trim();
 
-  if (!path.match(/^[a-zA-Z]:\\/) || !path.endsWith('.db')) {
+  if (!path.match(/^(?:[a-zA-Z]:\\|\/)/) || !path.endsWith('.db')) {
     $('#vaultPathError').hide();
     return false; // Path is not correct
   }

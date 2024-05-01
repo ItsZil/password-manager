@@ -26,11 +26,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="EndToEndTests\" />
-    <Folder Include="PerformanceTests\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Server\Server.csproj" />
     <ProjectReference Include="..\UtilitiesLibrary\UtilitiesLibrary.csproj" />
   </ItemGroup>

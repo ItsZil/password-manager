@@ -214,7 +214,7 @@ async function validatePath(path) {
 
   path = path.trim();
 
-  if (!path.match(/^[a-zA-Z]:\\/)) {
+  if (!path.match(/^(?:[a-zA-Z]:\\|\/)/)) {
     $('#customPathError').hide();
     return false; // Path is not absolute
   }
