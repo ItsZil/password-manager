@@ -116,7 +116,7 @@ namespace Server.Endpoints
             Passkey? passkey = await sqlContext.Passkeys.FirstOrDefaultAsync(x => x.CredentialId == credentialId && x.LoginDetailsId == request.LoginDetailsId);
 
             if (passkey == null)
-                return Results.Unauthorized();
+                return Results.NotFound();
 
             // Check if the challenge from the client matches the challenge stored in the database
             byte[] clientChallenge = Base64UrlEncoder.DecodeBytes(clientData.Challenge);

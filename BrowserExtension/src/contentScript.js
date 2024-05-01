@@ -24,6 +24,51 @@ function getAllInputFields() {
   return null;
 }
 
+// Function to check if there are elements on the current page that are login or registration input fields
+async function checkInputFields(inputFieldInfo) {
+  const usernameField = inputFieldInfo.find((field) =>
+    isUsernameField(field)
+  );
+
+  const passwordField = inputFieldInfo.find((field) =>
+    isPasswordField(field)
+  );
+
+  if (usernameField && passwordField) {
+    return true;
+  }
+  return false;
+}
+
+function isUsernameField(field) {
+  const usernameKeywords = ['username', 'id_username', 'email', 'user', 'login', 'nickname'];
+
+  // Check if any of the common keywords appear in id, name, or placeholder
+  return (
+    (field.type === 'text' || field.type === 'email') &&
+    (usernameKeywords.includes(field.id) ||
+      usernameKeywords.includes(field.name) ||
+      usernameKeywords.some((keyword) =>
+        field.placeholder.toLowerCase().includes(keyword)
+      ))
+  );
+}
+
+function isPasswordField(field) {
+  const passwordKeywords = ['password', 'id_password', 'passcode', 'pass', 'pwd'];
+
+  // Check if any of the common keywords appear in id, name, or placeholder
+  return (
+    field.type === 'password' &&
+    (passwordKeywords.includes(field.id) ||
+      passwordKeywords.includes(field.name) ||
+      passwordKeywords.some((keyword) =>
+        field.placeholder.toLowerCase().includes(keyword)
+      ))
+  );
+}
+
+
 // Function to parse the page and check for input fields
 function checkForInputFields() {
   const inputFieldInfo = getAllInputFields();
@@ -31,15 +76,21 @@ function checkForInputFields() {
   // Grab the page domain
   var domain = parseDomain();
 
-  // Notify the background script that input fields are found
-  chrome.runtime.sendMessage({
-    type: 'AUTOFILL_LOGIN_DETAILS',
-    payload: {
-      hasInputFields: true,
-      inputFieldInfo,
-      domain,
-    },
-  });
+  let check = checkInputFields(inputFieldInfo);
+
+  if (check) {
+    // Notify the background script that input fields are found
+    chrome.runtime.sendMessage({
+      type: 'AUTOFILL_LOGIN_DETAILS',
+      payload: {
+        hasInputFields: true,
+        inputFieldInfo,
+        domain,
+      },
+    });
+    return true;
+  }
+  return false;
 }
 
 export function parseDomain() {
@@ -50,15 +101,46 @@ export function parseDomain() {
   if (queryIndex !== -1) {
     pageHref = pageHref.substring(0, queryIndex);
   }
+  let domain = pageHref.split('/')[2];
+  
+  if (domain.startsWith('www.')) {
+    domain = domain.substring(4);
+  }
 
-  return pageHref.split('/')[2];
+  return domain;
 }
 
 // Run the checkForInputFields function when the DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', checkForInputFields);
+  document.addEventListener('DOMContentLoaded', function() {
+    checkForInputFields();
+    // Create a new MutationObserver to observe changes in the DOM
+    const observer = new MutationObserver(function(mutationsList, observer) {
+      for(let mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+          // Check for changes in the DOM
+          checkForInputFields();
+        }
+      }
+    });
+
+    // Start observing the entire document for changes
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  });
 } else {
   checkForInputFields();
+  // Create a new MutationObserver to observe changes in the DOM
+  const observer = new MutationObserver(function(mutationsList, observer) {
+    for(let mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        // Check for changes in the DOM
+        checkForInputFields();
+      }
+    }
+  });
+
+  // Start observing the entire document for changes
+  observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
 export function addStylesheet() {
@@ -100,11 +182,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
       usernameField.classList.add('autofilled');
       usernameField.value = request.username;
+      usernameField.dispatchEvent(new Event('input', { bubbles: true }));
 
       // Wait 0.1s before animating the password field
       setTimeout(() => {
         passwordField.classList.add('autofilled');
         passwordField.value = request.password;
+        passwordField.dispatchEvent(new Event('input', { bubbles: true }));
       }, 100);
 
       // Wait for autofillAnimLength before removing the autofilled class

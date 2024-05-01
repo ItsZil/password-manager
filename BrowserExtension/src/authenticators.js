@@ -357,7 +357,7 @@ $('#finish-create-authenticator-button').on('click', async function () {
   }
 
   // Ensure the secret key is at least 8 characters long
-  const secretKey = $('#create-new-authenticator-secret-input').val();
+  let secretKey = $('#create-new-authenticator-secret-input').val();
   if (secretKey.length < 8) {
     $('#create-new-authenticator-secret-input')
       .addClass('is-invalid')
@@ -371,6 +371,9 @@ $('#finish-create-authenticator-button').on('click', async function () {
   $('#finish-create-authenticator-button').addClass('disabled');
   $('#finish-create-authenticator-icon').hide();
   $('#finish-create-authenticator-spinner').show();
+
+  // Remove all whitespace from secret key
+  secretKey = secretKey.replace(/\s/g, '');
 
   // Create the authenticator
   const encryptedSecret = await encryptPassword(secretKey);

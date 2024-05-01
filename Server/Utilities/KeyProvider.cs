@@ -81,7 +81,13 @@ namespace Server.Utilities
         internal byte[] GetSharedSecret(int sourceId = 0)
         {
             SharedSecrets.TryGetValue(sourceId, out byte[]? sharedSecret);
-            return sharedSecret ?? Array.Empty<byte>();
+
+            if (sharedSecret == null)
+            {
+                throw new InvalidOperationException($"Shared secret {sourceId} not found.");
+            }
+
+            return sharedSecret;
         }
 
         internal bool SharedSecretNotNull()

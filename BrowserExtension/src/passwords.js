@@ -493,11 +493,16 @@ async function setupPasskey(loginDetailsId, domain) {
   const randomChallenge = window.crypto.getRandomValues(new Uint8Array(16));
   const randomUserId = window.crypto.getRandomValues(new Uint8Array(16));
 
+  let passkeyDomain = domain;
+  if (domain.includes('tradingview')) {
+    passkeyDomain = 'www.tradingview.com';
+  }
+
   const publicKeyCredentialCreationOptions = {
     challenge: randomChallenge,
     rp: {
       name: 'Password Manager Vault',
-      id: domain,
+      id: passkeyDomain,
     },
     user: {
       id: randomUserId,
@@ -719,6 +724,11 @@ $('#finish-create-details-button').on('click', async function () {
   $('#create-new-details-username-input').val('');
   $('#create-new-details-password-input').val('');
   $('#create-details-modal-close').click();
+
+  // Reset the extra auth fields
+  $('#create-details-pin-input').val('');
+  $('#extra-auth-pin-setup').hide();
+  $('#creation-extra-auth-selection').val('no-extra-auth');
 
   if (!extraAuthSetupResult) {
     // Something went wrong setting up extra authentication, show an error modal

@@ -77,6 +77,11 @@ async function contextMenuOnClick(info, tab) {
       }
       domain = domain.split('/')[2];
 
+      // Remove any www.
+      if (domain.startsWith('www.')) {
+        domain = domain.substring(4);
+      }
+
       // Get the current timestamp
       const timestamp = new Date().toISOString();
       const timestampUri = encodeURIComponent(timestamp);
@@ -129,6 +134,10 @@ function contextMenuPasteValue(tab, value, saveToClipboard = false) {
           !inputField.readOnly
         ) {
           inputField.value = value;
+
+          // Set input field value attribute
+          inputField.setAttribute('value', value);
+          inputField.dispatchEvent(new Event('input', { bubbles: true }));
 
           if (inputField.id) {
             // If the inputField has an id, return it
@@ -358,6 +367,8 @@ function sendAutofillDetailsMessage(usernameField, passwordField, loginInfo) {
   });
 }
 
+let handledTradingView = false;
+
 // Function to check if there are elements on the current page that are login or registration input fields
 async function handleInputFields(message) {
   if (!message.inputFieldInfo) {
@@ -376,6 +387,13 @@ async function handleInputFields(message) {
     try {
       let loginInfo = message.loginInfo;
       if (!loginInfo) {
+        // If the page is TradingView, we only autofill the login form once
+        if (message.domain.includes('tradingview') && handledTradingView) {
+          return;
+        } else if (message.domain.includes('tradingview')) {
+          handledTradingView = true;
+        }
+
         loginInfo = await retrieveLoginInfo(
           message.domain,
           message.pinCode,
@@ -394,7 +412,7 @@ async function handleInputFields(message) {
 }
 
 function isUsernameField(field) {
-  const usernameKeywords = ['username', 'email', 'user', 'login', 'nickname'];
+  const usernameKeywords = ['username', 'id_username', 'email', 'user', 'login', 'nickname'];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (
@@ -408,7 +426,7 @@ function isUsernameField(field) {
 }
 
 function isPasswordField(field) {
-  const passwordKeywords = ['password', 'passcode', 'pass', 'pwd'];
+  const passwordKeywords = ['password', 'id_password', 'passcode', 'pass', 'pwd'];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (
