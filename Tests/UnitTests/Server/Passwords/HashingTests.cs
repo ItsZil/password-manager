@@ -1,7 +1,7 @@
 ﻿using Geralt;
 using Server.Utilities;
 
-namespace Tests.UnitTests.Server.Passwords
+namespace Tests.UnitTests
 {
     public class HashingTests
     {

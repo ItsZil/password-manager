@@ -1,4 +1,4 @@
-namespace Tests.UnitTests.Server
+namespace Tests.IntegrationTests.Server
 {
     public class DatabaseConnectionTests : IClassFixture<TestDatabaseFixture>
     {

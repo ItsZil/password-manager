@@ -493,16 +493,11 @@ async function setupPasskey(loginDetailsId, domain) {
   const randomChallenge = window.crypto.getRandomValues(new Uint8Array(16));
   const randomUserId = window.crypto.getRandomValues(new Uint8Array(16));
 
-  let passkeyDomain = domain;
-  if (domain.includes('tradingview')) {
-    passkeyDomain = 'www.tradingview.com';
-  }
-
   const publicKeyCredentialCreationOptions = {
     challenge: randomChallenge,
     rp: {
       name: 'Password Manager Vault',
-      id: passkeyDomain,
+      id: domain,
     },
     user: {
       id: randomUserId,

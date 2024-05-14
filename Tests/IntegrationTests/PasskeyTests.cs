@@ -271,7 +271,7 @@ namespace Tests.IntegrationTests.Server
         }
 
         [Fact]
-        public async Task TestVerifyNonExistingPasskeyReturnsUnauthorized()
+        public async Task TestVerifyNonExistingPasskeyReturnsNotFound()
         {
             // Prepare a PasskeyVerificationRequest object with a credential ID that does not exist in the database
             PasskeyVerificationRequest request = await CreatePasskeyVerificationRequest();
@@ -279,7 +279,7 @@ namespace Tests.IntegrationTests.Server
 
             // Verify the passkey
             var passkeyVerificationResponse = await VerifyPasskeyAsync(request);
-            Assert.Equal(HttpStatusCode.Unauthorized, passkeyVerificationResponse.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, passkeyVerificationResponse.StatusCode);
         }
 
         [Fact]

@@ -2,7 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Server.Utilities;
 
-namespace Tests.UnitTests.Server
+namespace Tests.IntegrationTests.Server
 {
     public class DatabaseEncryptionTests : IClassFixture<TestDatabaseFixture>
     {

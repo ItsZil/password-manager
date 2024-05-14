@@ -176,6 +176,7 @@ async function setElements() {
       authenticatedReadyElement.hide();
       footerElement.hide();
 
+      $('#passphrase-input-fields').show();
       $('#connection-ok-icon')
         .removeClass('bi-database-fill-check')
         .addClass('bi-database-fill-lock');

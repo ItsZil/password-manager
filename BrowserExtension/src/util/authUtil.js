@@ -169,9 +169,15 @@ export async function getUserPasskeyCredentials(
     c.charCodeAt(0)
   );
 
+  let hostName = window.location.hostname;
+  if (hostName.startsWith('www.')) {
+    hostName = hostName.substring(4);
+  }
+
   const publicKeyCredentialRequestOptions = {
     challenge: challengeArrayBuffer,
-    userVerifiation: 'required',
+    userVerification: 'required',
+    rpId: hostName,
     allowCredentials: [
       {
         type: 'public-key',

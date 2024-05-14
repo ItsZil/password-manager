@@ -10,7 +10,8 @@ function getAllInputFields() {
     'input[type="email"], input[type="password"], input[type="text"], input[type="tel"], textarea'
   );
 
-  if (inputFields.length > 0) {
+  // For now, only handle pages that have at least 2 input fields, typically username and password fields.
+  if (inputFields.length > 1) {
     // Extract information about input fields
     const inputFieldInfo = Array.from(inputFields).map((inputField) => ({
       type: inputField.type,
@@ -25,23 +26,23 @@ function getAllInputFields() {
 }
 
 // Function to check if there are elements on the current page that are login or registration input fields
-async function checkInputFields(inputFieldInfo) {
-  const usernameField = inputFieldInfo.find((field) =>
-    isUsernameField(field)
-  );
+function checkInputFields(inputFieldInfo) {
+  const usernameField = inputFieldInfo.find((field) => isUsernameField(field));
 
-  const passwordField = inputFieldInfo.find((field) =>
-    isPasswordField(field)
-  );
+  const passwordField = inputFieldInfo.find((field) => isPasswordField(field));
 
-  if (usernameField && passwordField) {
-    return true;
-  }
-  return false;
+  return usernameField && passwordField;
 }
 
 function isUsernameField(field) {
-  const usernameKeywords = ['username', 'id_username', 'email', 'user', 'login', 'nickname'];
+  const usernameKeywords = [
+    'username',
+    'id_username',
+    'email',
+    'user',
+    'login',
+    'nickname',
+  ];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (
@@ -55,7 +56,13 @@ function isUsernameField(field) {
 }
 
 function isPasswordField(field) {
-  const passwordKeywords = ['password', 'id_password', 'passcode', 'pass', 'pwd'];
+  const passwordKeywords = [
+    'password',
+    'id_password',
+    'passcode',
+    'pass',
+    'pwd',
+  ];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (
@@ -68,17 +75,41 @@ function isPasswordField(field) {
   );
 }
 
+function isRegistrationPage() {
+  // Check if the document title or URL contains keywords that indicate it is a registration page
+  const registrationKeywords = [
+    'register',
+    'signup',
+    'create',
+    'join',
+    'sign up',
+    'sign-up',
+  ];
+  const title = document.title.toLowerCase();
+  const url = window.location.href.toLowerCase();
+
+  return (
+    registrationKeywords.some((keyword) => title.includes(keyword)) ||
+    registrationKeywords.some((keyword) => url.includes(keyword))
+  );
+}
 
 // Function to parse the page and check for input fields
 function checkForInputFields() {
-  const inputFieldInfo = getAllInputFields();
+  if (isRegistrationPage()) {
+    return false;
+  }
+
+  let inputFieldInfo = getAllInputFields();
+  if (inputFieldInfo == null) {
+    return false;
+  }
 
   // Grab the page domain
   var domain = parseDomain();
 
-  let check = checkInputFields(inputFieldInfo);
-
-  if (check) {
+  let inputFieldsFound = checkInputFields(inputFieldInfo);
+  if (inputFieldsFound) {
     // Notify the background script that input fields are found
     chrome.runtime.sendMessage({
       type: 'AUTOFILL_LOGIN_DETAILS',
@@ -102,7 +133,7 @@ export function parseDomain() {
     pageHref = pageHref.substring(0, queryIndex);
   }
   let domain = pageHref.split('/')[2];
-  
+
   if (domain.startsWith('www.')) {
     domain = domain.substring(4);
   }
@@ -112,35 +143,36 @@ export function parseDomain() {
 
 // Run the checkForInputFields function when the DOM is ready
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
-    checkForInputFields();
-    // Create a new MutationObserver to observe changes in the DOM
-    const observer = new MutationObserver(function(mutationsList, observer) {
-      for(let mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-          // Check for changes in the DOM
-          checkForInputFields();
-        }
-      }
-    });
-
-    // Start observing the entire document for changes
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded', function () {
+    handleInputFieldsCheck();
   });
 } else {
-  checkForInputFields();
+  handleInputFieldsCheck();
+}
+
+function handleInputFieldsCheck() {
+  if (checkForInputFields()) {
+    return; // We have initiated autofill, no need to continue
+  }
+
   // Create a new MutationObserver to observe changes in the DOM
-  const observer = new MutationObserver(function(mutationsList, observer) {
-    for(let mutation of mutationsList) {
+  const observer = new MutationObserver(function (mutationsList, observer) {
+    for (let mutation of mutationsList) {
       if (mutation.type === 'childList') {
         // Check for changes in the DOM
-        checkForInputFields();
+        if (checkForInputFields()) {
+          observer.disconnect(); // Stop observing once the check is complete
+          break;
+        }
       }
     }
   });
 
   // Start observing the entire document for changes
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
 }
 
 export function addStylesheet() {
@@ -197,7 +229,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         passwordField.classList.remove('autofilled');
       }, autofillAnimLength + 100);
     } else {
-      // Username and/or password fields not found on the page. // TODO: Add error handling, we probably should've gone this far if we can't find the fields.
+      // Username and/or password fields not found on the page.
     }
   }
 
@@ -289,7 +321,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     };
     const serializedCredentials = JSON.stringify(serializeableCredentials);
 
-    const domain = parseDomain();
+    const domain = 'www.' + parseDomain();
     const inputFieldInfo = getAllInputFields();
 
     chrome.runtime.sendMessage({

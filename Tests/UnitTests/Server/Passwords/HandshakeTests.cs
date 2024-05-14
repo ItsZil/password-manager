@@ -1,7 +1,7 @@
 ﻿using Server.Utilities;
 using UtilitiesLibrary.Models;
 
-namespace Tests.UnitTests.Server.Passwords
+namespace Tests.UnitTests
 {
     public class HandshakeTests
     {

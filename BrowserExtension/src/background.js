@@ -229,11 +229,10 @@ async function retrieveLoginInfo(
     // No login info has been found for this domain.
     return null;
   } else if (response.unauthorized) {
-    // Incorrect PIN code entered.
-    showFailureNotification(
-      'Extra Authentication Failed',
-      'Refresh to try again'
-    );
+    if (pinCode != null) {
+      // Incorrect PIN code entered.
+      showFailureNotification('Incorrect PIN Code', 'Refresh to try again');
+    }
     return;
   }
 
@@ -332,8 +331,14 @@ async function verifyPasskeyCredentials(payload) {
 
   if (domainLoginResponse.password) {
     // Authentication successful, send login info to content script
+    return domainLoginResponse;
+  } else {
+    // Authentication failed
+    showFailureNotification(
+      'Passkey Authentication Failed',
+      'Refresh to try again'
+    );
   }
-  return domainLoginResponse;
 }
 
 function showFailureNotification(title, message) {
@@ -367,8 +372,6 @@ function sendAutofillDetailsMessage(usernameField, passwordField, loginInfo) {
   });
 }
 
-let handledTradingView = false;
-
 // Function to check if there are elements on the current page that are login or registration input fields
 async function handleInputFields(message) {
   if (!message.inputFieldInfo) {
@@ -387,13 +390,6 @@ async function handleInputFields(message) {
     try {
       let loginInfo = message.loginInfo;
       if (!loginInfo) {
-        // If the page is TradingView, we only autofill the login form once
-        if (message.domain.includes('tradingview') && handledTradingView) {
-          return;
-        } else if (message.domain.includes('tradingview')) {
-          handledTradingView = true;
-        }
-
         loginInfo = await retrieveLoginInfo(
           message.domain,
           message.pinCode,
@@ -412,7 +408,14 @@ async function handleInputFields(message) {
 }
 
 function isUsernameField(field) {
-  const usernameKeywords = ['username', 'id_username', 'email', 'user', 'login', 'nickname'];
+  const usernameKeywords = [
+    'username',
+    'id_username',
+    'email',
+    'user',
+    'login',
+    'nickname',
+  ];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (
@@ -426,7 +429,13 @@ function isUsernameField(field) {
 }
 
 function isPasswordField(field) {
-  const passwordKeywords = ['password', 'id_password', 'passcode', 'pass', 'pwd'];
+  const passwordKeywords = [
+    'password',
+    'id_password',
+    'passcode',
+    'pass',
+    'pwd',
+  ];
 
   // Check if any of the common keywords appear in id, name, or placeholder
   return (

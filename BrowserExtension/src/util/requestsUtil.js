@@ -76,7 +76,7 @@ export async function domainRegisterRequest(domainRegisterRequestBody) {
     if (response.status === 200) {
       return response.json();
     } else if (response.status == 401) {
-      // TODO: not logged in
+      return;
     } else {
       console.error(
         `Failed to register for ${domainRegisterRequestBody.domain}: ${response.status} ${response.statusText}`
