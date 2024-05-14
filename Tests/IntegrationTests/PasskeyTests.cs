@@ -246,17 +246,6 @@ namespace Tests.IntegrationTests.Server
             Assert.Equal(HttpStatusCode.NotFound, passkeyCredentialResponse.StatusCode);
         }
 
-        /*[Fact]
-        public async Task TestVerifyPasskeyReturnsOk()
-        {
-            // Prepare a PasskeyVerificationRequest object
-            PasskeyVerificationRequest request = await CreatePasskeyVerificationRequest();
-
-            // Verify the passkey
-            var passkeyVerificationResponse = await VerifyPasskeyAsync(request);
-            Assert.Equal(HttpStatusCode.OK, passkeyVerificationResponse.StatusCode);
-        }*/
-
         [Fact]
         public async Task TestVerifyPasskeyEmptyCredentialIdReturnsBadRequest()
         {

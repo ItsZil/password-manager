@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <InvariantGlobalization>true</InvariantGlobalization>
     <PublishAot>False</PublishAot>
-    <OutputType>exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <ApplicationIcon>icon.ico</ApplicationIcon>
     <AssemblyName>Vault</AssemblyName>
   </PropertyGroup>
